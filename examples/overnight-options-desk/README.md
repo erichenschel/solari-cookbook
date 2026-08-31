@@ -56,15 +56,19 @@ set -a; source .env; set +a
   immediately after the backgrounded `python3 -m http.server` binds — no
   extra allowlisting or plan flag needed. `test_port_preview_serves_static_file_and_is_publicly_reachable`
   confirms an HTTP 200 fetched from the local machine, outside the VM.
-- **Recording: <fill in from the live run below>.** `test_recording_availability_probe`
+- **Recording: works on free tier, and fast.** `test_recording_availability_probe`
   creates a `recording=True` session, releases it, and polls
   `solari.sessions.download_replay()` for up to ~30s. It always passes — it
-  reports the finding rather than asserting on it. Actual result from this
-  spike's live run:
+  reports the finding rather than asserting on it. Actual results from this
+  spike's live runs (two separate runs, both against the real API):
 
   ```
-  <paste the "[finding] recording probe: ..." line from the live pytest -s output here>
+  [finding] recording probe: replay_available=True (2320 bytes after 3.6s (attempt 1))
+  [finding] recording probe: replay_available=True (2320 bytes after 10.0s (attempt 3))
   ```
+
+  The replay was retrievable well inside the ~30s the root README's
+  gotcha warns you to poll for — no 404s that didn't quickly resolve.
 
 - **SDK deviations from the ticket packet, confirmed against the installed
   `solari-browser==0.1.2` / `solari-sandbox==0.2.0` source:**
@@ -82,10 +86,16 @@ set -a; source .env; set +a
   - `sandbox.preview_url(port)` (Python) / `sandbox.previewUrl(port)` (TS)
     returns `{"url": ..., "token"?: ...}` — matches the ticket's assumed
     shape.
-  - The `base` sandbox template does not ship `numpy`; the live sandbox test
-    installs it via `pip install -q numpy` inside the same kernel call
-    (subprocess) before importing, and stays well inside the 2-minute
-    per-test budget.
+  - The `base` sandbox template's kernel resolved `pip install -q numpy` in
+    ~3s live (either it's already warm/cached on the image, or the install
+    itself is just fast) — the whole kernel run (install + import + two
+    prints) completed in 3.2s wall time, well inside the 2-minute per-test
+    budget. `run_in_sandbox`/the test install it defensively regardless
+    rather than assuming it's preinstalled.
+  - `commands.run(..., background=True)` reliably backgrounds
+    `python3 -m http.server`: the live preview test got HTTP 200 from the
+    public URL on the very first fetch (no retry needed), i.e. the server
+    was already bound by the time `preview_url()` returned.
 
 ## Gotchas this wrapper encodes
 
