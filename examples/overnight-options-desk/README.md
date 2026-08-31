@@ -32,6 +32,7 @@ desk/
     signals.py            # GARCH / OU(AR1) / momentum / verdict rule table
     fetch.py               # network: Stooq primary, Yahoo chart fallback
     driver.py               # sandbox-side glue: fetch + signals -> signals.json body
+    runner.py                # subprocess entry point (fresh interpreter, see "Live sandbox findings")
 fixtures/
   scraped_data.json    # one realistic scraped_data fixture
   signals.json          # one realistic signals fixture
@@ -136,6 +137,39 @@ Every model function degrades to a documented fallback instead of raising:
 Every one of these is covered by a bundled `fixtures/prices/*.csv` fixture
 and a hermetic test in `tests/test_models.py` (`CONST.csv` for the
 zero-variance/collinearity case, `SHORT.csv` for the trading-days floor).
+
+### Live sandbox findings (GRE-3461)
+
+Two real infrastructure quirks surfaced during live AC-1 testing, both
+worked around in `desk/model_code/` rather than papered over:
+
+- **Sandbox VM clock can be stuck in the past.** Observed ~4 weeks behind
+  real time; `date -s` inside the VM silently no-ops (kernel clock-set
+  syscalls appear blocked in the container), so it can't be fixed in-guest.
+  A stale clock makes legitimately-valid HTTPS certs look "not yet valid"
+  (`CERTIFICATE_VERIFY_FAILED`) — this broke every fetch until diagnosed.
+  `fetch.py`'s `_urlopen_tolerant` retries once, without cert verification,
+  ONLY on that exact error signature (not TLS failures generally), and
+  always leaves a `tls-clock-skew-workaround` note so the degraded-trust
+  request is visible in the output rather than silent.
+- **Installing `numpy` explicitly breaks `pandas`'s C extensions.** The
+  `base` template's preinstalled `scipy` is pinned to `numpy<1.27`; asking
+  pip for `numpy` as a top-level package (rather than letting it resolve
+  transitively as `arch`/`statsmodels`'s own dependency) pulls the newest
+  numpy (2.x) instead, silently breaking scipy/pandas' compiled ABI — surfacing
+  as `ImportError: C extension: None not built` deep inside the GARCH fit,
+  not as an install-time error. Worse: even with `numpy` correctly left off
+  the install list, the sandbox's persistent Python kernel process (the one
+  `run_code` executes in) already has numpy imported from kernel startup —
+  a `pip install` afterward only changes what's on disk, not what's already
+  bound in the kernel's `sys.modules`, so pandas' C extensions get checked
+  against a stale in-process numpy regardless. `desk/model_code/runner.py`
+  is the fix: `desk/models.py`'s bootstrap code installs `arch`+`statsmodels`
+  (letting pip's resolver pick a mutually-compatible numpy/scipy/pandas —
+  observed numpy 1.26.4 / scipy 1.10.1 / pandas 3.0.5), then runs
+  `runner.py` as a **fresh subprocess** rather than importing `driver` in
+  the kernel's own process — a brand-new interpreter has no stale numpy to
+  conflict with anything just installed.
 
 ## Spike findings
 

@@ -32,12 +32,26 @@ SANDBOX_MODEL_CODE_DIR = "/home/user/desk_model_code"
 # Uploaded in this order; driver.py's `import fetch, signals` and fetch.py's
 # `from prices import ...` only need prices/signals/fetch present alongside
 # it, order doesn't matter for correctness but keeps the upload deterministic.
-MODEL_CODE_FILES = ["prices.py", "signals.py", "fetch.py", "driver.py"]
+# runner.py is the subprocess entry point that actually imports driver (see
+# `_bootstrap_code` docstring for why it must run in a fresh process).
+MODEL_CODE_FILES = ["prices.py", "signals.py", "fetch.py", "driver.py", "runner.py"]
 
 # Sandbox pip installs -q the same way the GRE-3459 spike proved `numpy`
 # resolves in seconds on the `base` template kernel; installed defensively
 # every run rather than assuming the image has them.
-SANDBOX_PACKAGES = ["numpy", "arch", "statsmodels"]
+#
+# Deliberately NOT listing `numpy` here: live testing (GRE-3461) found that
+# installing it explicitly pulls the newest numpy (2.x) ahead of `arch`
+# and `statsmodels`, which pip then installs on top of — but the `base`
+# image's preinstalled `scipy` is pinned to `numpy<1.27`, so the newer
+# numpy silently breaks scipy/pandas' compiled C-extension ABI (surfaces
+# as a cryptic "C extension: None not built" ImportError deep inside
+# arch's GARCH fit / statsmodels' OLS, not as an install-time failure).
+# Letting pip's resolver pull numpy in transitively as arch/statsmodels's
+# own dependency keeps the whole numpy/scipy/pandas stack mutually
+# compatible (observed: numpy 1.26.4, scipy 1.10.1, pandas 3.0.5 — GARCH
+# fit verified working with that combination).
+SANDBOX_PACKAGES = ["arch", "statsmodels"]
 
 RESULT_START_MARKER = "===DESK_SIGNALS_JSON_START==="
 RESULT_END_MARKER = "===DESK_SIGNALS_JSON_END==="
@@ -57,24 +71,57 @@ def _load_model_code_files() -> dict[str, str]:
 
 
 def _bootstrap_code(scraped_dict: dict) -> str:
-    """Build the code string run in the sandbox kernel: install deps, load
-    `driver.build_signals`, run it on the embedded scraped_data payload, and
-    print the result JSON between markers so it's unambiguous to extract
-    from stdout regardless of what pip/arch/statsmodels print along the way.
+    """Build the code string run in the sandbox kernel: install deps, then
+    run `runner.py` (which imports `driver.build_signals`) in a FRESH
+    subprocess rather than importing `driver` directly in the kernel's own
+    process.
+
+    Why a subprocess: live testing (GRE-3461) found the sandbox kernel
+    process already has numpy imported at kernel startup; pip-installing a
+    different numpy/scipy/pandas combination afterward only changes what's
+    on disk; the kernel keeps the stale in-process numpy bound in
+    `sys.modules`, and pandas' compiled C-extensions (checked against
+    whatever numpy is actually imported) then fail with a cryptic
+    `ImportError: C extension: None not built` deep inside arch's GARCH fit
+    / statsmodels' OLS. A brand-new subprocess imports everything fresh
+    from disk with no stale in-process state — see runner.py's docstring
+    for the full writeup. `driver`'s own JSON output goes to a file (not
+    stdout) so pip/subprocess chatter can never corrupt it; only the
+    markers below are guaranteed clean on the kernel's own stdout.
     """
     scraped_json = json.dumps(scraped_dict)
     packages = " ".join(SANDBOX_PACKAGES)
     return f"""
 import json, subprocess, sys
 subprocess.check_call([sys.executable, "-m", "pip", "install", "-q"] + {packages!r}.split())
-sys.path.insert(0, {SANDBOX_MODEL_CODE_DIR!r})
-import driver
 
-scraped_data = json.loads({scraped_json!r})
-result = driver.build_signals(scraped_data)
+scraped_path = "/tmp/desk_scraped_data.json"
+out_path = "/tmp/desk_signals.json"
+with open(scraped_path, "w") as fh:
+    fh.write({scraped_json!r})
+
+proc = subprocess.run(
+    [
+        sys.executable,
+        {SANDBOX_MODEL_CODE_DIR!r} + "/runner.py",
+        {SANDBOX_MODEL_CODE_DIR!r},
+        scraped_path,
+        out_path,
+    ],
+    capture_output=True,
+    text=True,
+)
+if proc.stdout:
+    print(proc.stdout)
+if proc.returncode != 0:
+    print(proc.stderr, file=sys.stderr)
+    raise RuntimeError(f"runner.py subprocess failed (exit {{proc.returncode}}): {{proc.stderr}}")
+
+with open(out_path) as fh:
+    result_json = fh.read()
 
 print({RESULT_START_MARKER!r})
-print(json.dumps(result))
+print(result_json)
 print({RESULT_END_MARKER!r})
 """
 
