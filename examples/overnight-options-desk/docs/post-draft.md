@@ -11,24 +11,24 @@ preview URL + GitHub Pages. Real end-to-end demo run: status `full`,
 $0.0309 spend, cumulative project spend ≈$0.0509. See the package
 [README](../README.md) for the full writeup.
 
-Repo link and Pages URL below are placeholders pending the PM's merge +
-`gh api ... /pages` enable step (see the generator report for the exact
-command) — fill in the live Pages URL once it resolves.
+Pages serves from repo root on `main`; the live brief URL used below is
+https://erichenschel.github.io/solari-cookbook/examples/overnight-options-desk/docs/latest/index.html
 
 ---
 
 ## X / Twitter (≤280 chars)
 
 ```
-Built an overnight options desk on @getsolari: cloud browser scrapes earnings/news/quotes, a sandbox fits GARCH+OU+momentum, and renders a brief with a live preview URL. Research only, not advice. cc @harrychow_
+Built an overnight options desk on @getsolari: cloud browser scrapes earnings/news/quotes, a sandbox fits GARCH+OU+momentum, and renders a brief with a live preview URL. Total cost: ~$0.05. Research only, not advice. cc @harrychow_
 https://github.com/erichenschel/solari-cookbook
-https://erichenschel.github.io/solari-cookbook/
+https://erichenschel.github.io/solari-cookbook/examples/overnight-options-desk/docs/latest/index.html
 ```
 
-Length check: body text is 211 raw characters; X counts each URL as a
+Length check: body text is 231 raw characters; X counts each URL as a
 fixed 23 characters (t.co shortening) regardless of actual length, so two
 URLs on their own lines add 1 (newline) + 23 + 1 (newline) + 23 = 48,
-giving an effective length of **259/280** — 21 characters of headroom.
+giving an effective length of **279/280**. If the composer disagrees,
+drop the "Total cost" sentence for 20 characters of headroom.
 
 ## LinkedIn (longer variant)
 
@@ -62,7 +62,7 @@ trend-watch, ...), never buy/sell signals.
 
 Code, README, and the real published brief:
 https://github.com/erichenschel/solari-cookbook
-https://erichenschel.github.io/solari-cookbook/
+https://erichenschel.github.io/solari-cookbook/examples/overnight-options-desk/docs/latest/index.html
 
 cc Harry Chow / @getsolari
 ```
