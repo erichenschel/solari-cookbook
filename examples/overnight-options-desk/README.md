@@ -1,23 +1,228 @@
 # Overnight options desk
 
-**Status:** all four lanes merged (GRE-3459 spike, GRE-3460 scraper,
-GRE-3461 models, GRE-3462 brief, GRE-3463 orchestrator). End-to-end
-integration (GRE-3464) pending.
+**Status:** shipped (GRE-3464 integration). All five lanes (GRE-3459 spike,
+GRE-3460 scraper, GRE-3461 models, GRE-3462 brief, GRE-3463 orchestrator)
+are merged and wired end-to-end; `python -m desk.run_overnight` runs the
+real chain against the live free-tier API and publishes a brief.
 
-## What this will become
+## What it does
 
-An overnight pipeline that:
-1. Scrapes a universe of symbols for earnings dates, headlines, and quotes
-   (cloud browser) into `scraped_data` (`desk/contracts.py`,
-   `desk/schemas/scraped_data.schema.json`).
-2. Runs quant models (GARCH vol forecast, OU mean-reversion, momentum) in a
-   sandbox and emits `signals` (`desk/schemas/signals.schema.json`).
-3. Assembles a morning brief from both, previewable via a sandbox port
-   preview while it's being built.
+Every weekday morning before the market opens, an options desk wants one
+page: which names in its watchlist have earnings soon, what the overnight
+headlines say, and — for each — a quant read on volatility, mean-reversion,
+and momentum. `run_overnight.py` builds exactly that page from a cold
+start, unattended: it opens real cloud-browser sessions to scrape earnings
+dates / headlines / quotes for a symbol universe (≤5 tickers), fits a
+GARCH(1,1) vol forecast + an OU/AR(1) mean-reversion model + 5-day momentum
+per symbol inside a throwaway sandbox VM, renders both into one
+self-contained `brief.html` (no JS, no external requests — readable from a
+bare `file://` URL), and publishes it on a public sandbox preview URL —
+then copies the same file to `docs/latest/index.html` for GitHub Pages. For
+this repo's demo, that command ran once against `AAPL,NVDA,MSFT,TSLA,AMZN`;
+see "Free-tier story" below for what it actually cost and
+[the published brief](../../docs/latest/index.html) for what it produced.
+No step here is trading advice — every brief carries a
+"Research only — not investment advice" disclaimer, and the model outputs
+are research labels (`mean-reversion-watch`, `trend-watch`, ...), never buy/
+sell signals.
 
-This spike scaffolds the client wrapper and the two contracts so the four
-lanes can build against a stable interface instead of each hand-rolling
-Solari SDK calls.
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph S1["1. desk.scraper — cloud browser"]
+        B["open_browser_page()<br/>Yahoo / MarketWatch RSS / Google News RSS<br/>+ CBOE JSON (plain HTTP fallback)"]
+    end
+    subgraph S2["2. desk.models — sandbox kernel"]
+        F["fetch.py: Stooq CSV -&gt; Yahoo chart fallback"]
+        M["GARCH(1,1) + OU/AR(1) + momentum<br/>(arch, statsmodels, numpy)"]
+        F --> M
+    end
+    subgraph S3["3. desk.brief — pure render"]
+        R["Jinja2, autoescaped<br/>no JS, no external requests"]
+    end
+    subgraph S4["4. desk.serve — sandbox port preview"]
+        P["http.server, background=True<br/>*.preview.getsolari.com"]
+    end
+
+    B -->|scraped_data.json| S2
+    B -->|scraped_data.json| S3
+    S2 -->|signals.json| S3
+    S3 -->|brief.html| S4
+    S3 -->|brief.html| D["docs/latest/index.html"]
+    D --> GHP["GitHub Pages"]
+    P --> URL(["public preview URL<br/>(lives ~1hr, free tier)"])
+```
+
+Each stage is invoked by `run_overnight.py` as its own subprocess — a fresh
+Solari session per stage, never held across stage boundaries (NG-1) — with
+stage checkpointing, retry-then-degrade, and budget accounting in between
+(see "Orchestrator" below).
+
+## Contract changes in this integration (GRE-3464)
+
+Wiring the four lanes together surfaced two real contract gaps between
+lanes built in parallel against a shared spec — both fixed additively so
+nothing that validated against the old shape breaks:
+
+- **`signals.schema.json` gains an optional `label` string** carrying the
+  models lane's real research vocabulary (`insufficient-data`,
+  `mean-reversion-watch`, `trend-watch`, `event-risk`, `no-strong-signal`)
+  as first-class data instead of only inside `notes[]` prose. `verdict`
+  stays the closed four-value enum. See "Model rule table" below for the
+  full writeup.
+- **`scraped_data.schema.json`'s `provenance` gains an optional `replays`
+  array** — the subset of `provenance.sessions` that were recorded and are
+  downloadable via `solari.sessions.download_replay(session_id)` (Solari's
+  replay id *is* the session id — no new id needed). Populated by
+  `desk/scraper.py` (mirrors `sessions` when the run's `recording` flag was
+  on, empty otherwise) and rendered in `desk/brief.py`'s provenance footer.
+- **The orchestrator's assumed `desk.serve` contract was wrong** — see
+  "Orchestrator ↔ serve reconciliation" further down for that one; it's a
+  behavioral fix, not a schema change.
+
+## The three Solari primitives this example uses
+
+All three are thin wrappers in `desk/solari_client.py`; every helper opens
+exactly the resource it needs and closes/kills it before returning (the one
+exception, `serve_preview`, is documented below).
+
+- **Cloud browser** (`solari.launch()` → `browser.new_page()`, wrapped as
+  `open_browser_page`) — the scraper needs real rendered pages (Yahoo
+  Finance, MarketWatch RSS, Google News RSS); several of these don't behave
+  the same over a plain HTTP GET (missing JS-rendered content, or outright
+  blocked). Every fetch is a fresh, closed session.
+- **Sandbox code interpreter** (`SandboxClient.create()` → `run_code()`,
+  wrapped as `run_in_sandbox`) — the quant models need `numpy`/`arch`/
+  `statsmodels`; installing scientific-Python for every reader of this repo
+  just to look at the code would be a bad trade. The sandbox installs them
+  fresh, fits the models, and is `kill()`ed — one throwaway VM per run.
+- **Sandbox port preview** (`SandboxClient` + `commands.run(...,
+  background=True)` + `sandbox.preview_url()`, wrapped as `serve_preview`)
+  — publishes the finished `brief.html` on a public
+  `*.preview.getsolari.com` URL with no deploy step, so the morning brief
+  is curl-able the moment the pipeline finishes.
+
+## Free-tier story
+
+Free tier: 1 concurrent sandbox, 3 concurrent browsers, sequential live
+work. Every helper in `desk/solari_client.py` prints a `[spend]` estimate
+line (`resource: Ns ~= $X @ rate/hr`) on every call; `run_overnight.py`
+sums these into `runs/<date>/budget.json`. Cumulative spend across every
+live probe this project has run — prior lanes' AC testing plus this
+integration ticket's real end-to-end demo:
+
+- Prior lanes (GRE-3459 spike + GRE-3460 scraper + GRE-3461 models AC live
+  testing): **≈$0.02**
+- This ticket's real `run_overnight` demo run below
+  (`AAPL,NVDA,MSFT,TSLA,AMZN`, `runs/2026-08-31/budget.json`): **$0.0309**
+  (scraper $0.0048, models $0.0011, brief $0.0000, serve $0.0250 —
+  the serve figure is an *estimated* charge for the requested 900s preview
+  hold, not a measured actual; see "Orchestrator ↔ serve reconciliation"
+  below for why).
+- **Cumulative project spend: ≈$0.0509** — against a $2.00 ticket budget
+  and a $0.60 live-work budget for this ticket alone. Not rounded up.
+
+Nothing here needs a paid plan — every primitive above (recording,
+port preview, the sandbox `base` template) was confirmed working on the
+free tier during the GRE-3459 spike (see "Spike findings").
+
+## Real end-to-end run (GRE-3464 demo)
+
+```
+python -m desk.run_overnight --symbols AAPL,NVDA,MSFT,TSLA,AMZN --serve-hold-seconds 900
+```
+
+```
+=== overnight desk run 2026-08-31 — status: full ===
+  scraper  ok       attempts=1 duration=42.00s spend=$0.0048
+  models   ok       attempts=1 duration=41.96s spend=$0.0011
+  brief    ok       attempts=1 duration=0.10s  spend=$0.0000
+  serve    ok       attempts=1 duration=0.97s  spend=$0.0250
+  budget total: $0.0309
+  preview: https://bf81fd6689b42fa152c3-8000.preview.getsolari.com
+  (?pt_token=... stripped — see NG-3; curled 200 while the preview was alive)
+  brief: docs/latest/index.html
+  run dir: runs/2026-08-31
+```
+
+- **Every stage ran real** — no stubs, no `--dry-run`. `scraper` hit the
+  live free-tier API for 5 symbols (15 recorded browser sessions; Nasdaq's
+  earnings page failed with `net::ERR_HTTP2_PROTOCOL_ERROR` on every symbol
+  exactly as documented in "Limitations" and fell through to the Yahoo
+  earnings calendar fallback every time — see `runs/2026-08-31/scraped_data.json`'s
+  `warnings[]`).
+  `models` hit the sandbox-clock-skew TLS workaround live too (every
+  symbol's `notes[]` carries a `tls-clock-skew-workaround` entry) and still
+  produced valid GARCH/OU/momentum fits for all 5 symbols via the Yahoo
+  chart price fallback (Stooq returned 0 usable closes this run).
+- **Verdicts** (real market data, not fixture): 4 of 5 symbols came back
+  `avoid` / `mean-reversion-watch` (stretched OU z-scores, elevated
+  annualized vol forecasts — MSFT z=+6.48, NVDA z=+4.78, AMZN z=+3.71, TSLA
+  z=−3.45), AAPL came back `neutral` / `no-strong-signal`. See
+  `runs/2026-08-31/signals.json` for the full per-symbol output including
+  `label`.
+- **Artifacts**: `runs/2026-08-31/{scraped_data.json, signals.json,
+  brief.html, run.log, budget.json, state.json}` — all present, all
+  schema-valid, `state.json.status == "full"`.
+- **Published brief**: `docs/latest/index.html` is a byte-for-byte copy of
+  `runs/2026-08-31/brief.html` (verified via checksum) — real universe,
+  real quotes, real labels, not the fixture data used by the hermetic
+  tests.
+- **Screenshot**: `docs/latest/brief-screenshot.jpg`, captured from the
+  live preview URL while it was up.
+
+## Quickstart
+
+```bash
+git clone https://github.com/erichenschel/solari-cookbook.git
+cd solari-cookbook
+
+cp examples/overnight-options-desk/.env.example .env
+# edit .env: SOLARI_API_KEY=slr_live_... (grab one at console.getsolari.com)
+
+python3 -m venv .venv-desk
+.venv-desk/bin/pip install -r examples/overnight-options-desk/requirements.txt
+
+# hermetic — no network, no key needed
+.venv-desk/bin/pytest examples/overnight-options-desk/tests -m "not live" -q
+
+# the real overnight run (live API, one sandbox + a few browser sessions)
+set -a; source .env; set +a
+cd examples/overnight-options-desk
+python -m desk.run_overnight --symbols AAPL,NVDA,MSFT,TSLA,AMZN
+```
+
+That last command chains scrape → models → render → serve and prints a
+summary — per-stage status/timing/spend, the total budget, and the preview
+URL — see "Orchestrator" below for what each flag does and "Real
+end-to-end run" for what a real run of it produced.
+
+## Limitations (read before you rely on this)
+
+- **Preview lifetime is capped at ~1hr** (free-tier sandbox idle-kill
+  window — `desk/serve.py`'s `MAX_HOLD_S`). The preview URL printed by a
+  run — and the one linked from this README — goes dead after that; the
+  durable artifact is `docs/latest/index.html` / `runs/<date>/brief.html`,
+  not the URL.
+- **No stealth mode, so Nasdaq's earnings page is blocked.** A vanilla
+  cloud browser gets `net::ERR_HTTP2_PROTOCOL_ERROR` from
+  `nasdaq.com/market-activity/...` every time (confirmed at build time and
+  live) — the scraper always falls through to the Yahoo/StockAnalysis
+  fallbacks. A deployment that specifically needs Nasdaq would want
+  Solari's stealth + residential-proxy browser mode (see
+  [browser-stealth-proxy-ts](../browser-stealth-proxy-ts)) instead.
+- **Sandbox VM clock can be stuck in the past** (observed ~4 weeks behind
+  real time), which makes legitimately valid HTTPS certs look "not yet
+  valid." Worked around in `fetch.py`'s `_urlopen_tolerant` with one
+  documented, narrowly-scoped unverified retry — never silent, always
+  leaves a `tls-clock-skew-workaround` note. See "Live sandbox findings"
+  below for the full writeup.
+- **Research only.** Every rendered brief carries a
+  "Research only — not investment advice" disclaimer in its footer; the
+  verdict/label vocabulary (`mean-reversion-watch`, `trend-watch`,
+  `event-risk`, ...) describes what a human analyst might flag for further
+  reading, not an order or execution instruction.
 
 ## Layout
 
@@ -44,6 +249,8 @@ fixtures/
   prices/              # seeded synthetic daily-close CSVs for hermetic model tests
   scraper/             # real page/RSS/JSON snapshots for hermetic parser tests
 runs/                  # per-day run artifacts (gitignored; .gitkeep only)
+docs/latest/           # published output: index.html (real brief, GitHub Pages
+                        # source) + brief-screenshot.jpg from the GRE-3464 demo run
 tests/
   test_contracts.py    # hermetic: fixtures round-trip, invalid samples rejected
   test_scraper_*.py    # hermetic: parsers vs saved fixtures, fallback chains
@@ -87,7 +294,7 @@ cd examples/overnight-options-desk
 # hermetic — zero API calls, all four stages run against stubs
 python -m desk.run_overnight --dry-run --symbols AAPL,NVDA,MSFT,TSLA
 
-# live chain, once the sibling scraper/models/brief/serve CLIs exist
+# live chain against the real sibling scraper/models/brief/serve CLIs
 python -m desk.run_overnight --symbols AAPL,NVDA,MSFT,TSLA
 
 # resume a partial run, skipping stages whose valid artifacts already exist
@@ -105,13 +312,15 @@ per-stage status/timing, total estimated spend, and the preview URL when
 `--stubs` (or `DESK_STUBS=1`) uses the fixture-derived stand-ins in
 `desk/stubs.py` instead of shelling out to the real sibling CLIs;
 `--dry-run` implies `--stubs` and is the mode the hermetic tests exercise.
-The exact sibling CLI contracts this orchestrator assumes (subject to
-reconciliation once each lane ships):
+The exact sibling CLI contracts this orchestrator assumes, verified against
+the real modules (GRE-3464):
 
 - `python -m desk.scraper --symbols A,B --out path` — writes `scraped_data.json`
 - `python -m desk.models --scraped path --out path` — writes `signals.json`
 - `python -m desk.brief --scraped path --signals path --out path` — writes `brief.html`
-- `python -m desk.serve --file path` — prints a preview URL as the last stdout line
+- `python -m desk.serve --file path --port N --hold-seconds N` — prints a
+  preview URL as its FIRST stdout line, then blocks holding the sandbox
+  open (see below)
 
 Each is invoked as its own subprocess (a fresh process per stage — the
 NG-1 "no session reuse across stages" guarantee falls out of that for
@@ -119,6 +328,45 @@ free). Spend is read from `[spend] resource: Ns ~= $X` lines emitted by
 `desk/solari_client.py`'s helpers (summed across every resource a stage
 opened), or from a trailing `{"spend_usd": ...}` line if a stage
 self-reports instead.
+
+#### Orchestrator ↔ serve reconciliation (GRE-3464)
+
+`desk/serve.py` doesn't print a URL and exit — it prints the URL, then
+blocks (`--hold-seconds N`, or until Ctrl-C) so the URL stays curlable
+after the pipeline finishes. The original assumption baked into this
+orchestrator (URL as the *last* stdout line, process then returns) doesn't
+hold, and running it the same way as the other three stages —
+`subprocess.run(...)`, wait for exit — would hang the `serve` stage for the
+entire hold duration.
+
+Fixed by having `_do_serve` launch `desk.serve` as a live subprocess,
+stream its stdout on a background thread, and return as soon as a line
+matching the URL appears — leaving the subprocess (and the sandbox it's
+holding open) running, detached (`start_new_session=True`), after this
+function returns. `--serve-hold-seconds` (default `3600`, i.e. desk/serve.py's
+`MAX_HOLD_S` free-tier cap) is threaded through to the real `desk.serve
+--hold-seconds`; this also fixed a real bug found along the way —
+`serve_preview()`'s sandbox `timeout_ms` was hardcoded to 5 minutes
+regardless of the requested hold, so the VM would silently die under the
+still-running `http.server` before a long hold elapsed. `timeout_ms` is
+now threaded through from `--hold-seconds` (capped at `MAX_HOLD_S`, plus a
+setup buffer).
+
+One consequence: the real `[spend] sandbox (preview): ...` line
+`solari_client.py` emits is only printed when the subprocess is eventually
+killed (hold elapses, or a human Ctrl-C's it) — which happens *after*
+`_do_serve` has already returned — so `run.log`/`budget.json`'s `serve`
+spend is an **estimate** (`hold_seconds * $0.10/hr`), not a measured
+actual. `budget.json` carries a `notes[]` entry flagging this whenever it
+applies; `StageOutcome.extra["spend_estimated"]` is `true` in `state.json`
+for the same run.
+
+**Session-cap implication**: free tier is one concurrent sandbox. A
+`--serve-hold-seconds` anywhere near the 1hr cap means that sandbox slot is
+occupied — and its estimated cost accruing — for the whole hold, even
+though `run_overnight.py` itself finished in seconds. Kill it early with
+`Ctrl-C` on the still-running `desk.serve` process (found via `ps aux | grep
+desk.serve`) if you don't need the preview for the full hold.
 
 ### Scheduling
 
@@ -192,7 +440,7 @@ N-day percent change) — nothing here encodes proprietary signal logic.
 Applied top-to-bottom, first match wins (`desk/model_code/signals.py`,
 `decide_verdict`):
 
-| # | Condition | Verdict | Research label (in `notes[]`) |
+| # | Condition | Verdict | `label` (+ same text in `notes[]`) |
 |---|-----------|---------|-------------------------------|
 | 1 | Fewer than 60 trading days of price history | `avoid` | `insufficient-data` |
 | 2 | Earnings date within 3 calendar days of `as_of` | `avoid` | `event-risk` — vol forecast likely understates the actual move |
@@ -206,20 +454,23 @@ would flag for further reading (a stretched mean-reversion setup, a
 low-vol trend, an upcoming earnings date), not a trade recommendation or
 order/execution instruction (NG-1).
 
-**CONTRACT GAP (flagged, not fixed by this ticket):**
-`signals.schema.json`'s `verdict` field is a closed enum
-(`bullish|bearish|neutral|avoid`) inherited from the GRE-3459 spike. It
-predates this ticket's research-verdict vocabulary and doesn't literally
-contain `insufficient-data`, `mean-reversion-watch`, `trend-watch`, or
-`event-risk` — including AC-3's literal `verdict: "insufficient-data"`. Per
-the ticket's instructions, `desk/contracts.py` and the schemas were left
-untouched; instead each rule above maps onto the closest existing enum
-value and the literal research label is always the corresponding
-`notes[]` entry (see table). A follow-up should extend the enum (or split
-`verdict` into a coarse enum + a `label` string) so `verdict` can carry the
-literal AC-3 string. `bullish`/`bearish`/`avoid` as enum *names* also
-predate NG-1 and read closer to trading-advice language than the research
-labels above — worth revisiting in the same follow-up.
+**CONTRACT GAP — resolved (GRE-3464):** `signals.schema.json`'s `verdict`
+field is still the closed four-value enum
+(`bullish|bearish|neutral|avoid`) from the GRE-3459 spike — it stays that
+way, deliberately (`bullish`/`bearish`/`avoid` as enum *names* read closer
+to trading-advice language than the research labels above; narrowing that
+is a separate, larger discussion than this ticket's integration scope).
+What changed: `signals.schema.json` gained an **optional** `label` field
+(`desk/contracts.py`'s `SymbolSignal.label`) carrying the literal research
+label from the table above as first-class data — the same string that was
+previously only recoverable by parsing `notes[]` prose. `decide_verdict`
+now returns `(verdict, label, note)`; `compute_symbol_signal` sets both
+`verdict` and `label`, and still appends the human-readable `note` to
+`notes[]` (byte-for-byte the same text as before this ticket, so nothing
+that substring-matched `notes[]` broke). `desk/brief.py` renders `label`
+under the verdict badge when present. Older producers that only set
+`verdict`/`notes` are unaffected — `label` is omitted from `to_dict()`
+output entirely when unset, not emitted as `null`.
 
 ### Numerical edge cases (NG-5)
 

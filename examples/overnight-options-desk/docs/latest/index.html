@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overnight Options Desk Brief — 2026-08-31 23:26 UTC</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0a0e14;
+    --panel: #0d1117;
+    --border: #21262d;
+    --text: #c9d1d9;
+    --dim: #7d8590;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --amber: #d29922;
+    --gray: #8b949e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 0 0 3rem;
+  }
+  a { color: var(--accent); }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 1rem; }
+  header.brief-header {
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    padding: 1.25rem 0 1rem;
+    margin-bottom: 1.5rem;
+  }
+  header.brief-header .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .5rem 1.5rem; }
+  h1 { font-size: 1.1rem; letter-spacing: .04em; text-transform: uppercase; margin: 0; color: #e6edf3; }
+  .as-of { color: var(--dim); font-size: .85rem; }
+  .universe { color: var(--dim); font-size: .85rem; }
+  .universe strong { color: var(--text); }
+  section { margin: 0 0 2rem; }
+  section > h2 {
+    font-size: .8rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--dim);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: .35rem;
+    margin: 0 0 .75rem;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  th { font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .bar { display: block; width: 90px; height: 14px; }
+  .mom-up { color: var(--green); }
+  .mom-down { color: var(--red); }
+  .mom-flat { color: var(--dim); }
+  .badge {
+    display: inline-block;
+    padding: .1rem .5rem;
+    border-radius: 3px;
+    font-size: .72rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    font-weight: 700;
+    border: 1px solid transparent;
+  }
+  .v-bullish { color: var(--green); border-color: var(--green); background: rgba(63,185,80,.1); }
+  .v-bearish { color: var(--red); border-color: var(--red); background: rgba(248,81,73,.1); }
+  .v-avoid   { color: var(--red); border-color: var(--red); background: rgba(248,81,73,.15); }
+  .v-neutral { color: var(--gray); border-color: var(--gray); background: rgba(139,148,158,.08); }
+  .verdict-label { display: block; color: var(--dim); font-size: .68rem; margin-top: .25rem; letter-spacing: .02em; }
+  .uncovered-note { color: var(--dim); font-size: .8rem; margin-top: .5rem; }
+  .callouts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .75rem; }
+  .callout { border: 1px solid var(--border); background: var(--panel); border-radius: 6px; padding: .75rem .9rem; }
+  .callout .sym { font-weight: 700; color: #e6edf3; font-size: .95rem; }
+  .callout .date { color: var(--dim); font-size: .8rem; margin-top: .15rem; }
+  .callout .badge { margin-top: .5rem; }
+  .headline-group { margin-bottom: 1rem; }
+  .headline-group h3 { font-size: .85rem; color: #e6edf3; margin: 0 0 .35rem; }
+  .headline-group ul { list-style: none; margin: 0; padding: 0; }
+  .headline-group li { padding: .35rem 0; border-bottom: 1px dotted var(--border); }
+  .headline-group li:last-child { border-bottom: none; }
+  .headline-meta { color: var(--dim); font-size: .78rem; }
+  .empty { color: var(--dim); font-style: italic; font-size: .85rem; }
+  footer.provenance {
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+    padding-top: 1rem;
+    color: var(--dim);
+    font-size: .78rem;
+  }
+  footer.provenance .disclaimer {
+    color: var(--amber);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-size: .75rem;
+    margin-bottom: .5rem;
+  }
+  footer.provenance .sessions code { color: var(--text); }
+  .warnings { color: var(--amber); font-size: .8rem; margin-top: .5rem; }
+
+  @media (max-width: 640px) {
+    table.responsive thead { display: none; }
+    table.responsive, table.responsive tbody, table.responsive tr, table.responsive td {
+      display: block; width: 100%;
+    }
+    table.responsive tr { border: 1px solid var(--border); border-radius: 6px; margin-bottom: .6rem; padding: .3rem .6rem; }
+    table.responsive td {
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px dotted var(--border); padding: .4rem 0; text-align: right;
+    }
+    table.responsive td:last-child { border-bottom: none; }
+    table.responsive td::before {
+      content: attr(data-label);
+      color: var(--dim); text-transform: uppercase; font-size: .68rem;
+      letter-spacing: .04em; margin-right: .5rem; text-align: left;
+    }
+  }
+</style>
+</head>
+<body>
+<header class="brief-header" id="header">
+  <div class="wrap">
+    <h1>Overnight Options Desk &mdash; Morning Brief</h1>
+    <div class="as-of">As of <strong>2026-08-31 23:26 UTC</strong> &middot; signals as of 2026-08-03 08:22 UTC</div>
+    <div class="universe">Universe: <strong>AAPL</strong>, <strong>NVDA</strong>, <strong>MSFT</strong>, <strong>TSLA</strong>, <strong>AMZN</strong></div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section id="signals">
+    <h2>Ranked signals (by |OU z-score|)</h2>
+    <div style="overflow-x:auto">
+    <table class="responsive">
+      <thead>
+        <tr>
+          <th>#</th><th>Sym</th><th class="num">Last</th><th class="num">Chg</th>
+          <th>Vol (1d / ann)</th><th>OU z-score</th><th class="num">Half-life (d)</th>
+          <th>Mom 5d</th><th>Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td data-label="#">1</td>
+          <td data-label="Symbol"><strong>MSFT</strong></td>
+          <td data-label="Last" class="num">507.29</td>
+          <td data-label="Chg" class="num"><span class="mom-down">-1.22%</span></td>
+          <td data-label="Vol 1d/ann"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 41.9%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="75.1" height="10" fill="#d29922" rx="1"/></svg> 2.64% / 41.9%</td>
+          <td data-label="OU z-score"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +6.48"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#3fb950" rx="1"/></svg> +6.48</td>
+          <td data-label="Half-life" class="num">46.8</td>
+          <td data-label="Momentum 5d"><span class="mom mom-up">&#9650; +4.10%</span></td>
+          <td data-label="Verdict"><span class="badge v-avoid">avoid</span><span class="verdict-label">mean-reversion-watch</span></td>
+        </tr>
+        
+        <tr>
+          <td data-label="#">2</td>
+          <td data-label="Symbol"><strong>NVDA</strong></td>
+          <td data-label="Last" class="num">220.78</td>
+          <td data-label="Chg" class="num"><span class="mom-up">+1.48%</span></td>
+          <td data-label="Vol 1d/ann"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 39.9%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="71.5" height="10" fill="#d29922" rx="1"/></svg> 2.52% / 39.9%</td>
+          <td data-label="OU z-score"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +4.78"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#3fb950" rx="1"/></svg> +4.78</td>
+          <td data-label="Half-life" class="num">14.6</td>
+          <td data-label="Momentum 5d"><span class="mom mom-up">&#9650; +5.90%</span></td>
+          <td data-label="Verdict"><span class="badge v-avoid">avoid</span><span class="verdict-label">mean-reversion-watch</span></td>
+        </tr>
+        
+        <tr>
+          <td data-label="#">3</td>
+          <td data-label="Symbol"><strong>AAPL</strong></td>
+          <td data-label="Last" class="num">316.85</td>
+          <td data-label="Chg" class="num"><span class="mom-down">-0.89%</span></td>
+          <td data-label="Vol 1d/ann"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 24.6%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="44.0" height="10" fill="#d29922" rx="1"/></svg> 1.55% / 24.6%</td>
+          <td data-label="OU z-score"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +4.72"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#3fb950" rx="1"/></svg> +4.72</td>
+          <td data-label="Half-life" class="num">34.7</td>
+          <td data-label="Momentum 5d"><span class="mom mom-up">&#9650; +2.10%</span></td>
+          <td data-label="Verdict"><span class="badge v-neutral">neutral</span><span class="verdict-label">no-strong-signal</span></td>
+        </tr>
+        
+        <tr>
+          <td data-label="#">4</td>
+          <td data-label="Symbol"><strong>AMZN</strong></td>
+          <td data-label="Last" class="num">259.77</td>
+          <td data-label="Chg" class="num"><span class="mom-down">-2.50%</span></td>
+          <td data-label="Vol 1d/ann"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 38.3%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="68.6" height="10" fill="#d29922" rx="1"/></svg> 2.41% / 38.3%</td>
+          <td data-label="OU z-score"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +3.71"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#3fb950" rx="1"/></svg> +3.71</td>
+          <td data-label="Half-life" class="num">21.6</td>
+          <td data-label="Momentum 5d"><span class="mom mom-down">&#9660; -0.88%</span></td>
+          <td data-label="Verdict"><span class="badge v-avoid">avoid</span><span class="verdict-label">mean-reversion-watch</span></td>
+        </tr>
+        
+        <tr>
+          <td data-label="#">5</td>
+          <td data-label="Symbol"><strong>TSLA</strong></td>
+          <td data-label="Last" class="num">367.95</td>
+          <td data-label="Chg" class="num"><span class="mom-up">+5.51%</span></td>
+          <td data-label="Vol 1d/ann"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 48.6%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="87.0" height="10" fill="#d29922" rx="1"/></svg> 3.06% / 48.6%</td>
+          <td data-label="OU z-score"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score -3.45"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="0.0" y="2" width="50.0" height="10" fill="#f85149" rx="1"/></svg> -3.45</td>
+          <td data-label="Half-life" class="num">14.3</td>
+          <td data-label="Momentum 5d"><span class="mom mom-up">&#9650; +5.44%</span></td>
+          <td data-label="Verdict"><span class="badge v-avoid">avoid</span><span class="verdict-label">mean-reversion-watch</span></td>
+        </tr>
+        
+      </tbody>
+    </table>
+    </div>
+    
+    
+    <div class="warnings">&#9888; nasdaq_earnings failed for AAPL: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/aapl/earnings
+Call log:
+  - navigating to &#34;https://www.nasdaq.com/market-activity/stocks/aapl/earnings&#34;, waiting until &#34;load&#34;
+; nasdaq_earnings failed for NVDA: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/nvda/earnings
+Call log:
+  - navigating to &#34;https://www.nasdaq.com/market-activity/stocks/nvda/earnings&#34;, waiting until &#34;load&#34;
+; nasdaq_earnings failed for MSFT: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/msft/earnings
+Call log:
+  - navigating to &#34;https://www.nasdaq.com/market-activity/stocks/msft/earnings&#34;, waiting until &#34;load&#34;
+; nasdaq_earnings failed for TSLA: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/tsla/earnings
+Call log:
+  - navigating to &#34;https://www.nasdaq.com/market-activity/stocks/tsla/earnings&#34;, waiting until &#34;load&#34;
+; nasdaq_earnings failed for AMZN: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/amzn/earnings
+Call log:
+  - navigating to &#34;https://www.nasdaq.com/market-activity/stocks/amzn/earnings&#34;, waiting until &#34;load&#34;
+</div>
+    
+  </section>
+
+  <section id="earnings">
+    <h2>Earnings in window</h2>
+    
+    <div class="callouts">
+      
+      <div class="callout">
+        <div class="sym">NVDA</div>
+        <div class="date">2026-08-26 &middot; After close</div>
+        
+        <div class="badge v-avoid">avoid (z +4.78)</div>
+        
+      </div>
+      
+      <div class="callout">
+        <div class="sym">TSLA</div>
+        <div class="date">2026-10-21 &middot; After close</div>
+        
+        <div class="badge v-avoid">avoid (z -3.45)</div>
+        
+      </div>
+      
+      <div class="callout">
+        <div class="sym">MSFT</div>
+        <div class="date">2026-10-28 &middot; After close</div>
+        
+        <div class="badge v-avoid">avoid (z +6.48)</div>
+        
+      </div>
+      
+      <div class="callout">
+        <div class="sym">AAPL</div>
+        <div class="date">2026-10-29 &middot; After close</div>
+        
+        <div class="badge v-neutral">neutral (z +4.72)</div>
+        
+      </div>
+      
+      <div class="callout">
+        <div class="sym">AMZN</div>
+        <div class="date">2026-10-29 &middot; After close</div>
+        
+        <div class="badge v-avoid">avoid (z +3.71)</div>
+        
+      </div>
+      
+      <div class="callout">
+        <div class="sym">NVDA</div>
+        <div class="date">2026-11-17 &middot; Unknown</div>
+        
+        <div class="badge v-avoid">avoid (z +4.78)</div>
+        
+      </div>
+      
+    </div>
+    
+  </section>
+
+  <section id="headlines">
+    <h2>Headlines</h2>
+    
+    <div class="headline-group">
+      <h3>AAPL</h3>
+      
+      <ul>
+        
+        <li>
+          <a href="https://finance.yahoo.com/video/rewind-2011-tim-cooks-first-212632931.html" rel="noopener noreferrer nofollow" target="_blank">Rewind to 2011: Tim Cook&#39;s first Apple product launch as CEO</a>
+          <div class="headline-meta">Yahoo Finance Video &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/video/heres-tim-cook-posted-last-193127146.html" rel="noopener noreferrer nofollow" target="_blank">Here&#39;s what Tim Cook posted on his last day as Apple&#39;s CEO</a>
+          <div class="headline-meta">Yahoo Finance Video &middot; 2026-08-31 20:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/technology/live/tech-stocks-today-apple-ceo-steps-down-nvidia-mag-7-145623375.html" rel="noopener noreferrer nofollow" target="_blank">Tech stocks today: Apple stock slips as Tim Cook prepares to step down</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-08-31 19:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/technology/article/what-tim-cook-told-employees-on-his-last-day-at-apple-171506698.html" rel="noopener noreferrer nofollow" target="_blank">What Tim Cook told employees on his last day at Apple</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-08-31 17:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/video/tim-cooks-final-day-apple-135615675.html" rel="noopener noreferrer nofollow" target="_blank">It&#39;s Tim Cook&#39;s final day as Apple CEO. Here&#39;s what investors need from John Ternus.</a>
+          <div class="headline-meta">Yahoo Finance Video &middot; 2026-08-31 14:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/dell-stock-could-halve-double-224813891.html" rel="noopener noreferrer nofollow" target="_blank">Dell Stock Could Halve Or Double Within Thirteen Months</a>
+          <div class="headline-meta">Trefis &middot; 2026-08-31 22:48 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/m/a8a193f1-e79f-328b-b784-83bb33fb41f5/apple-to-begin-new-chapter.html" rel="noopener noreferrer nofollow" target="_blank">Apple To Begin New Chapter With CEO John Ternus</a>
+          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/jpmorgan-built-version-jepi-designed-214527094.html" rel="noopener noreferrer nofollow" target="_blank">JPMorgan Built a Version of JEPI Designed to Keep the IRS Waiting</a>
+          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 22:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/sector-tech-stocks-rise-afternoon-200045050.html" rel="noopener noreferrer nofollow" target="_blank">Sector Update: Tech Stocks Rise Late Afternoon</a>
+          <div class="headline-meta">MT Newswires &middot; 2026-08-31 20:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/apple-just-raised-mac-ipad-193518922.html" rel="noopener noreferrer nofollow" target="_blank">Apple Just Raised Mac and iPad Prices 20%, So Who Is Getting Rich Off the Shortage?</a>
+          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 20:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/technology/articles/tim-cooks-last-day-apple-193059903.html" rel="noopener noreferrer nofollow" target="_blank">Tim Cook&#39;s last day as Apple CEO: How he led the tech giant&#39;s rise to $4T</a>
+          <div class="headline-meta">Fox Business &middot; 2026-08-31 20:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/technology/articles/apple-ceo-tim-cook-gives-185856801.html" rel="noopener noreferrer nofollow" target="_blank">Apple CEO Tim Cook gives nod to founder Steve Jobs in final memo</a>
+          <div class="headline-meta">AFP &middot; 2026-08-31 19:26 UTC</div>
+        </li>
+        
+      </ul>
+      
+    </div>
+    
+    <div class="headline-group">
+      <h3>NVDA</h3>
+      
+      <ul>
+        
+        <li>
+          <a href="https://finance.yahoo.com/video/nvidias-stellar-q2-earnings-represent-153000546.html" rel="noopener noreferrer nofollow" target="_blank">What Nvidia&#39;s stellar Q2 earnings represent for AI in the rest of 2026</a>
+          <div class="headline-meta">Yahoo Finance Video &middot; 2026-08-31 16:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/crypto/articles/crypto-valuations-could-ready-double-225000771.html" rel="noopener noreferrer nofollow" target="_blank">Crypto Valuations Could Be Ready to Double, According to Bitwise&#39;s Matt Hougan -- But Only If This 1 Thing Happens</a>
+          <div class="headline-meta">Motley Fool &middot; 2026-08-31 22:50 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/m/e094dafb-4fb9-3a61-892b-0d14bebedee4/dow-jones-futures-trump-s.html" rel="noopener noreferrer nofollow" target="_blank">Dow Jones Futures: Trump&#39;s Iran Warning Sparks Stock Market Losses; Elon Musk-Led SpaceX, Tesla Rally</a>
+          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-31 22:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/commodities/articles/nvidia-just-lined-500-billion-215900262.html" rel="noopener noreferrer nofollow" target="_blank">Nvidia just lined up $500 billion. Frank Holmes says the thing that’s scarce isn’t money, it’s copper</a>
+          <div class="headline-meta">TheStreet &middot; 2026-08-31 22:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/quote/NVDA/news" rel="noopener noreferrer nofollow" target="_blank">S&amp;P500, Dow End Lower On US-Iran Flare-Up, While Dow Records Fifth Straight Month Of Gains — NVDA, META, AON, MSTR, TSLA In Focus</a>
+          <div class="headline-meta">Stocktwits &middot; 2026-08-31 22:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/could-buy-nvidia-106-revenue-212000053.html" rel="noopener noreferrer nofollow" target="_blank">You Could Buy Nvidia for Its 106% Revenue Growth and 75% Gross Margin. But There&#39;s an Even Better Reason the AI Stock Has Room to Run.</a>
+          <div class="headline-meta">Motley Fool &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/jpmorgan-built-version-jepi-designed-214527094.html" rel="noopener noreferrer nofollow" target="_blank">JPMorgan Built a Version of JEPI Designed to Keep the IRS Waiting</a>
+          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 22:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/science-applications-international-corporation-q2-205646479.html" rel="noopener noreferrer nofollow" target="_blank">Science Applications International Corporation Q2 2027 Earnings Call Summary</a>
+          <div class="headline-meta">Moby &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/healthcare/articles/eli-lilly-acquiring-merdia-biosciences-220150170.html" rel="noopener noreferrer nofollow" target="_blank">Eli Lilly Is Acquiring Merdia Biosciences for Up to $2.88 Billion. Here&#39;s What That Means for Investors.</a>
+          <div class="headline-meta">Motley Fool &middot; 2026-08-31 22:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/broadcoms-next-earnings-report-september-220501648.html" rel="noopener noreferrer nofollow" target="_blank">Broadcom&#39;s Next Earnings Report on September 2 Could Send the Stock Soaring. Here&#39;s Why.</a>
+          <div class="headline-meta">Motley Fool &middot; 2026-08-31 22:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/peter-lynch-made-fortune-investing-205000793.html" rel="noopener noreferrer nofollow" target="_blank">Peter Lynch Made a Fortune by Investing in Familiar Brands. Here Are 2 Consumer Stocks I Think He&#39;d Love Right Now.</a>
+          <div class="headline-meta">Motley Fool &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/options/articles/fidelity-now-charges-100-buy-215526713.html" rel="noopener noreferrer nofollow" target="_blank">Fidelity Now Charges $100 to Buy These ETFs. Here’s the List and the Free Alternatives</a>
+          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 22:26 UTC</div>
+        </li>
+        
+      </ul>
+      
+    </div>
+    
+    <div class="headline-group">
+      <h3>MSFT</h3>
+      
+      <ul>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/article/here-comes-the-ai-capex-shocker-goldman-sachs-says-171026577.html" rel="noopener noreferrer nofollow" target="_blank">Here comes the AI capex shocker, Goldman Sachs says</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-08-31 17:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/technology/ai/articles/microsoft-msft-brings-arabic-language-210536821.html" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT) Brings Arabic Language AI Models To Its Ecosystem</a>
+          <div class="headline-meta">Simply Wall St. &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/quote/MSFT/news" rel="noopener noreferrer nofollow" target="_blank">Software Stocks &amp; ETFs: Is the AI Sell-Off Over?</a>
+          <div class="headline-meta">Zacks &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/investors-may-respond-jpmorgan-chase-202254218.html" rel="noopener noreferrer nofollow" target="_blank">How Investors May Respond To JPMorgan Chase (JPM) Bond Issuance, Branch Expansion and Higher Payouts</a>
+          <div class="headline-meta">Simply Wall St. &middot; 2026-08-31 20:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/microsoft-raised-dividend-every-more-183801141.html" rel="noopener noreferrer nofollow" target="_blank">Microsoft Has Raised Its Dividend Every Year for More Than a Decade. History Provides Clues of How Big This Year&#39;s Raise Might Be.</a>
+          <div class="headline-meta">Motley Fool &middot; 2026-08-31 19:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/options/articles/adobes-options-price-runs-past-192201700.html" rel="noopener noreferrer nofollow" target="_blank">Adobe&#39;s Options Price A Year That Runs Past Its Own Range</a>
+          <div class="headline-meta">Trefis &middot; 2026-08-31 19:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/meta-stock-gives-more-market-191243222.html" rel="noopener noreferrer nofollow" target="_blank">Meta Stock Gives You More Of The Market, Not Less Of It</a>
+          <div class="headline-meta">Trefis &middot; 2026-08-31 19:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/technology/ai/articles/bill-oracles-ai-build-arrived-185118557.html" rel="noopener noreferrer nofollow" target="_blank">The Bill For Oracle&#39;s AI Build Arrived Before The Revenue</a>
+          <div class="headline-meta">Trefis &middot; 2026-08-31 19:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/technology/ai/articles/microsoft-humain-expand-strategic-collaboration-164500702.html" rel="noopener noreferrer nofollow" target="_blank">Microsoft and HUMAIN Expand Strategic Collaboration at LEAP 2026 with New Enterprise AI Offering and AI PC</a>
+          <div class="headline-meta">PR Newswire &middot; 2026-08-31 17:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/iren-climbs-4-co-ceo-174735195.html" rel="noopener noreferrer nofollow" target="_blank">IREN Climbs 4% as Co-CEO Says Debt and Prepayments Can Fund FY27 Capex, TeraWulf Slips</a>
+          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 18:26 UTC</div>
+        </li>
+        
+      </ul>
+      
+    </div>
+    
+    <div class="headline-group">
+      <h3>TSLA</h3>
+      
+      <ul>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/article/here-comes-the-ai-capex-shocker-goldman-sachs-says-171026577.html" rel="noopener noreferrer nofollow" target="_blank">Here comes the AI capex shocker, Goldman Sachs says</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-08-31 17:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/why-tesla-tsla-stock-today-214840004.html" rel="noopener noreferrer nofollow" target="_blank">Why Tesla (TSLA) Stock Is Up Today</a>
+          <div class="headline-meta">StockStory &middot; 2026-08-31 22:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/m/e094dafb-4fb9-3a61-892b-0d14bebedee4/dow-jones-futures-trump-s.html" rel="noopener noreferrer nofollow" target="_blank">Dow Jones Futures: Trump&#39;s Iran Warning Sparks Stock Market Losses; Elon Musk-Led SpaceX, Tesla Rally</a>
+          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-31 22:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/stock-market-today-aug-31-210747182.html" rel="noopener noreferrer nofollow" target="_blank">Stock Market Today, Aug. 31: Tesla Stock Surges on Cybercab Event Anticipation</a>
+          <div class="headline-meta">Motley Fool &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/elon-musk-spending-119-billion-224014170.html" rel="noopener noreferrer nofollow" target="_blank">Elon Musk Is Spending $119 Billion on A Single Building Outside Houston. Here’s Who Actually Profits.</a>
+          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 22:40 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/elon-musk-spacex-blade-plan-211604495.html" rel="noopener noreferrer nofollow" target="_blank">Elon Musk’s SpaceX Blade Plan Knocks Howmet As HWM Suffers Steepest Slide In 16 Months</a>
+          <div class="headline-meta">Stocktwits &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/m/c57f0554-71e8-33dd-9dcc-a2cad75076ba/stock-market-today-dow-skids.html" rel="noopener noreferrer nofollow" target="_blank">Stock Market Today: Dow Skids As Trump Gives This AI Warning; Tesla Pops Ahead Of Key Event</a>
+          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/tslw-pays-tesla-investors-every-203729868.html" rel="noopener noreferrer nofollow" target="_blank">TSLW Pays Tesla Investors Every Week. Its Share Price Is Down 29% This Year.</a>
+          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/quote/TSLA/news" rel="noopener noreferrer nofollow" target="_blank">Tesla Tops S&amp;P 500. Was It Cybercab Buzz, Or Elon Musk&#39;s New FSD Tease?</a>
+          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/m/43c4ec24-02e3-3bfb-8532-7169df4b3da5/next-up-for-tesla-s.html" rel="noopener noreferrer nofollow" target="_blank">Next Up for Tesla’s Self-Driving Tech: Potholes</a>
+          <div class="headline-meta">Barrons.com &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/tesla-stock-hot-streak-ahead-201059821.html" rel="noopener noreferrer nofollow" target="_blank">Tesla Stock Has Been on a Hot Streak Ahead of Big Event This Week</a>
+          <div class="headline-meta">Investopedia &middot; 2026-08-31 20:26 UTC</div>
+        </li>
+        
+      </ul>
+      
+    </div>
+    
+    <div class="headline-group">
+      <h3>AMZN</h3>
+      
+      <ul>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/article/here-comes-the-ai-capex-shocker-goldman-sachs-says-171026577.html" rel="noopener noreferrer nofollow" target="_blank">Here comes the AI capex shocker, Goldman Sachs says</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-08-31 17:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/media-advertising/articles/us-regulator-22-states-accuse-230624178.html" rel="noopener noreferrer nofollow" target="_blank">US regulator, 22 states accuse Amazon of &#39;manipulating&#39; ad auctions: lawsuit</a>
+          <div class="headline-meta">AFP &middot; 2026-08-31 23:06 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/media-advertising/articles/ftc-22-states-sue-amazon-211727463.html" rel="noopener noreferrer nofollow" target="_blank">FTC, 22 states sue Amazon over deceptive advertising practices</a>
+          <div class="headline-meta">Axios Media &middot; 2026-08-31 22:30 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/small-business/articles/ups-reorganization-prioritizes-global-logistics-223004459.html" rel="noopener noreferrer nofollow" target="_blank">UPS reorganization prioritizes global logistics over parcel delivery</a>
+          <div class="headline-meta">FreightWaves &middot; 2026-08-31 22:29 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/media-advertising/articles/ftc-sues-amazon-manipulating-ad-210300336.html" rel="noopener noreferrer nofollow" target="_blank">FTC sues Amazon for manipulating ad auction prices</a>
+          <div class="headline-meta">Quartz &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/media-advertising/articles/ftc-sues-amazon-allegedly-overcharging-200421072.html" rel="noopener noreferrer nofollow" target="_blank">FTC sues Amazon, alleging it overcharged advertisers</a>
+          <div class="headline-meta">CNN Business &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/m/c57f0554-71e8-33dd-9dcc-a2cad75076ba/stock-market-today-dow-skids.html" rel="noopener noreferrer nofollow" target="_blank">Stock Market Today: Dow Skids As Trump Gives This AI Warning; Tesla Pops Ahead Of Key Event</a>
+          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/media-advertising/articles/ftc-accuses-amazon-running-secret-202025049.html" rel="noopener noreferrer nofollow" target="_blank">FTC accuses Amazon of running a ‘secret ad surcharge scheme’ in new lawsuit</a>
+          <div class="headline-meta">TechCrunch &middot; 2026-08-31 20:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/media-advertising/articles/ftc-22-states-sue-amazon-192212268.html" rel="noopener noreferrer nofollow" target="_blank">FTC and 22 states sue Amazon over alleged secret ad surcharge scheme</a>
+          <div class="headline-meta">CBS News &middot; 2026-08-31 20:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/media-advertising/articles/federal-trade-commission-22-states-214057554.html" rel="noopener noreferrer nofollow" target="_blank">Federal Trade Commission and 22 states sue Amazon over inflated advertising prices</a>
+          <div class="headline-meta">Associated Press &middot; 2026-08-31 22:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/kohls-names-ryan-m-waymire-211500307.html" rel="noopener noreferrer nofollow" target="_blank">Kohl&#39;s Names Ryan M. Waymire Chief Merchandising Officer</a>
+          <div class="headline-meta">Business Wire &middot; 2026-08-31 21:26 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/economy/policy/articles/us-trade-regulator-22-states-194152421.html" rel="noopener noreferrer nofollow" target="_blank">US trade regulator and 22 states accuse Amazon of taking $20bn with secret surcharges</a>
+          <div class="headline-meta">The Guardian &middot; 2026-08-31 20:26 UTC</div>
+        </li>
+        
+      </ul>
+      
+    </div>
+    
+    
+  </section>
+
+</div>
+
+<footer class="provenance" id="provenance">
+  <div class="wrap">
+    <div class="disclaimer">Research only — not investment advice.</div>
+    <div class="sessions">Solari session ids:
+      
+        <code>ip-10-0-10-195:76993b4d-e0cc-4944-8fa9-a4243d2d4a4d:cmthpl0y700g7nu01qibgju5y:1788218806253.S1LBTubGnQ_1wG_YXHiDeg</code>, <code>ip-10-0-10-195:7ee884e6-e238-4c6f-8ff0-7502f245d2a4:cmthpl0y700g7nu01qibgju5y:1788218808368.Y1M5wcUCClhe3Np3xCtWYg</code>, <code>ip-10-0-10-195:21ee5085-414d-43c9-abf9-e69addc4fcaa:cmthpl0y700g7nu01qibgju5y:1788218805952.BeheGkYW-XF3HGY3a1nQwg</code>, <code>ip-10-0-11-172:4788cfa9-5e15-4d5d-a138-754f4d59a995:cmthpl0y700g7nu01qibgju5y:1788218817060.VI8vW9OcqYk-Dh2IQOt5rA</code>, <code>ip-10-0-11-172:dd2a8834-8b3d-46ab-9d3a-4cc49ace8e41:cmthpl0y700g7nu01qibgju5y:1788218814565.05Tmrb0AInfIsjZCu3OKng</code>, <code>ip-10-0-10-195:54f07f0f-86db-4cff-9114-bc1be6fed513:cmthpl0y700g7nu01qibgju5y:1788218817326.TcdQPsOd4Mc0xrQplnst2g</code>, <code>ip-10-0-10-195:b255b12e-cb6f-4e3c-90e1-ffda4dff0985:cmthpl0y700g7nu01qibgju5y:1788218823134.d-h5I-vu2eWGeTM69aO1KA</code>, <code>ip-10-0-10-195:e5af15d6-b462-4518-bdae-285dbbe49368:cmthpl0y700g7nu01qibgju5y:1788218825060.WiD6f5oRbaMOimkYmvVrfQ</code>, <code>ip-10-0-10-195:f59a829a-ffac-424e-8f11-8a6b5e1d3e96:cmthpl0y700g7nu01qibgju5y:1788218823677.7FcxcbS04h91B7LryGUVfg</code>, <code>ip-10-0-11-172:7dbee148-0150-4cb0-9c51-974e930b1238:cmthpl0y700g7nu01qibgju5y:1788218831162.xLEcvJDJQX-3ojNTXjFyww</code>, <code>ip-10-0-10-195:2a2fb646-9bcf-4b31-b6d5-56e1c592b399:cmthpl0y700g7nu01qibgju5y:1788218832444.R9ZbYp6BdJkccqT1qCrMJw</code>, <code>ip-10-0-10-195:cf67559f-d6b0-4064-b709-6c59a2da05b0:cmthpl0y700g7nu01qibgju5y:1788218833198.Ik8WT46fufqBzYgvwfMafQ</code>, <code>ip-10-0-11-172:46789c1e-5f61-4e32-a7f1-4018b13dcd4a:cmthpl0y700g7nu01qibgju5y:1788218836265.B40lTbECFn2pFmUvmdwkFA</code>, <code>ip-10-0-10-195:bd04832e-f4d9-42aa-96fe-22793df11339:cmthpl0y700g7nu01qibgju5y:1788218840368.MWesE2oMLJDiAruokVn-lg</code>, <code>ip-10-0-10-195:2966f4c6-cd4a-40b3-b1fc-e3e495d32c75:cmthpl0y700g7nu01qibgju5y:1788218840517.Ooc9al4KeeRXcV_g08kWHw</code>
+      
+    </div>
+    
+    <div class="replays">Replay ids (recorded, downloadable via solari.sessions.download_replay):
+      <code>ip-10-0-10-195:76993b4d-e0cc-4944-8fa9-a4243d2d4a4d:cmthpl0y700g7nu01qibgju5y:1788218806253.S1LBTubGnQ_1wG_YXHiDeg</code>, <code>ip-10-0-10-195:7ee884e6-e238-4c6f-8ff0-7502f245d2a4:cmthpl0y700g7nu01qibgju5y:1788218808368.Y1M5wcUCClhe3Np3xCtWYg</code>, <code>ip-10-0-10-195:21ee5085-414d-43c9-abf9-e69addc4fcaa:cmthpl0y700g7nu01qibgju5y:1788218805952.BeheGkYW-XF3HGY3a1nQwg</code>, <code>ip-10-0-11-172:4788cfa9-5e15-4d5d-a138-754f4d59a995:cmthpl0y700g7nu01qibgju5y:1788218817060.VI8vW9OcqYk-Dh2IQOt5rA</code>, <code>ip-10-0-11-172:dd2a8834-8b3d-46ab-9d3a-4cc49ace8e41:cmthpl0y700g7nu01qibgju5y:1788218814565.05Tmrb0AInfIsjZCu3OKng</code>, <code>ip-10-0-10-195:54f07f0f-86db-4cff-9114-bc1be6fed513:cmthpl0y700g7nu01qibgju5y:1788218817326.TcdQPsOd4Mc0xrQplnst2g</code>, <code>ip-10-0-10-195:b255b12e-cb6f-4e3c-90e1-ffda4dff0985:cmthpl0y700g7nu01qibgju5y:1788218823134.d-h5I-vu2eWGeTM69aO1KA</code>, <code>ip-10-0-10-195:e5af15d6-b462-4518-bdae-285dbbe49368:cmthpl0y700g7nu01qibgju5y:1788218825060.WiD6f5oRbaMOimkYmvVrfQ</code>, <code>ip-10-0-10-195:f59a829a-ffac-424e-8f11-8a6b5e1d3e96:cmthpl0y700g7nu01qibgju5y:1788218823677.7FcxcbS04h91B7LryGUVfg</code>, <code>ip-10-0-11-172:7dbee148-0150-4cb0-9c51-974e930b1238:cmthpl0y700g7nu01qibgju5y:1788218831162.xLEcvJDJQX-3ojNTXjFyww</code>, <code>ip-10-0-10-195:2a2fb646-9bcf-4b31-b6d5-56e1c592b399:cmthpl0y700g7nu01qibgju5y:1788218832444.R9ZbYp6BdJkccqT1qCrMJw</code>, <code>ip-10-0-10-195:cf67559f-d6b0-4064-b709-6c59a2da05b0:cmthpl0y700g7nu01qibgju5y:1788218833198.Ik8WT46fufqBzYgvwfMafQ</code>, <code>ip-10-0-11-172:46789c1e-5f61-4e32-a7f1-4018b13dcd4a:cmthpl0y700g7nu01qibgju5y:1788218836265.B40lTbECFn2pFmUvmdwkFA</code>, <code>ip-10-0-10-195:bd04832e-f4d9-42aa-96fe-22793df11339:cmthpl0y700g7nu01qibgju5y:1788218840368.MWesE2oMLJDiAruokVn-lg</code>, <code>ip-10-0-10-195:2966f4c6-cd4a-40b3-b1fc-e3e495d32c75:cmthpl0y700g7nu01qibgju5y:1788218840517.Ooc9al4KeeRXcV_g08kWHw</code>
+    </div>
+    
+    <div>Rendered 2026-08-31 23:28 UTC &middot; desk/brief.py (hermetic, no external requests)</div>
+  </div>
+</footer>
+
+</body>
+</html>
