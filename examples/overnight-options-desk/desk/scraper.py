@@ -565,13 +565,21 @@ async def scrape(
         if symbol not in quotes:
             warnings.append(f"no quote data available for {symbol} from any source")
 
+    # GRE-3464: every browser session opened above shares this run's single
+    # `recording` flag (folded into `common` and forwarded uniformly), so
+    # the recorded-and-replayable subset of `sessions` is either all of it
+    # or none of it — Solari's replay id is the session id itself
+    # (solari.sessions.download_replay(session_id), see solari_client.py's
+    # PageResult.replay_hint), so no separate id needs minting here.
+    replays = list(sessions) if recording else []
+
     return ScrapedData(
         as_of=_iso(now),
         universe=universe,
         earnings=[Earnings(**r) for r in earnings_all],
         headlines=[Headline(**h) for h in headlines_all],
         quotes={sym: Quote(**q) for sym, q in quotes.items()},
-        provenance=Provenance(sessions=sessions),
+        provenance=Provenance(sessions=sessions, replays=replays),
         warnings=warnings,
     )
 

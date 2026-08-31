@@ -61,6 +61,11 @@
         "sessions": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
+        },
+        "replays": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Optional (GRE-3464): the subset of `sessions` that were recorded and are eligible for replay download via solari.sessions.download_replay(id) (Solari's replay id is the session id itself). Empty/omitted when recording was off for the run."
         }
       }
     },

@@ -32,6 +32,17 @@
             "type": "string",
             "enum": ["bullish", "bearish", "neutral", "avoid"]
           },
+          "label": {
+            "type": "string",
+            "description": "Optional finer-grained research label (GRE-3464) — e.g. insufficient-data, mean-reversion-watch, trend-watch, event-risk, no-strong-signal. Omitted when a producer doesn't set one; consumers must not assume presence. Keeps the coarse `verdict` enum closed while letting the models lane's real vocabulary travel as data instead of only inside notes[] prose.",
+            "enum": [
+              "insufficient-data",
+              "mean-reversion-watch",
+              "trend-watch",
+              "event-risk",
+              "no-strong-signal"
+            ]
+          },
           "notes": {
             "type": "array",
             "items": { "type": "string" }

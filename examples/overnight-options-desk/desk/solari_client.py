@@ -203,7 +203,9 @@ class PreviewHandle:
         await self.kill()
 
 
-async def serve_preview(directory: str, port: int = 8000) -> PreviewHandle:
+async def serve_preview(
+    directory: str, port: int = 8000, *, timeout_ms: int = 5 * 60_000
+) -> PreviewHandle:
     """Upload `directory`'s files into a fresh sandbox and serve them on
     `port` behind a public `*.preview.getsolari.com` URL.
 
@@ -211,9 +213,16 @@ async def serve_preview(directory: str, port: int = 8000) -> PreviewHandle:
     is started with `background=True` — the Python SDK's direct equivalent
     of the `nohup ... &` shell trick the TS port-preview example needs
     (Python's `commands.run` takes the flag natively; TS's does not).
+
+    `timeout_ms` is the sandbox VM's own idle-kill window (GRE-3464): the
+    default 5 minutes is fine for a quick smoke test but far too short for
+    `desk/serve.py --hold-seconds N` to hold a preview open for N seconds —
+    the VM would die out from under the still-running http.server before
+    the caller's hold elapses. Callers that want the preview reachable for
+    longer must pass a `timeout_ms` that covers their intended hold.
     """
     client = SandboxClient(api_key=_api_key(), base_url=SANDBOX_BASE_URL)
-    sandbox = await client.create(template="base", timeout_ms=5 * 60_000)
+    sandbox = await client.create(template="base", timeout_ms=timeout_ms)
     started = time.monotonic()
     try:
         await sandbox.connect()

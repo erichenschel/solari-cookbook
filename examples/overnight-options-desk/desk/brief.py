@@ -155,6 +155,9 @@ def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
                 "momentum_html": _momentum_arrow(sig.momentum_5d),
                 "verdict": sig.verdict,
                 "verdict_class": _verdict_class(sig.verdict),
+                # GRE-3464: optional finer-grained research label — None for
+                # any signal produced before this field existed.
+                "label": getattr(sig, "label", None),
                 "notes": sig.notes,
             }
         )
@@ -217,6 +220,8 @@ def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
         "headline_groups": headline_groups,
         "macro_headlines": macro_headlines,
         "sessions": scraped.provenance.sessions,
+        # GRE-3464: optional — the recorded/replayable subset of sessions.
+        "replays": getattr(scraped.provenance, "replays", None) or [],
         "warnings": scraped.warnings,
         "disclaimer": DISCLAIMER,
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
@@ -303,6 +308,7 @@ _TEMPLATE = r"""<!doctype html>
   .v-bearish { color: var(--red); border-color: var(--red); background: rgba(248,81,73,.1); }
   .v-avoid   { color: var(--red); border-color: var(--red); background: rgba(248,81,73,.15); }
   .v-neutral { color: var(--gray); border-color: var(--gray); background: rgba(139,148,158,.08); }
+  .verdict-label { display: block; color: var(--dim); font-size: .68rem; margin-top: .25rem; letter-spacing: .02em; }
   .uncovered-note { color: var(--dim); font-size: .8rem; margin-top: .5rem; }
   .callouts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .75rem; }
   .callout { border: 1px solid var(--border); background: var(--panel); border-radius: 6px; padding: .75rem .9rem; }
@@ -386,7 +392,7 @@ _TEMPLATE = r"""<!doctype html>
           <td data-label="OU z-score">{{ r.zscore_svg|safe }} {{ "%+.2f"|format(r.zscore) }}</td>
           <td data-label="Half-life" class="num">{{ "%.1f"|format(r.half_life) }}</td>
           <td data-label="Momentum 5d">{{ r.momentum_html|safe }}</td>
-          <td data-label="Verdict"><span class="badge {{ r.verdict_class }}">{{ r.verdict }}</span></td>
+          <td data-label="Verdict"><span class="badge {{ r.verdict_class }}">{{ r.verdict }}</span>{% if r.label %}<span class="verdict-label">{{ r.label }}</span>{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -465,6 +471,11 @@ _TEMPLATE = r"""<!doctype html>
         <span class="empty">none recorded</span>
       {% endif %}
     </div>
+    {% if replays %}
+    <div class="replays">Replay ids (recorded, downloadable via solari.sessions.download_replay):
+      {% for r in replays %}<code>{{ r }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
+    </div>
+    {% endif %}
     <div>Rendered {{ generated_at }} &middot; desk/brief.py (hermetic, no external requests)</div>
   </div>
 </footer>

@@ -13,16 +13,16 @@ log-price as a discretized Ornstein-Uhlenbeck process, a naive N-day percent
 change). Nothing here encodes proprietary signal logic — see the README
 "Model rule table" section for the full, human-readable verdict rules.
 
-CONTRACT GAP (flagged, not fixed here — see GRE-3461 report): the ticket's
-own verdict vocabulary ("mean-reversion watch", "trend watch", "event risk",
-and AC-3's literal `verdict: "insufficient-data"`) does not fit
-`signals.schema.json`'s closed `verdict` enum
-(`bullish|bearish|neutral|avoid`), which predates this ticket (GRE-3459
-spike). This file maps each research label onto the closest existing enum
-value and puts the literal research label as the first `notes[]` entry, so
-the label survives in the output even though it can't be the `verdict`
-field. `desk/models.py` and `desk/contracts.py` were left untouched per the
-ticket's instructions; the enum should be extended in a follow-up.
+GRE-3464 UPDATE: the CONTRACT GAP this file used to flag (research labels
+like "mean-reversion-watch"/"trend-watch"/"event-risk"/"insufficient-data"
+not fitting the closed `verdict` enum) is resolved by an additive `label`
+field on the signals contract (`schemas/signals.schema.json`,
+`desk/contracts.py`'s `SymbolSignal.label`). `decide_verdict` below now
+returns the literal research label alongside the coarse `verdict` and the
+human-readable note; `compute_symbol_signal` sets both. `verdict` stays the
+closed four-value enum (bullish|bearish|neutral|avoid) — `label` is the
+carrier for the ticket's real vocabulary, optional so older consumers that
+only read `verdict`/`notes` are unaffected.
 """
 
 from __future__ import annotations
@@ -53,6 +53,15 @@ EARNINGS_WINDOW_DAYS = 3        # calendar days considered "near-term"
 VERDICT_VALUES = ("bullish", "bearish", "neutral", "avoid")
 
 
+LABEL_VALUES = (
+    "insufficient-data",
+    "mean-reversion-watch",
+    "trend-watch",
+    "event-risk",
+    "no-strong-signal",
+)
+
+
 def _signal_dict(
     vol_1d: float,
     vol_ann: float,
@@ -60,9 +69,11 @@ def _signal_dict(
     half_life: float,
     momentum: float,
     verdict: str,
+    label: str,
     notes: list[str],
 ) -> dict:
     assert verdict in VERDICT_VALUES, f"verdict {verdict!r} not in schema enum"
+    assert label in LABEL_VALUES, f"label {label!r} not in schema enum"
     return {
         "garch_vol_forecast_1d": float(vol_1d),
         "garch_vol_forecast_ann": float(vol_ann),
@@ -70,6 +81,7 @@ def _signal_dict(
         "ou_half_life_d": float(half_life),
         "momentum_5d": float(momentum),
         "verdict": verdict,
+        "label": label,
         "notes": list(notes),
     }
 
@@ -256,24 +268,24 @@ def decide_verdict(
     vol_ann: float,
     zscore: float,
     momentum: float,
-) -> tuple[str, str]:
-    """Apply the rule table (first match wins) and return (verdict, note).
+) -> tuple[str, str, str]:
+    """Apply the rule table (first match wins) and return (verdict, label, note).
 
-    `verdict` is one of the schema's four enum values; `note` carries the
-    human-readable research label the ticket actually asks for
-    (mean-reversion watch / trend watch / event risk / insufficient-data —
-    see the CONTRACT GAP note at the top of this file for why the label
-    isn't the `verdict` field itself).
+    `verdict` is one of the schema's four enum values; `label` is the
+    literal research label (GRE-3464, `signals.schema.json`'s optional
+    `label` field / `LABEL_VALUES` above); `note` is the same information as
+    human-readable prose for `notes[]` (kept verbatim from the pre-GRE-3464
+    text so existing substring-matching tests/consumers are unaffected).
     """
     if insufficient_data:
-        return "avoid", (
+        return "avoid", "insufficient-data", (
             "insufficient-data: fewer than "
             f"{MIN_TRADING_DAYS} trading days of history; model fit is "
             "lower-confidence, treat as a conservative default"
         )
 
     if earnings_row is not None:
-        return "avoid", (
+        return "avoid", "event-risk", (
             f"event-risk: earnings on {earnings_row['date']} "
             f"({earnings_row.get('session', 'unknown')}) within "
             f"{EARNINGS_WINDOW_DAYS}d — GARCH/OU forecasts likely understate "
@@ -281,27 +293,27 @@ def decide_verdict(
         )
 
     if vol_ann >= VOL_HIGH_ANN and abs(zscore) >= Z_STRETCH:
-        return "avoid", (
+        return "avoid", "mean-reversion-watch", (
             f"mean-reversion-watch: annualized vol forecast {vol_ann:.1%} >= "
             f"{VOL_HIGH_ANN:.0%} and |OU z-score| {abs(zscore):.2f} >= "
             f"{Z_STRETCH} (stretched vs fitted mean, high forecast vol)"
         )
 
     if vol_ann < VOL_LOW_ANN and momentum >= MOMENTUM_POS:
-        return "bullish", (
+        return "bullish", "trend-watch", (
             f"trend-watch: annualized vol forecast {vol_ann:.1%} < "
             f"{VOL_LOW_ANN:.0%} and 5d momentum {momentum:+.1%} >= "
             f"{MOMENTUM_POS:.0%}"
         )
 
     if vol_ann < VOL_LOW_ANN and momentum <= MOMENTUM_NEG:
-        return "bearish", (
+        return "bearish", "trend-watch", (
             f"trend-watch: annualized vol forecast {vol_ann:.1%} < "
             f"{VOL_LOW_ANN:.0%} and 5d momentum {momentum:+.1%} <= "
             f"{MOMENTUM_NEG:.0%}"
         )
 
-    return "neutral", (
+    return "neutral", "no-strong-signal", (
         "no-strong-signal: vol forecast, OU z-score, and momentum are all "
         "inside normal ranges"
     )
@@ -328,11 +340,11 @@ def compute_symbol_signal(
 
     if n < 2:
         notes.append(f"insufficient-data: only {n} price point(s) fetched; no returns computable")
-        verdict, verdict_note = decide_verdict(
+        verdict, label, verdict_note = decide_verdict(
             insufficient_data=True, earnings_row=None, vol_ann=0.0, zscore=0.0, momentum=0.0
         )
         notes.append(verdict_note)
-        return _signal_dict(0.0, 0.0, 0.0, 0.0, 0.0, verdict, notes)
+        return _signal_dict(0.0, 0.0, 0.0, 0.0, 0.0, verdict, label, notes)
 
     pct_returns = np.diff(closes_arr) / closes_arr[:-1] * 100.0
 
@@ -354,7 +366,7 @@ def compute_symbol_signal(
 
     earnings_soon, earnings_row = has_earnings_soon(symbol, earnings, as_of)
 
-    verdict, verdict_note = decide_verdict(
+    verdict, label, verdict_note = decide_verdict(
         insufficient_data=insufficient,
         earnings_row=earnings_row,
         vol_ann=vol_ann,
@@ -363,4 +375,4 @@ def compute_symbol_signal(
     )
     notes.append(verdict_note)
 
-    return _signal_dict(vol_1d, vol_ann, zscore, half_life, momentum, verdict, notes)
+    return _signal_dict(vol_1d, vol_ann, zscore, half_life, momentum, verdict, label, notes)
