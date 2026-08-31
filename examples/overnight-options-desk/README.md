@@ -1,10 +1,8 @@
-# Overnight options desk (spike)
+# Overnight options desk
 
-**Status: spike (GRE-3459).** This is the foundation four parallel lanes
-(scraper, quant models, brief assembly, and whatever else the desk project
-needs) will build on top of. It is not itself a runnable desk — it's a thin
-Solari client wrapper, two data contracts, and smoke tests proving the free
-tier can do what the desk needs.
+**Status:** foundation spike (GRE-3459) + models lane (GRE-3461). The
+scraper and brief-assembly lanes are still spike-only; the quant models lane
+is a runnable, schema-valid pipeline stage.
 
 ## What this will become
 
@@ -26,11 +24,21 @@ Solari SDK calls.
 ```
 desk/
   solari_client.py   # open_browser_page / run_in_sandbox / serve_preview
-  contracts.py        # dataclasses + load/validate for both contracts
-  schemas/             # JSON Schema for scraped_data and signals
-fixtures/               # one realistic fixture per contract
+  contracts.py         # dataclasses + load/validate for both contracts
+  schemas/              # JSON Schema for scraped_data and signals
+  models.py            # models-lane CLI: scraped_data.json -> signals.json
+  model_code/            # uploaded into the sandbox AND imported locally
+    prices.py             # pure CSV/JSON parsing -> list[float] closes
+    signals.py            # GARCH / OU(AR1) / momentum / verdict rule table
+    fetch.py               # network: Stooq primary, Yahoo chart fallback
+    driver.py               # sandbox-side glue: fetch + signals -> signals.json body
+fixtures/
+  scraped_data.json    # one realistic scraped_data fixture
+  signals.json          # one realistic signals fixture
+  prices/                 # seeded synthetic daily-close CSVs for hermetic model tests
 tests/
   test_contracts.py      # hermetic: fixtures round-trip, invalid samples rejected
+  test_models.py           # hermetic: model_code functions vs bundled price fixtures
   test_live_desk.py      # live: browser, sandbox, preview, recording probe
 ```
 
@@ -47,7 +55,87 @@ python3 -m venv .venv-desk
 # live — needs SOLARI_API_KEY, hits the real free-tier API, sequential
 set -a; source .env; set +a
 .venv-desk/bin/pytest examples/overnight-options-desk/tests -m live -q
+
+# models lane: scraped_data.json -> signals.json, one sandbox session (live)
+set -a; source .env; set +a
+python -m desk.models --scraped fixtures/scraped_data.json --out /tmp/signals.json
 ```
+
+## Model rule table (GRE-3461)
+
+`desk/model_code/` runs entirely inside one Solari sandbox session
+(`run_in_sandbox`, one `pip install -q numpy arch statsmodels` up front) and
+computes, per symbol in `scraped_data.universe`:
+
+- **GARCH(1,1) vol forecast** (`arch`, zero-mean, normal innovations, fit on
+  percent daily returns) — 1-day-ahead forecast (`garch_vol_forecast_1d`)
+  and its `sqrt(252)`-annualized version (`garch_vol_forecast_ann`).
+- **Ornstein-Uhlenbeck mean reversion via AR(1)** (`statsmodels` OLS on
+  `log(P_t) = c + phi*log(P_t-1) + e_t`, the standard OU discretization) —
+  `ou_zscore` (current log-price's distance from the fitted long-run mean,
+  in residual-std units) and `ou_half_life_d` (`ln(0.5)/ln(phi)`).
+- **5-day momentum** (`momentum_5d`) — plain `close[t]/close[t-5] - 1`.
+
+All formulas are textbook/public (a GARCH(1,1) forecast, an AR(1)/OU fit, an
+N-day percent change) — nothing here encodes proprietary signal logic.
+
+### Verdict rule table
+
+Applied top-to-bottom, first match wins (`desk/model_code/signals.py`,
+`decide_verdict`):
+
+| # | Condition | Verdict | Research label (in `notes[]`) |
+|---|-----------|---------|-------------------------------|
+| 1 | Fewer than 60 trading days of price history | `avoid` | `insufficient-data` |
+| 2 | Earnings date within 3 calendar days of `as_of` | `avoid` | `event-risk` — vol forecast likely understates the actual move |
+| 3 | Annualized vol forecast ≥ 35% **and** \|OU z-score\| ≥ 1.5 | `avoid` | `mean-reversion-watch` — stretched vs. fitted mean, elevated forecast vol |
+| 4 | Annualized vol forecast < 20% **and** 5d momentum ≥ +2% | `bullish` | `trend-watch` (up) |
+| 5 | Annualized vol forecast < 20% **and** 5d momentum ≤ -2% | `bearish` | `trend-watch` (down) |
+| 6 | None of the above | `neutral` | `no-strong-signal` |
+
+**Research verdicts only** — these labels describe what a human analyst
+would flag for further reading (a stretched mean-reversion setup, a
+low-vol trend, an upcoming earnings date), not a trade recommendation or
+order/execution instruction (NG-1).
+
+**CONTRACT GAP (flagged, not fixed by this ticket):**
+`signals.schema.json`'s `verdict` field is a closed enum
+(`bullish|bearish|neutral|avoid`) inherited from the GRE-3459 spike. It
+predates this ticket's research-verdict vocabulary and doesn't literally
+contain `insufficient-data`, `mean-reversion-watch`, `trend-watch`, or
+`event-risk` — including AC-3's literal `verdict: "insufficient-data"`. Per
+the ticket's instructions, `desk/contracts.py` and the schemas were left
+untouched; instead each rule above maps onto the closest existing enum
+value and the literal research label is always the corresponding
+`notes[]` entry (see table). A follow-up should extend the enum (or split
+`verdict` into a coarse enum + a `label` string) so `verdict` can carry the
+literal AC-3 string. `bullish`/`bearish`/`avoid` as enum *names* also
+predate NG-1 and read closer to trading-advice language than the research
+labels above — worth revisiting in the same follow-up.
+
+### Numerical edge cases (NG-5)
+
+Every model function degrades to a documented fallback instead of raising:
+
+- **GARCH fit failure or non-convergence** (too little data, degenerate/zero
+  variance, optimizer non-convergence) → falls back to annualized
+  sample-std vol, with a `garch-fit-failed`/`garch-skipped`/
+  `garch-non-convergence` note.
+- **OU/AR(1) fit failure** (too little data, or — for a genuinely constant
+  price series — the OLS design matrix loses rank: `statsmodels.add_constant`
+  detects the already-constant predictor and skips adding a duplicate
+  constant column, so `model.params` has one entry instead of two) → falls
+  back to `zscore=0, half_life_d=0`, with an `ou-fit-failed`/`ou-skipped`
+  note.
+- **Fitted AR(1) `phi` outside `(0, 1)`** (not clearly mean-reverting over
+  the window) → clamped into `[0.01, 0.99]` for a finite half-life, with an
+  `ou-ar1-phi-out-of-range` note.
+- **Zero or one price points** (fetch failure) → all numeric fields `0.0`,
+  verdict `avoid`, `insufficient-data` note — never a crash.
+
+Every one of these is covered by a bundled `fixtures/prices/*.csv` fixture
+and a hermetic test in `tests/test_models.py` (`CONST.csv` for the
+zero-variance/collinearity case, `SHORT.csv` for the trading-days floor).
 
 ## Spike findings
 
