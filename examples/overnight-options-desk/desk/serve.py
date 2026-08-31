@@ -15,17 +15,42 @@ from __future__ import annotations
 import argparse
 import asyncio
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 from typing import Optional
 
 from desk.solari_client import serve_preview
 
+# GRE-3464: observed free-tier sandbox preview lifetime — see the root
+# README limitations / this package's README "Live sandbox findings". A
+# --hold-seconds beyond this is silently clamped for the sandbox's own
+# timeout_ms (the process itself still sleeps for the full --hold-seconds
+# requested, but the VM — and therefore the preview URL — will already be
+# dead by then).
+MAX_HOLD_S = 3600.0
+
 
 async def _serve_file(file_path: str, port: int, hold_seconds: Optional[float]) -> None:
     src = Path(file_path)
     if not src.is_file():
         raise FileNotFoundError(f"not a file: {file_path}")
+
+    if hold_seconds is not None and hold_seconds > MAX_HOLD_S:
+        print(
+            f"[warn] --hold-seconds {hold_seconds:.0f} exceeds the sandbox's "
+            f"~{MAX_HOLD_S:.0f}s free-tier preview lifetime cap; the preview "
+            f"will die at ~{MAX_HOLD_S:.0f}s regardless of the longer hold "
+            "requested here.",
+            file=sys.stderr,
+        )
+
+    # The sandbox VM's own idle-kill window has to cover the requested hold
+    # (see solari_client.serve_preview's timeout_ms docstring) or it dies
+    # under the still-running http.server before --hold-seconds elapses.
+    # Capped at MAX_HOLD_S either way (GRE-3464), plus a small setup buffer.
+    sandbox_hold_s = min(hold_seconds if hold_seconds is not None else MAX_HOLD_S, MAX_HOLD_S)
+    timeout_ms = int(sandbox_hold_s * 1000) + 30_000
 
     with tempfile.TemporaryDirectory(prefix="desk-serve-") as tmp:
         tmp_dir = Path(tmp)
@@ -36,7 +61,7 @@ async def _serve_file(file_path: str, port: int, hold_seconds: Optional[float]) 
         dest = tmp_dir / dest_name
         shutil.copy2(src, dest)
 
-        handle = await serve_preview(str(tmp_dir), port=port)
+        handle = await serve_preview(str(tmp_dir), port=port, timeout_ms=timeout_ms)
         try:
             print(handle.url, flush=True)
             if hold_seconds is not None:

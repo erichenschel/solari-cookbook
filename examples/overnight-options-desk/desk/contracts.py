@@ -53,6 +53,11 @@ class Quote:
 @dataclass
 class Provenance:
     sessions: list = field(default_factory=list)
+    # GRE-3464: optional subset of `sessions` recorded and eligible for
+    # replay download (Solari's replay id == the session id — see
+    # schemas/scraped_data.schema.json). Omitted from to_dict() output when
+    # empty so old-shape fixtures/consumers round-trip unchanged.
+    replays: list = field(default_factory=list)
 
 
 @dataclass
@@ -77,9 +82,19 @@ class ScrapedData:
                 sym: (asdict(q) if isinstance(q, Quote) else dict(q))
                 for sym, q in self.quotes.items()
             },
-            "provenance": asdict(self.provenance)
-            if isinstance(self.provenance, Provenance)
-            else dict(self.provenance),
+            "provenance": {
+                k: v
+                for k, v in (
+                    asdict(self.provenance)
+                    if isinstance(self.provenance, Provenance)
+                    else dict(self.provenance)
+                ).items()
+                # GRE-3464: omit "replays" entirely when empty (recording
+                # off, or an older-shape caller that never set it) instead
+                # of emitting a spurious "replays": [] — keeps pre-existing
+                # fixtures/consumers round-tripping byte-for-byte.
+                if not (k == "replays" and not v)
+            },
             "warnings": list(self.warnings),
         }
 
@@ -123,6 +138,11 @@ class SymbolSignal:
     momentum_5d: float
     verdict: str
     notes: list = field(default_factory=list)
+    # GRE-3464: optional finer-grained research label (see
+    # schemas/signals.schema.json) — populated by desk/model_code/signals.py,
+    # displayed by desk/brief.py when present. Omitted from to_dict() output
+    # when None so pre-existing fixtures/consumers round-trip unchanged.
+    label: Optional[str] = None
 
 
 @dataclass
@@ -134,7 +154,12 @@ class Signals:
         return {
             "as_of": self.as_of,
             "per_symbol": {
-                sym: (asdict(s) if isinstance(s, SymbolSignal) else dict(s))
+                sym: {
+                    k: v
+                    for k, v in (asdict(s) if isinstance(s, SymbolSignal) else dict(s)).items()
+                    # GRE-3464: omit "label" when unset (see SymbolSignal docstring above).
+                    if not (k == "label" and v is None)
+                }
                 for sym, s in self.per_symbol.items()
             },
         }

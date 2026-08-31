@@ -34,10 +34,12 @@ import argparse
 import json
 import logging
 import os
+import queue
 import re
 import shutil
 import subprocess
 import sys
+import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -52,6 +54,20 @@ FIXTURES_DIR = PACKAGE_ROOT / "fixtures"
 STAGE_NAMES = ["scraper", "models", "brief", "serve"]
 
 _SPEND_LINE_RE = re.compile(r"\[spend\].*?\$([0-9]*\.?[0-9]+)")
+
+# GRE-3464: how long to wait for `desk.serve` to print its preview URL
+# before giving up. `desk.serve` prints the URL as its very first line of
+# output (right after the sandbox comes up), then blocks — see
+# `_do_serve`'s docstring for why the orchestrator must not wait for it to
+# exit the way `_run_subprocess_stage` does for the other three stages.
+SERVE_URL_WAIT_S = 90.0
+
+# Mirrors desk.solari_client.SANDBOX_RATE_PER_HOUR — kept as a local
+# constant (not an import) so the orchestrator never depends on the Solari
+# SDK directly (NG-2: it only ever talks to Solari via a subprocess into a
+# sibling CLI). Used only to print an *estimated* spend line for the serve
+# stage (see `_do_serve`).
+_SANDBOX_RATE_PER_HOUR_ESTIMATE = 0.10
 
 logger = logging.getLogger("desk.run_overnight")
 
@@ -140,6 +156,20 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=8000,
         help="Port passed to the real desk.serve CLI (ignored in stub mode).",
+    )
+    p.add_argument(
+        "--serve-hold-seconds",
+        type=float,
+        default=3600.0,
+        help=(
+            "How long the real desk.serve subprocess holds the preview open "
+            "after this run finishes (default: 3600s = 1hr, desk/serve.py's "
+            "free-tier sandbox lifetime cap — see MAX_HOLD_S there). The "
+            "orchestrator reads the preview URL from desk.serve's stdout as "
+            "soon as it's printed and does NOT wait for the subprocess to "
+            "exit; the server keeps running in the background afterward. "
+            "Ignored in stub mode."
+        ),
     )
     return p
 
@@ -270,18 +300,100 @@ def _do_brief(
     return spend
 
 
-def _do_serve(brief_path: Path, use_stubs: bool, port: int) -> tuple[str, float]:
+def _do_serve(
+    brief_path: Path, use_stubs: bool, port: int, hold_seconds: float
+) -> tuple[str, float]:
+    """Start `desk.serve` and return as soon as it prints a preview URL —
+    NOT when it exits.
+
+    GRE-3464 fix: real `desk.serve` prints the URL as its first line, then
+    BLOCKS (holding the sandbox open for `--hold-seconds`, or until Ctrl-C)
+    so the URL stays curlable. The original assumption here — that
+    `desk.serve` prints the URL as its LAST stdout line and then returns —
+    doesn't hold; running it through `_run_subprocess_stage` (which waits
+    for exit) would hang this stage for the full hold duration instead of
+    the few seconds sandbox startup actually takes.
+
+    Fix: launch it as a live subprocess, stream its stdout on a background
+    thread, and return the URL the moment a line matching it appears —
+    leaving the subprocess (and the sandbox it's holding open) running
+    untouched in the background after this function returns. The real
+    `[spend] sandbox (preview): ...` line desk/solari_client.py emits is
+    only printed when the subprocess is eventually killed (hold elapses, or
+    someone Ctrl-C's it) — which happens after this function has already
+    returned — so `spend_usd` here is an ESTIMATE from the requested hold
+    time and the documented sandbox rate, not a measured actual. Documented
+    in budget.json via the stage's `spend_estimated` extra field.
+    """
     _check_injected_failure("serve")
     if use_stubs:
         return stubs.stub_serve(brief_path)
-    stdout, spend = _run_subprocess_stage(
-        [sys.executable, "-m", "desk.serve", "--file", str(brief_path)],
-        cwd=PACKAGE_ROOT,
+
+    cmd = [
+        sys.executable,
+        "-m",
+        "desk.serve",
+        "--file",
+        str(brief_path),
+        "--port",
+        str(port),
+        "--hold-seconds",
+        str(hold_seconds),
+    ]
+    proc = subprocess.Popen(
+        cmd,
+        cwd=str(PACKAGE_ROOT),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1,
+        # Detach into its own session so it outlives this orchestrator
+        # process (and the shell that launched it) rather than being sent
+        # SIGHUP when the parent's controlling terminal/session goes away —
+        # the whole point is that the preview stays up after this run ends.
+        start_new_session=True,
     )
-    url = _parse_preview_url(stdout)
+
+    lines: "queue.Queue[Optional[str]]" = queue.Queue()
+
+    def _pump() -> None:
+        try:
+            for line in proc.stdout:  # type: ignore[union-attr]
+                lines.put(line)
+        finally:
+            lines.put(None)  # EOF sentinel
+
+    threading.Thread(target=_pump, daemon=True).start()
+
+    url: Optional[str] = None
+    deadline = time.monotonic() + SERVE_URL_WAIT_S
+    while url is None:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        try:
+            line = lines.get(timeout=remaining)
+        except queue.Empty:
+            break
+        if line is None:  # process closed stdout without printing a URL
+            break
+        url = _parse_preview_url(line)
+
     if not url:
-        raise RuntimeError("desk.serve exited 0 but printed no preview URL")
-    return url, spend
+        # Never printed a URL — the process either failed fast or is stuck.
+        # Kill it (nothing worth leaving running) and surface stderr.
+        proc.kill()
+        try:
+            _, stderr = proc.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            stderr = ""
+        raise RuntimeError(
+            f"desk.serve did not print a preview URL within {SERVE_URL_WAIT_S:.0f}s "
+            f"(exit={proc.poll()}): {stderr.strip()[:2000]}"
+        )
+
+    est_spend = hold_seconds / 3600 * _SANDBOX_RATE_PER_HOUR_ESTIMATE
+    return url, est_spend
 
 
 # --------------------------------------------------------------------------
@@ -491,7 +603,7 @@ def _run(args: argparse.Namespace, run_dir: Path, run_date: str, use_stubs: bool
         result_holder: dict = {}
 
         def _serve_call():
-            url, spend = _do_serve(brief_path, use_stubs, args.serve_port)
+            url, spend = _do_serve(brief_path, use_stubs, args.serve_port, args.serve_hold_seconds)
             result_holder["url"] = url
             result_holder["spend"] = spend
             return url
@@ -501,6 +613,12 @@ def _run(args: argparse.Namespace, run_dir: Path, run_date: str, use_stubs: bool
             preview_url = result_holder.get("url")
             outcomes["serve"].spend_usd = result_holder.get("spend", 0.0)
             outcomes["serve"].extra["preview_url"] = preview_url
+            if not use_stubs:
+                # GRE-3464: real serve spend is an estimate — see
+                # _do_serve's docstring — the sandbox is left running past
+                # this function returning, so the actual "[spend]" line
+                # isn't observable synchronously here.
+                outcomes["serve"].extra["spend_estimated"] = True
 
     # pull spend out of the "_result" extras used for scraper/models/brief
     for name in ("scraper", "models", "brief"):
@@ -523,6 +641,12 @@ def _run(args: argparse.Namespace, run_dir: Path, run_date: str, use_stubs: bool
         "stages": {name: round(outcomes[name].spend_usd, 6) for name in STAGE_NAMES},
         "total_usd": round(sum(outcomes[name].spend_usd for name in STAGE_NAMES), 6),
     }
+    if outcomes["serve"].extra.get("spend_estimated"):
+        budget["notes"] = [
+            "serve stage spend is an ESTIMATE (hold_seconds * sandbox rate), not a "
+            "measured actual — the sandbox is left running past this run finishing "
+            "(GRE-3464); see README 'Orchestrator <-> serve reconciliation'."
+        ]
     (run_dir / "budget.json").write_text(json.dumps(budget, indent=2) + "\n")
 
     _write_state(run_dir, outcomes, status)
