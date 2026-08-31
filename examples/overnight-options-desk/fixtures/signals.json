@@ -1,0 +1,35 @@
+{
+  "as_of": "2026-08-31T06:15:00Z",
+  "per_symbol": {
+    "AAPL": {
+      "garch_vol_forecast_1d": 0.0118,
+      "garch_vol_forecast_ann": 0.187,
+      "ou_zscore": 0.42,
+      "ou_half_life_d": 6.1,
+      "momentum_5d": 0.014,
+      "verdict": "neutral",
+      "notes": ["z-score inside +/-1, no mean-reversion edge today"]
+    },
+    "NVDA": {
+      "garch_vol_forecast_1d": 0.0261,
+      "garch_vol_forecast_ann": 0.414,
+      "ou_zscore": 1.92,
+      "ou_half_life_d": 3.4,
+      "momentum_5d": 0.038,
+      "verdict": "bullish",
+      "notes": [
+        "earnings 2026-09-02 AMC — vol forecast likely understates event risk",
+        "z-score > 1.5 with positive momentum"
+      ]
+    },
+    "TSLA": {
+      "garch_vol_forecast_1d": 0.0329,
+      "garch_vol_forecast_ann": 0.522,
+      "ou_zscore": -1.15,
+      "ou_half_life_d": 2.8,
+      "momentum_5d": -0.021,
+      "verdict": "avoid",
+      "notes": ["quote flagged stale in scraped_data.warnings; low confidence"]
+    }
+  }
+}
