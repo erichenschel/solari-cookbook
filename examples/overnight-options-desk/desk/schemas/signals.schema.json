@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://solari-cookbook/overnight-options-desk/signals.schema.json",
+  "title": "Signals",
+  "description": "Per-symbol quant outputs (GARCH vol forecast, OU mean-reversion stats, momentum) for one run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["as_of", "per_symbol"],
+  "properties": {
+    "as_of": { "type": "string", "format": "date-time" },
+    "per_symbol": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "garch_vol_forecast_1d",
+          "garch_vol_forecast_ann",
+          "ou_zscore",
+          "ou_half_life_d",
+          "momentum_5d",
+          "verdict",
+          "notes"
+        ],
+        "properties": {
+          "garch_vol_forecast_1d": { "type": "number", "minimum": 0 },
+          "garch_vol_forecast_ann": { "type": "number", "minimum": 0 },
+          "ou_zscore": { "type": "number" },
+          "ou_half_life_d": { "type": "number", "minimum": 0 },
+          "momentum_5d": { "type": "number" },
+          "verdict": {
+            "type": "string",
+            "enum": ["bullish", "bearish", "neutral", "avoid"]
+          },
+          "notes": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

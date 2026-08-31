@@ -1,8 +1,11 @@
 node_modules/
 package-lock.json
 .env
+.env.*
+!.env.example
 __pycache__/
 *.pyc
 .venv/
 venv/
+.venv-desk/
 screenshot.png

@@ -1,0 +1,43 @@
+{
+  "as_of": "2026-08-31T06:00:00Z",
+  "universe": ["AAPL", "MSFT", "NVDA", "TSLA"],
+  "earnings": [
+    { "symbol": "NVDA", "date": "2026-09-02", "session": "amc" },
+    { "symbol": "TSLA", "date": "2026-09-04", "session": "bmo" }
+  ],
+  "headlines": [
+    {
+      "symbol": "AAPL",
+      "title": "Apple supplier reports strong September build ramp",
+      "source": "Reuters",
+      "url": "https://example.com/news/apple-supplier-ramp",
+      "published": "2026-08-31T04:12:00Z"
+    },
+    {
+      "symbol": "NVDA",
+      "title": "NVIDIA earnings preview: analysts eye data-center demand",
+      "source": "Bloomberg",
+      "url": "https://example.com/news/nvda-earnings-preview",
+      "published": "2026-08-31T05:03:00Z"
+    },
+    {
+      "symbol": null,
+      "title": "Fed officials signal no change at September meeting",
+      "source": "AP",
+      "url": "https://example.com/news/fed-september-signal",
+      "published": "2026-08-31T02:47:00Z"
+    }
+  ],
+  "quotes": {
+    "AAPL": { "last": 227.54, "prev_close": 225.11 },
+    "MSFT": { "last": 418.22, "prev_close": 417.90 },
+    "NVDA": { "last": 121.35, "prev_close": 119.80 },
+    "TSLA": { "last": 214.67, "prev_close": 219.02 }
+  },
+  "provenance": {
+    "sessions": ["sess_7f3a9c21", "sess_9b21e04d"]
+  },
+  "warnings": [
+    "TSLA quote is 18 minutes stale (source rate-limited)"
+  ]
+}

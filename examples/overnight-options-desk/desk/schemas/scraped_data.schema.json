@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://solari-cookbook/overnight-options-desk/scraped_data.schema.json",
+  "title": "ScrapedData",
+  "description": "One overnight scrape: universe, earnings calendar, headlines, quotes, and provenance for the sessions that produced them.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["as_of", "universe", "earnings", "headlines", "quotes", "provenance", "warnings"],
+  "properties": {
+    "as_of": { "type": "string", "format": "date-time" },
+    "universe": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "earnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["symbol", "date", "session"],
+        "properties": {
+          "symbol": { "type": "string", "minLength": 1 },
+          "date": { "type": "string", "format": "date" },
+          "session": { "type": "string", "enum": ["bmo", "amc", "unknown"] }
+        }
+      }
+    },
+    "headlines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["symbol", "title", "source", "url", "published"],
+        "properties": {
+          "symbol": { "type": ["string", "null"] },
+          "title": { "type": "string", "minLength": 1 },
+          "source": { "type": "string", "minLength": 1 },
+          "url": { "type": "string", "format": "uri" },
+          "published": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "quotes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["last", "prev_close"],
+        "properties": {
+          "last": { "type": "number" },
+          "prev_close": { "type": "number" }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sessions"],
+      "properties": {
+        "sessions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}
