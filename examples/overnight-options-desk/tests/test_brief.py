@@ -10,12 +10,24 @@ import re
 import subprocess
 import sys
 from dataclasses import replace
+from datetime import date
 from pathlib import Path
 
 import pytest
 
-from desk.brief import _upcoming_earnings, main, render_brief
-from desk.contracts import Earnings, ScrapedData, Signals
+from desk.brief import (
+    HEADLINE_CAP,
+    _dedupe_and_group_headlines,
+    _earnings_within,
+    _interpret_signal,
+    _newest_first_capped,
+    _stretched_chip_text,
+    _upcoming_earnings,
+    _verdict_tally,
+    main,
+    render_brief,
+)
+from desk.contracts import Earnings, Headline, ScrapedData, Signals, SymbolSignal
 
 pytestmark = pytest.mark.filterwarnings("ignore")
 
@@ -500,3 +512,444 @@ def test_render_is_pure_no_solari_import(rendered):
     assert "solari_client" not in source
     assert "import solari_browser" not in source
     assert "import solari_sandbox" not in source
+
+
+# ---------------------------------------------------------------------------
+# GRE-3464 UX pass — 1. TL;DR strip
+# ---------------------------------------------------------------------------
+# The bundled fixture (fixtures/scraped_data.json + fixtures/signals.json):
+# AAPL neutral z=+0.42, NVDA bullish z=+1.92, TSLA avoid z=-1.15, MSFT
+# uncovered; earnings NVDA 2026-09-02 (2d out), TSLA 2026-09-04 (4d out) from
+# as_of 2026-08-31; one warning ("TSLA quote is 18 minutes stale...").
+
+
+def _tldr_html(rendered: str) -> str:
+    return rendered.split('id="tldr"')[1].split("</header>")[0]
+
+
+def test_tldr_strip_lives_directly_under_header(rendered):
+    header_idx = rendered.index('id="header"')
+    tldr_idx = rendered.index('id="tldr"')
+    signals_idx = rendered.index('id="signals"')
+    assert header_idx < tldr_idx < signals_idx
+
+
+def test_tldr_verdict_tally_computed_from_context_not_hardcoded(rendered):
+    # 1 avoid (TSLA) + 1 bullish (NVDA) + 1 neutral (AAPL); MSFT is uncovered
+    # and must not be counted.
+    tldr = _tldr_html(rendered)
+    assert "1 avoid" in tldr
+    assert "1 bullish" in tldr
+    assert "1 neutral" in tldr
+    assert "0 " not in tldr  # zero-count verdicts must be omitted, not shown as "0 bearish"
+
+
+def test_tldr_most_stretched_name_chip(rendered):
+    # NVDA |1.92| is the largest |OU z-score| in the fixture -> rank 1.
+    tldr = _tldr_html(rendered)
+    assert "NVDA +1.9σ above its 1-yr mean" in tldr
+
+
+def test_tldr_most_stretched_name_chip_uses_below_for_negative_zscore(scraped, signals):
+    # Make TSLA (z=-1.15) the most-stretched row by shrinking the others.
+    hostile_signals = copy.deepcopy(signals)
+    hostile_signals.per_symbol["AAPL"].ou_zscore = 0.01
+    hostile_signals.per_symbol["NVDA"].ou_zscore = 0.02
+    out = render_brief(scraped, hostile_signals)
+    tldr = _tldr_html(out)
+    assert "TSLA -1.1σ below its 1-yr mean" in tldr
+
+
+def test_tldr_next_earnings_chip_computed_from_as_of(rendered):
+    # NVDA reports 2026-09-02, 2 days after as_of 2026-08-31 -> soonest.
+    tldr = _tldr_html(rendered)
+    assert "next earnings: NVDA in 2d" in tldr
+
+
+def test_tldr_next_earnings_chip_omitted_when_none_in_window(scraped, signals):
+    hostile = replace(scraped, earnings=[])
+    out = render_brief(hostile, signals)
+    tldr = _tldr_html(out)
+    assert "next earnings" not in tldr
+
+
+def test_tldr_data_health_chip_shows_warning_count_and_links_signals(rendered):
+    # fixture has exactly one (undedupable, no source-id match) warning.
+    tldr = _tldr_html(rendered)
+    assert "1 data warning" in tldr
+    assert 'href="#signals"' in tldr
+    assert "all sources ok" not in tldr
+
+
+def test_tldr_data_health_chip_shows_all_ok_when_no_warnings(scraped, signals):
+    clean = replace(scraped, warnings=[])
+    out = render_brief(clean, signals)
+    tldr = _tldr_html(out)
+    assert "all sources ok" in tldr
+    assert "data warning" not in tldr
+
+
+def test_tldr_data_health_chip_pluralizes_multiple_warnings(scraped, signals):
+    hostile = replace(
+        scraped,
+        warnings=[
+            "yahoo_news failed for AAPL: net::ERR_TIMED_OUT",
+            "stockanalysis_earnings failed for NVDA: Timeout 30000ms exceeded.",
+        ],
+    )
+    out = render_brief(hostile, signals)
+    tldr = _tldr_html(out)
+    assert "2 data warnings" in tldr
+
+
+def test_tldr_verdict_tally_empty_when_no_signal_coverage(scraped):
+    empty_signals = Signals(as_of="2026-08-31T06:15:00Z", per_symbol={})
+    out = render_brief(scraped, empty_signals)
+    tldr = _tldr_html(out)
+    assert "no signal coverage" in tldr
+
+
+# ---------------------------------------------------------------------------
+# GRE-3464 UX pass — 2. plain-English interpretation sentence
+# ---------------------------------------------------------------------------
+
+
+def _sig(**overrides) -> SymbolSignal:
+    base = dict(
+        garch_vol_forecast_1d=0.01,
+        garch_vol_forecast_ann=0.15,
+        ou_zscore=0.1,
+        ou_half_life_d=5.0,
+        momentum_5d=0.0,
+        verdict="neutral",
+        notes=[],
+        label=None,
+    )
+    base.update(overrides)
+    return SymbolSignal(**base)
+
+
+def test_interpret_mean_reversion_watch_at_threshold_boundary():
+    # Exactly at the rule table's >= boundaries (vol 35%, |z| 1.5).
+    sig = _sig(garch_vol_forecast_ann=0.35, ou_zscore=1.5, verdict="avoid", label="mean-reversion-watch")
+    assert _interpret_signal(sig, None, None) == "1.5σ above 1-yr mean, high vol — reversion risk"
+
+
+def test_interpret_mean_reversion_watch_negative_zscore_says_below():
+    sig = _sig(garch_vol_forecast_ann=0.40, ou_zscore=-2.0, verdict="avoid", label="mean-reversion-watch")
+    assert _interpret_signal(sig, None, None) == "2.0σ below 1-yr mean, high vol — reversion risk"
+
+
+def test_interpret_just_under_vol_threshold_does_not_flag_reversion():
+    # vol 34.9% < 35% -> rule 3 must NOT fire even with a stretched z-score.
+    sig = _sig(garch_vol_forecast_ann=0.349, ou_zscore=5.0, verdict="avoid")
+    assert "reversion risk" not in _interpret_signal(sig, None, None)
+
+
+def test_interpret_trend_watch_up_at_momentum_boundary():
+    sig = _sig(garch_vol_forecast_ann=0.19, momentum_5d=0.02, verdict="bullish", label="trend-watch")
+    assert _interpret_signal(sig, None, None) == "low vol, drifting up — steady trend"
+
+
+def test_interpret_trend_watch_down_at_momentum_boundary():
+    sig = _sig(garch_vol_forecast_ann=0.19, momentum_5d=-0.02, verdict="bearish", label="trend-watch")
+    assert _interpret_signal(sig, None, None) == "low vol, drifting down — steady trend"
+
+
+def test_interpret_vol_exactly_at_low_boundary_does_not_flag_trend():
+    # vol == 20% is not "< 20%" -> rule 4/5 must NOT fire.
+    sig = _sig(garch_vol_forecast_ann=0.20, momentum_5d=0.05, verdict="neutral")
+    out = _interpret_signal(sig, None, None)
+    assert "steady trend" not in out
+
+
+def test_interpret_no_strong_signal_fallback():
+    sig = _sig(garch_vol_forecast_ann=0.25, ou_zscore=0.3, momentum_5d=0.0, verdict="neutral", label="no-strong-signal")
+    assert _interpret_signal(sig, None, None) == "no strong signal — inside normal ranges"
+
+
+def test_interpret_insufficient_data_label_overrides_numbers():
+    # Even with numbers that would otherwise read as stretched, the
+    # insufficient-data label must win (rule 1 in the table).
+    sig = _sig(garch_vol_forecast_ann=0.9, ou_zscore=4.0, verdict="avoid", label="insufficient-data")
+    assert _interpret_signal(sig, None, None) == "limited price history — low-confidence read"
+
+
+def test_interpret_earnings_within_window_takes_priority_over_reversion():
+    # Earnings due soon AND vol/z both past the reversion threshold —
+    # earnings (rule 2) must win, matching decide_verdict's rule order.
+    sig = _sig(garch_vol_forecast_ann=0.40, ou_zscore=2.0, verdict="avoid", label="event-risk")
+    row = Earnings(symbol="NVDA", date="2026-09-02", session="amc")
+    out = _interpret_signal(sig, row, date(2026, 8, 31))
+    assert out == "reports in 2d — expect a gap"
+
+
+def test_interpret_earnings_today_boundary():
+    sig = _sig(verdict="avoid", label="event-risk")
+    row = Earnings(symbol="TSLA", date="2026-08-31", session="bmo")
+    out = _interpret_signal(sig, row, date(2026, 8, 31))
+    assert out == "reports today — expect a gap"
+
+
+def test_interpret_avoid_without_label_or_matching_rule_has_generic_fallback():
+    # Older-shape signal (no `label`) whose numbers don't match any
+    # threshold rule — must not fabricate a specific reason.
+    sig = _sig(garch_vol_forecast_ann=0.25, ou_zscore=0.5, momentum_5d=0.0, verdict="avoid", label=None)
+    assert _interpret_signal(sig, None, None) == "flagged avoid — see notes for detail"
+
+
+def test_interpret_sentence_is_at_most_ten_words():
+    cases = [
+        _sig(garch_vol_forecast_ann=0.40, ou_zscore=3.0, verdict="avoid", label="mean-reversion-watch"),
+        _sig(garch_vol_forecast_ann=0.10, momentum_5d=0.05, verdict="bullish", label="trend-watch"),
+        _sig(garch_vol_forecast_ann=0.10, momentum_5d=-0.05, verdict="bearish", label="trend-watch"),
+        _sig(verdict="avoid", label="insufficient-data"),
+        _sig(verdict="neutral", label="no-strong-signal"),
+    ]
+    for sig in cases:
+        words = _interpret_signal(sig, None, None).split()
+        assert len(words) <= 10, _interpret_signal(sig, None, None)
+
+
+def test_interpret_sentence_never_uses_buy_sell_language():
+    banned = {"buy", "sell", "short", "long", "purchase", "trade"}
+    cases = [
+        _sig(garch_vol_forecast_ann=0.40, ou_zscore=3.0, verdict="avoid", label="mean-reversion-watch"),
+        _sig(garch_vol_forecast_ann=0.10, momentum_5d=0.05, verdict="bullish", label="trend-watch"),
+        _sig(verdict="avoid", label="insufficient-data"),
+        _sig(verdict="neutral"),
+    ]
+    for sig in cases:
+        words = {w.strip("—.,").lower() for w in _interpret_signal(sig, None, None).split()}
+        assert not (words & banned)
+
+
+def test_rendered_verdict_cell_includes_interpretation_sentence(scraped, signals):
+    # Strip NVDA's earnings row so the rule-order test below isolates the
+    # mean-reversion-watch branch rather than the higher-priority
+    # earnings-window branch (NVDA's fixture earnings date is 2 days out).
+    hostile = replace(scraped, earnings=[e for e in scraped.earnings if e.symbol != "NVDA"])
+    out = render_brief(hostile, signals)
+    signals_section = out.split('id="signals"')[1].split("</section>")[0]
+    assert 'class="verdict-interp"' in signals_section
+    # NVDA: vol 41.4% (>=35%) and z=1.92 (>=1.5) -> mean-reversion-watch read
+    nvda_row = signals_section.split('<strong>NVDA')[1].split("</tr>")[0]
+    assert "1.9σ above 1-yr mean, high vol — reversion risk" in nvda_row
+
+
+def test_rendered_verdict_cell_interpretation_respects_earnings_priority(rendered):
+    # Unmodified fixture: NVDA has both a stretched z-score AND an earnings
+    # date 2 days out — the rule table's earnings-window rule outranks
+    # mean-reversion-watch, so the rendered sentence must reflect that.
+    signals_section = rendered.split('id="signals"')[1].split("</section>")[0]
+    nvda_row = signals_section.split('<strong>NVDA')[1].split("</tr>")[0]
+    assert "reports in 2d — expect a gap" in nvda_row
+
+
+# ---------------------------------------------------------------------------
+# GRE-3464 UX pass — 3. column subtitles
+# ---------------------------------------------------------------------------
+
+
+def test_column_subtitles_present(rendered):
+    signals_section = rendered.split('id="signals"')[1].split("</section>")[0]
+    assert '<span class="col-sub">expected move</span>' in signals_section
+    assert '<span class="col-sub">distance from 1-yr mean</span>' in signals_section
+    assert '<span class="col-sub">days for stretch to halve</span>' in signals_section
+    assert '<span class="col-sub">5-day price change</span>' in signals_section
+    # subtitles live inside <thead>, which the mobile media query hides
+    # entirely alongside the rest of the header row.
+    assert "table.responsive thead { display: none; }" in rendered
+
+
+# ---------------------------------------------------------------------------
+# GRE-3464 UX pass — 4. "How to read this" disclosure
+# ---------------------------------------------------------------------------
+
+
+def test_how_to_read_disclosure_present_and_collapsed_after_table(rendered):
+    signals_section = rendered.split('id="signals"')[1].split("</section>")[0]
+    assert '<details class="how-to-read" id="how-to-read">' in signals_section
+    assert "<summary>How to read this</summary>" in signals_section
+    # comes after the ranked-signal table, not before
+    assert signals_section.index("</table>") < signals_section.index('id="how-to-read"')
+    # condensed rule-table thresholds, same numbers as the README/rule table
+    assert "3 calendar days" in signals_section
+    assert "1.5" in signals_section and "35%" in signals_section
+    assert "20%" in signals_section and "2%" in signals_section
+    # ends on the research-only boundary
+    assert "Research only" in signals_section and "not investment advice" in signals_section
+    # a <details> is collapsed by default absent an `open` attribute
+    assert "<details class=\"how-to-read\" id=\"how-to-read\" open" not in signals_section
+
+
+# ---------------------------------------------------------------------------
+# GRE-3464 UX pass — 5. headlines triage (cap, newest-first, dedupe)
+# ---------------------------------------------------------------------------
+
+
+def _headline(symbol, title, published, source="Reuters", url="https://example.com/x"):
+    return Headline(symbol=symbol, title=title, source=source, url=url, published=published)
+
+
+def test_headline_cap_is_five_per_symbol():
+    items = [_headline("AAPL", f"Story {i}", f"2026-08-{20+i:02d}T00:00:00Z") for i in range(8)]
+    shown, more = _newest_first_capped(items)
+    assert len(shown) == HEADLINE_CAP == 5
+    assert more == 3
+
+
+def test_headline_newest_first_ordering():
+    items = [
+        _headline("AAPL", "Oldest", "2026-08-20T00:00:00Z"),
+        _headline("AAPL", "Newest", "2026-08-30T00:00:00Z"),
+        _headline("AAPL", "Middle", "2026-08-25T00:00:00Z"),
+    ]
+    shown, more = _newest_first_capped(items)
+    assert [h.title for h in shown] == ["Newest", "Middle", "Oldest"]
+    assert more == 0
+
+
+def test_headline_unparseable_published_sorts_last_not_crashes():
+    items = [
+        _headline("AAPL", "Good date", "2026-08-30T00:00:00Z"),
+        _headline("AAPL", "Bad date", "not-a-date"),
+    ]
+    shown, more = _newest_first_capped(items)
+    assert [h.title for h in shown] == ["Good date", "Bad date"]
+
+
+def test_headline_dedupe_keeps_shared_title_under_first_symbol_only():
+    headlines = [
+        _headline("AAPL", "Shared story", "2026-08-30T00:00:00Z"),
+        _headline("MSFT", "Shared story", "2026-08-30T00:00:00Z"),
+    ]
+    by_symbol, promoted = _dedupe_and_group_headlines(headlines, ["AAPL", "MSFT"])
+    assert [h.title for h in by_symbol["AAPL"]] == ["Shared story"]
+    assert by_symbol["MSFT"] == []
+    assert promoted == []
+
+
+def test_headline_dedupe_promotes_to_market_wide_when_three_or_more_symbols_share_title():
+    headlines = [
+        _headline("AAPL", "Fed signals rate pause", "2026-08-30T00:00:00Z"),
+        _headline("MSFT", "Fed signals rate pause", "2026-08-30T00:00:00Z"),
+        _headline("NVDA", "Fed signals rate pause", "2026-08-30T00:00:00Z"),
+        _headline("AAPL", "Apple-only story", "2026-08-29T00:00:00Z"),
+    ]
+    by_symbol, promoted = _dedupe_and_group_headlines(headlines, ["AAPL", "MSFT", "NVDA"])
+    assert [h.title for h in promoted] == ["Fed signals rate pause"]
+    assert len(promoted) == 1  # promoted exactly once, not once per symbol
+    assert [h.title for h in by_symbol["AAPL"]] == ["Apple-only story"]
+    assert by_symbol["MSFT"] == []
+    assert by_symbol["NVDA"] == []
+
+
+def test_headline_dedupe_two_symbols_not_promoted():
+    # Below the 3-symbol promotion threshold — stays under the first symbol.
+    headlines = [
+        _headline("AAPL", "Two-symbol story", "2026-08-30T00:00:00Z"),
+        _headline("MSFT", "Two-symbol story", "2026-08-30T00:00:00Z"),
+    ]
+    by_symbol, promoted = _dedupe_and_group_headlines(headlines, ["AAPL", "MSFT"])
+    assert promoted == []
+    assert [h.title for h in by_symbol["AAPL"]] == ["Two-symbol story"]
+
+
+def test_rendered_headlines_show_more_note_when_capped(scraped, signals):
+    many = [
+        _headline("AAPL", f"AAPL story {i}", f"2026-08-{10+i:02d}T00:00:00Z")
+        for i in range(7)
+    ]
+    hostile = replace(scraped, headlines=many)
+    out = render_brief(hostile, signals)
+    headlines_section = out.split('id="headlines"')[1].split("</section>")[0]
+    groups = headlines_section.split('<div class="headline-group">')
+    aapl_group = next(g for g in groups if "<h3>AAPL</h3>" in g)
+    assert aapl_group.count("<li>") == 5
+    assert "2 more in the run's scraped_data.json" in aapl_group
+
+
+def test_rendered_headlines_no_more_note_when_under_cap(rendered):
+    # bundled fixture has exactly one headline per covered symbol.
+    headlines_section = rendered.split('id="headlines"')[1].split("</section>")[0]
+    assert "more in the run" not in headlines_section
+
+
+# ---------------------------------------------------------------------------
+# GRE-3464 UX pass — 6. earnings cards: relative time
+# ---------------------------------------------------------------------------
+
+
+def test_earnings_within_matches_soonest_row_in_window():
+    earnings = [
+        Earnings(symbol="NVDA", date="2026-09-03", session="amc"),
+        Earnings(symbol="NVDA", date="2026-09-01", session="bmo"),  # soonest -> wins
+    ]
+    row = _earnings_within("NVDA", earnings, date(2026, 8, 31))
+    assert row.date == "2026-09-01"
+
+
+def test_earnings_within_none_outside_window():
+    earnings = [Earnings(symbol="NVDA", date="2026-09-10", session="amc")]  # 10d out, window is 3d
+    assert _earnings_within("NVDA", earnings, date(2026, 8, 31)) is None
+
+
+def test_earnings_within_none_when_as_of_unparseable():
+    earnings = [Earnings(symbol="NVDA", date="2026-09-01", session="amc")]
+    assert _earnings_within("NVDA", earnings, None) is None
+
+
+def _earnings_cards(rendered_or_out: str) -> list[str]:
+    earnings_section = rendered_or_out.split('id="earnings"')[1].split("</section>")[0]
+    return earnings_section.split('<div class="callout">')[1:]
+
+
+def test_rendered_earnings_cards_lead_with_relative_time(rendered):
+    nvda_card = next(c for c in _earnings_cards(rendered) if '<div class="sym">NVDA</div>' in c)
+    assert '<div class="rel-time">in 2d</div>' in nvda_card
+    # absolute date + session survive as the secondary line
+    assert "2026-09-02" in nvda_card
+    assert "After close" in nvda_card  # NVDA earnings session is amc
+
+
+def test_rendered_earnings_cards_relative_time_today_boundary(scraped, signals):
+    hostile = replace(scraped, earnings=[Earnings(symbol="TSLA", date="2026-08-31", session="bmo")])
+    out = render_brief(hostile, signals)
+    earnings_section = out.split('id="earnings"')[1].split("</section>")[0]
+    assert '<div class="rel-time">today</div>' in earnings_section
+
+
+def test_rendered_earnings_cards_sorted_soonest_first(scraped, signals):
+    hostile = replace(
+        scraped,
+        earnings=[
+            Earnings(symbol="TSLA", date="2026-09-10", session="amc"),
+            Earnings(symbol="NVDA", date="2026-09-02", session="amc"),
+        ],
+    )
+    out = render_brief(hostile, signals)
+    earnings_section = out.split('id="earnings"')[1].split("</section>")[0]
+    nvda_pos = earnings_section.index('<div class="sym">NVDA</div>')
+    tsla_pos = earnings_section.index('<div class="sym">TSLA</div>')
+    assert nvda_pos < tsla_pos
+
+
+# ---------------------------------------------------------------------------
+# GRE-3464 UX pass — 7. one primary "run" timestamp
+# ---------------------------------------------------------------------------
+
+
+def test_header_shows_single_prominent_run_timestamp(rendered):
+    header = rendered.split('id="header"')[1].split("</header>")[0]
+    assert '<div class="run-time">Run <strong>2026-08-31 06:00 UTC</strong></div>' in header
+
+
+def test_header_demotes_scraped_and_signals_as_of_to_small_muted_detail(rendered):
+    header = rendered.split('id="header"')[1].split("</header>")[0]
+    assert 'class="as-of-detail"' in header
+    detail = header.split('class="as-of-detail">')[1].split("</div>")[0]
+    # both values still present in the DOM, just demoted — same underlying
+    # data the old single "As of ... signals as of ..." line carried.
+    assert "2026-08-31 06:00 UTC" in detail  # scraped.as_of
+    assert "2026-08-31 06:15 UTC" in detail  # signals.as_of

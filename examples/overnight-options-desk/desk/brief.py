@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import argparse
 import re
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
@@ -22,7 +22,7 @@ from urllib.parse import urlsplit
 
 from jinja2 import Environment
 
-from desk.contracts import Earnings, ScrapedData, Signals, load_scraped, load_signals
+from desk.contracts import Earnings, Headline, ScrapedData, Signals, SymbolSignal, load_scraped, load_signals
 
 DISCLAIMER = "Research only — not investment advice."
 _ALLOWED_URL_SCHEMES = {"http", "https"}
@@ -46,6 +46,20 @@ _ZSCORE_SCALE = 3.0
 _ZSCORE_STRETCH = 1.5  # mirrors model_code/signals.py's Z_STRETCH — display-only threshold, kept local so brief.py stays decoupled from the sandbox-side model code
 _VOL_CAP_ANN = 0.60  # fixed annualized-vol scale so bars are comparable run over run, not just within one brief
 
+# GRE-3464: the same rule-table thresholds `decide_verdict` uses, kept local
+# (not imported from model_code/signals.py) for the same NG-3 purity reason
+# as `_ZSCORE_STRETCH` above — this module only ever reads the *rendered*
+# verdict/label, never the model code. Used to generate the plain-English
+# per-symbol interpretation sentence and the TL;DR strip below.
+_VOL_HIGH_ANN = 0.35  # mirrors model_code/signals.py's VOL_HIGH_ANN
+_VOL_LOW_ANN = 0.20  # mirrors model_code/signals.py's VOL_LOW_ANN
+_MOMENTUM_POS = 0.02  # mirrors model_code/signals.py's MOMENTUM_POS
+_MOMENTUM_NEG = -0.02  # mirrors model_code/signals.py's MOMENTUM_NEG
+_EARNINGS_SOON_WINDOW_DAYS = 3  # mirrors model_code/signals.py's EARNINGS_WINDOW_DAYS
+_VERDICT_TALLY_ORDER = ("avoid", "bearish", "bullish", "neutral")
+
+HEADLINE_CAP = 5  # GRE-3464: max headlines shown per symbol/Market-wide group
+
 
 def _fmt_dt(iso: str) -> str:
     """'2026-08-31T06:00:00Z' -> '2026-08-31 06:00 UTC'. Falls back to the
@@ -63,6 +77,15 @@ def _fmt_date(iso: str) -> str:
         return datetime.fromisoformat(iso).strftime("%Y-%m-%d")
     except (ValueError, AttributeError):
         return iso
+
+
+def _parse_dt(iso: str) -> datetime:
+    """Best-effort parse for sort ordering only — never raises. Unparseable
+    timestamps sort last (oldest) rather than crashing the triage."""
+    try:
+        return datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone(timezone.utc)
+    except (ValueError, AttributeError):
+        return datetime.min.replace(tzinfo=timezone.utc)
 
 
 def _safe_url(url: str) -> str:
@@ -403,8 +426,135 @@ def _upcoming_earnings(earnings: list[Earnings], as_of_iso: str) -> list[Earning
     return list(best.values())
 
 
+def _headline_ctx(h: Headline) -> dict:
+    return {
+        "title": h.title,
+        "source": h.source,
+        "url": _safe_url(h.url),
+        "published": _fmt_dt(h.published),
+    }
+
+
+def _dedupe_and_group_headlines(
+    headlines: list[Headline], universe: list[str]
+) -> tuple["OrderedDict[str, list[Headline]]", list[Headline]]:
+    """Headlines triage (GRE-3464): group `scraped.headlines` by symbol,
+    dropping an exact-title duplicate that already appears under an earlier
+    symbol (kept under the first symbol it was seen with) and promoting a
+    title shared by 3+ distinct symbols into the Market-wide group instead
+    of repeating it under each one. Presentation-only, same convention as
+    `_upcoming_earnings` — `scraped_data.json` stays untouched."""
+    universe_set = set(universe)
+    title_symbols: "OrderedDict[str, list[str]]" = OrderedDict()
+    for h in headlines:
+        if h.symbol is None or h.symbol not in universe_set:
+            continue
+        syms = title_symbols.setdefault(h.title, [])
+        if h.symbol not in syms:
+            syms.append(h.symbol)
+
+    promoted_titles = {t for t, syms in title_symbols.items() if len(syms) >= 3}
+
+    by_symbol: "OrderedDict[str, list[Headline]]" = OrderedDict((s, []) for s in universe)
+    promoted: list[Headline] = []
+    promoted_seen: set = set()
+    for h in headlines:
+        if h.symbol is None or h.symbol not in universe_set:
+            continue
+        if h.title in promoted_titles:
+            if h.title not in promoted_seen:
+                promoted.append(h)
+                promoted_seen.add(h.title)
+            continue
+        first_symbol = title_symbols[h.title][0]
+        if h.symbol != first_symbol:
+            continue  # duplicate under a later symbol — dropped
+        by_symbol[h.symbol].append(h)
+    return by_symbol, promoted
+
+
+def _newest_first_capped(items: list[Headline], cap: int = HEADLINE_CAP) -> tuple[list[Headline], int]:
+    """Sort newest-published-first and cap at `cap`; return (shown, more_count)."""
+    ordered = sorted(items, key=lambda h: _parse_dt(h.published), reverse=True)
+    return ordered[:cap], max(0, len(ordered) - cap)
+
+
+def _earnings_within(
+    symbol: str, earnings: list[Earnings], as_of: Optional[date], window_days: int = _EARNINGS_SOON_WINDOW_DAYS
+) -> Optional[Earnings]:
+    """Soonest `earnings` row for `symbol` within `window_days` calendar
+    days on/after `as_of` — the same "near-term" test `has_earnings_soon`
+    applies in model_code/signals.py, re-derived here from `scraped.earnings`
+    (not imported — NG-3 purity) so the interpretation sentence can flag
+    event-risk without trusting `notes[]` prose."""
+    if as_of is None:
+        return None
+    best: Optional[Earnings] = None
+    for e in earnings:
+        if e.symbol != symbol:
+            continue
+        try:
+            e_date = date.fromisoformat(e.date)
+        except (ValueError, TypeError):
+            continue
+        delta = (e_date - as_of).days
+        if 0 <= delta <= window_days:
+            if best is None or e_date < date.fromisoformat(best.date):
+                best = e
+    return best
+
+
+def _interpret_signal(sig: SymbolSignal, earnings_row: Optional[Earnings], as_of_date: Optional[date]) -> str:
+    """Terse (<=10 words), research-toned read of *why* the verdict landed
+    where it did — same threshold order as `decide_verdict` (README's
+    "Verdict rule table"): insufficient data, then earnings window, then
+    stretch+vol, then low-vol momentum, else no strong signal. Never
+    buy/sell language (GRE-3464) — a factual restatement of the numbers,
+    not a recommendation."""
+    label = getattr(sig, "label", None)
+    z, vol_ann, mom = sig.ou_zscore, sig.garch_vol_forecast_ann, sig.momentum_5d
+
+    if label == "insufficient-data":
+        return "limited price history — low-confidence read"
+    if earnings_row is not None and as_of_date is not None:
+        days = (date.fromisoformat(earnings_row.date) - as_of_date).days
+        when = "today" if days <= 0 else f"in {days}d"
+        return f"reports {when} — expect a gap"
+    if vol_ann >= _VOL_HIGH_ANN and abs(z) >= _ZSCORE_STRETCH:
+        direction = "above" if z >= 0 else "below"
+        return f"{abs(z):.1f}σ {direction} 1-yr mean, high vol — reversion risk"
+    if vol_ann < _VOL_LOW_ANN and mom >= _MOMENTUM_POS:
+        return "low vol, drifting up — steady trend"
+    if vol_ann < _VOL_LOW_ANN and mom <= _MOMENTUM_NEG:
+        return "low vol, drifting down — steady trend"
+    if label is None and sig.verdict == "avoid":
+        return "flagged avoid — see notes for detail"
+    return "no strong signal — inside normal ranges"
+
+
+def _verdict_tally(signal_rows: list[dict]) -> str:
+    """TL;DR tally chip text, e.g. '4 avoid · 1 neutral' — fixed
+    priority order, zero-count verdicts omitted."""
+    counts = Counter(r["verdict"] for r in signal_rows)
+    parts = [f"{counts[v]} {v}" for v in _VERDICT_TALLY_ORDER if counts.get(v)]
+    return " · ".join(parts) if parts else "no signal coverage"
+
+
+def _stretched_chip_text(signal_rows: list[dict]) -> Optional[str]:
+    """TL;DR most-stretched-name chip, e.g. 'MSFT +6.5σ above its 1-yr
+    mean' — `signal_rows` is already ranked by |OU z-score| desc, so the
+    top row is the answer."""
+    if not signal_rows:
+        return None
+    top = signal_rows[0]
+    z = top["zscore"]
+    direction = "above" if z >= 0 else "below"
+    return f'{top["symbol"]} {z:+.1f}σ {direction} its 1-yr mean'
+
+
 def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
     covered = signals.per_symbol
+    as_of_date = _as_of_date(scraped.as_of)
 
     ranked = sorted(covered.items(), key=lambda kv: abs(kv[1].ou_zscore), reverse=True)
     signal_rows = []
@@ -413,6 +563,7 @@ def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
         chg_pct = None
         if quote is not None and quote.prev_close:
             chg_pct = (quote.last - quote.prev_close) / quote.prev_close
+        earnings_row = _earnings_within(symbol, scraped.earnings, as_of_date)
         signal_rows.append(
             {
                 "rank": rank,
@@ -434,6 +585,9 @@ def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
                 # any signal produced before this field existed.
                 "label": getattr(sig, "label", None),
                 "notes": sig.notes,
+                # GRE-3464: plain-English "why" sentence, same thresholds
+                # decide_verdict uses — see _interpret_signal.
+                "interpretation": _interpret_signal(sig, earnings_row, as_of_date),
             }
         )
     uncovered = [s for s in scraped.universe if s not in covered]
@@ -442,20 +596,28 @@ def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
     earnings_rows = []
     for e in earnings_sorted:
         sig = covered.get(e.symbol)
+        e_date = date.fromisoformat(e.date)
+        days = (e_date - as_of_date).days if as_of_date is not None else None
+        relative = None if days is None else ("today" if days <= 0 else f"in {days}d")
         earnings_rows.append(
             {
                 "symbol": e.symbol,
                 "date": _fmt_date(e.date),
                 "session": _session_label(e.session),
+                "relative": relative,
                 "verdict": sig.verdict if sig else None,
                 "verdict_class": _verdict_class(sig.verdict) if sig else None,
                 "zscore": sig.ou_zscore if sig else None,
             }
         )
 
+    # GRE-3464: headlines triage — dedupe identical titles shared across
+    # symbols, then newest-first + cap per group. See
+    # _dedupe_and_group_headlines / _newest_first_capped.
+    by_symbol, promoted = _dedupe_and_group_headlines(scraped.headlines, scraped.universe)
     headline_groups = []
     for symbol in scraped.universe:
-        items = [h for h in scraped.headlines if h.symbol == symbol]
+        shown, more_count = _newest_first_capped(by_symbol[symbol])
         headline_groups.append(
             {
                 "symbol": symbol,
@@ -463,30 +625,42 @@ def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
                 # attribute, and Jinja's dot-lookup tries attribute access
                 # before item access, so `g.items` would silently resolve to
                 # the bound method instead of this list.
-                "headlines": [
-                    {
-                        "title": h.title,
-                        "source": h.source,
-                        "url": _safe_url(h.url),
-                        "published": _fmt_dt(h.published),
-                    }
-                    for h in items
-                ],
+                "headlines": [_headline_ctx(h) for h in shown],
+                "more_count": more_count,
             }
         )
-    macro_headlines = [
-        {
-            "title": h.title,
-            "source": h.source,
-            "url": _safe_url(h.url),
-            "published": _fmt_dt(h.published),
-        }
-        for h in scraped.headlines
-        if h.symbol is None
-    ]
+    macro_raw = [h for h in scraped.headlines if h.symbol is None] + promoted
+    macro_shown, macro_more_count = _newest_first_capped(macro_raw)
+    macro_headlines = [_headline_ctx(h) for h in macro_shown]
 
     sessions = list(scraped.provenance.sessions)
     replays = list(getattr(scraped.provenance, "replays", None) or [])
+
+    warning_groups = _summarize_warnings(scraped.warnings, len(scraped.universe), scraped)
+
+    # GRE-3464: TL;DR strip — always computed from this same context, never
+    # hardcoded. Chips omitted when the underlying data doesn't support them
+    # (no signal coverage, no earnings in window).
+    tldr_chips = [{"text": _verdict_tally(signal_rows), "cls": "tldr-tally"}]
+    stretched_text = _stretched_chip_text(signal_rows)
+    if stretched_text:
+        tldr_chips.append({"text": stretched_text, "cls": "tldr-stretch"})
+    if earnings_rows:
+        top_e = earnings_rows[0]
+        tldr_chips.append(
+            {"text": f"next earnings: {top_e['symbol']} {top_e['relative']}", "cls": "tldr-earnings"}
+        )
+    n_warn = len(warning_groups)
+    if n_warn:
+        tldr_chips.append(
+            {
+                "text": f"{n_warn} data warning{'s' if n_warn != 1 else ''}",
+                "cls": "tldr-warn",
+                "href": "#signals",
+            }
+        )
+    else:
+        tldr_chips.append({"text": "all sources ok", "cls": "tldr-ok"})
 
     return {
         "as_of": _fmt_dt(scraped.as_of),
@@ -497,9 +671,11 @@ def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
         "earnings_rows": earnings_rows,
         "headline_groups": headline_groups,
         "macro_headlines": macro_headlines,
+        "macro_more_count": macro_more_count,
         "provenance_claim": _provenance_claim(sessions, replays),
         "session_ids_short": [_short_id(s) for s in sessions],
-        "warning_groups": _summarize_warnings(scraped.warnings, len(scraped.universe), scraped),
+        "warning_groups": warning_groups,
+        "tldr_chips": tldr_chips,
         "disclaimer": DISCLAIMER,
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
     }
@@ -546,8 +722,26 @@ _TEMPLATE = r"""<!doctype html>
   header.brief-header .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .5rem 1.5rem; }
   h1 { font-size: 1.1rem; letter-spacing: .04em; text-transform: uppercase; margin: 0; color: #e6edf3; }
   .as-of { color: var(--dim); font-size: .85rem; }
+  .run-time { color: var(--text); font-size: .9rem; }
+  .run-time strong { color: #e6edf3; }
+  .as-of-detail { color: var(--dim); font-size: .72rem; margin-top: .15rem; }
   .universe { color: var(--dim); font-size: .85rem; }
   .universe strong { color: var(--text); }
+  .tldr-wrap { padding-top: .75rem; margin-top: .5rem; border-top: 1px dotted var(--border); }
+  .tldr { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .chip {
+    display: inline-block;
+    padding: .2rem .65rem;
+    border-radius: 12px;
+    font-size: .72rem;
+    border: 1px solid var(--border);
+    color: var(--text);
+    background: var(--panel);
+    text-decoration: none;
+  }
+  a.chip:hover { text-decoration: underline; }
+  .tldr-ok { color: var(--green); border-color: var(--green); }
+  .tldr-warn { color: var(--amber); border-color: var(--amber); }
   section { margin: 0 0 3rem; }
   section > h2 {
     font-size: .8rem;
@@ -561,6 +755,7 @@ _TEMPLATE = r"""<!doctype html>
   table { width: 100%; border-collapse: collapse; }
   th, td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
   th { font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
+  .col-sub { display: block; font-size: .62rem; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--dim); margin-top: .15rem; }
   tbody tr:hover { background: rgba(255,255,255,0.02); }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
   .cell-metric { display: flex; align-items: center; gap: .5rem; }
@@ -585,11 +780,17 @@ _TEMPLATE = r"""<!doctype html>
   .v-avoid   { color: var(--red); border-color: var(--red); background: rgba(248,81,73,.15); }
   .v-neutral { color: var(--gray); border-color: var(--gray); background: rgba(139,148,158,.08); }
   .verdict-label { display: block; color: var(--dim); font-size: .68rem; margin-top: .25rem; letter-spacing: .02em; }
+  .verdict-interp { display: block; color: var(--dim); font-size: .72rem; margin-top: .2rem; line-height: 1.35; max-width: 22ch; }
+  .how-to-read { margin-top: 1rem; border: 1px solid var(--border); border-radius: 6px; padding: .6rem .8rem; }
+  .how-to-read summary { cursor: pointer; color: var(--dim); font-size: .78rem; }
+  .how-to-read p { color: var(--text); font-size: .82rem; line-height: 1.6; margin: .6rem 0 0; }
+  .how-to-read .boundary { color: var(--amber); }
   .uncovered-note { color: var(--dim); font-size: .8rem; margin-top: .75rem; }
   .callouts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .75rem; }
   .callout { border: 1px solid var(--border); background: var(--panel); border-radius: 6px; padding: .75rem .9rem; }
   .callout .sym { font-weight: 700; color: #e6edf3; font-size: .95rem; }
-  .callout .date { color: var(--dim); font-size: .8rem; margin-top: .15rem; }
+  .callout .rel-time { color: var(--accent); font-size: .82rem; font-weight: 600; margin-top: .3rem; }
+  .callout .date { color: var(--dim); font-size: .75rem; margin-top: .15rem; }
   .callout .badge { margin-top: .5rem; }
   .headline-group { margin-bottom: 1.25rem; }
   .headline-group h3 { font-size: .85rem; color: #e6edf3; margin: 0 0 .35rem; }
@@ -597,6 +798,7 @@ _TEMPLATE = r"""<!doctype html>
   .headline-group li { padding: .35rem 0; border-bottom: 1px dotted var(--border); }
   .headline-group li:last-child { border-bottom: none; }
   .headline-meta { color: var(--dim); font-size: .78rem; }
+  .headline-more { color: var(--dim); font-size: .76rem; font-style: italic; padding: .35rem 0 0; }
   .empty { color: var(--dim); font-style: italic; font-size: .85rem; }
   .warnings { margin-top: .75rem; display: flex; flex-direction: column; gap: .4rem; }
   .warn-row {
@@ -663,8 +865,18 @@ _TEMPLATE = r"""<!doctype html>
 <header class="brief-header" id="header">
   <div class="wrap">
     <h1>Overnight Options Desk &mdash; Morning Brief</h1>
-    <div class="as-of">As of <strong>{{ as_of }}</strong> &middot; signals as of {{ signals_as_of }}</div>
+    <div class="as-of">
+      <div class="run-time">Run <strong>{{ as_of }}</strong></div>
+      <div class="as-of-detail">scraped {{ as_of }} &middot; signals {{ signals_as_of }}</div>
+    </div>
     <div class="universe">Universe: {% for s in universe %}<strong>{{ s }}</strong>{% if not loop.last %}, {% endif %}{% endfor %}</div>
+  </div>
+  <div class="wrap tldr-wrap" id="tldr">
+    <div class="tldr">
+      {% for c in tldr_chips %}
+      {% if c.href %}<a class="chip {{ c.cls }}" href="{{ c.href }}">{{ c.text }}</a>{% else %}<span class="chip {{ c.cls }}">{{ c.text }}</span>{% endif %}
+      {% endfor %}
+    </div>
   </div>
 </header>
 
@@ -677,8 +889,11 @@ _TEMPLATE = r"""<!doctype html>
       <thead>
         <tr>
           <th>#</th><th>Sym</th><th class="num">Last</th><th class="num">Chg</th>
-          <th>Vol (1d / ann)</th><th>OU z-score</th><th class="num">Half-life (d)</th>
-          <th>Mom 5d</th><th>Verdict</th>
+          <th>Vol (1d / ann)<span class="col-sub">expected move</span></th>
+          <th>OU z-score<span class="col-sub">distance from 1-yr mean</span></th>
+          <th class="num">Half-life (d)<span class="col-sub">days for stretch to halve</span></th>
+          <th>Mom 5d<span class="col-sub">5-day price change</span></th>
+          <th>Verdict</th>
         </tr>
       </thead>
       <tbody>
@@ -692,12 +907,33 @@ _TEMPLATE = r"""<!doctype html>
           <td data-label="OU z-score"><span class="cell-metric">{{ r.zscore_svg|safe }}<span class="zscore-num{{ ' stretched' if r.zscore_stretched else '' }}">{{ "%+.2f"|format(r.zscore) }}</span></span></td>
           <td data-label="Half-life" class="num">{{ "%.1f"|format(r.half_life) }}</td>
           <td data-label="Momentum 5d">{{ r.momentum_html|safe }}</td>
-          <td data-label="Verdict"><span class="badge {{ r.verdict_class }}">{{ r.verdict }}</span>{% if r.label %}<span class="verdict-label">{{ r.label }}</span>{% endif %}</td>
+          <td data-label="Verdict"><span class="badge {{ r.verdict_class }}">{{ r.verdict }}</span>{% if r.label %}<span class="verdict-label">{{ r.label }}</span>{% endif %}<span class="verdict-interp">{{ r.interpretation }}</span></td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
     </div>
+    <details class="how-to-read" id="how-to-read">
+      <summary>How to read this</summary>
+      <p>
+        Three textbook models feed the table above: a GARCH(1,1) forecast of
+        tomorrow's volatility (Vol 1d/ann), an Ornstein&ndash;Uhlenbeck fit of
+        how far the price has stretched from its own fitted 1-year mean (OU
+        z-score) and how many days that stretch takes to halve (Half-life),
+        and a plain 5-day percent change (Mom 5d). The Verdict column applies
+        these, in order: an earnings date within 3 calendar days flags
+        <code>avoid</code> (event-risk, since the vol forecast likely
+        understates an earnings move); a z-score of &ge;1.5&sigma; alongside
+        &ge;35% annualized vol flags <code>avoid</code>
+        (mean-reversion-watch); under 20% vol with 5-day momentum beyond
+        &plusmn;2% flags <code>bullish</code> or <code>bearish</code>
+        (trend-watch); anything else is <code>neutral</code>. Every verdict
+        traces back to these three numbers &mdash; nothing here is hidden or
+        proprietary.
+        <span class="boundary">These are research labels, not trade
+        instructions. {{ disclaimer }}</span>
+      </p>
+    </details>
     {% if uncovered %}
     <div class="uncovered-note">No signal coverage: {% for s in uncovered %}{{ s }}{% if not loop.last %}, {% endif %}{% endfor %}</div>
     {% endif %}
@@ -727,6 +963,7 @@ _TEMPLATE = r"""<!doctype html>
       {% for e in earnings_rows %}
       <div class="callout">
         <div class="sym">{{ e.symbol }}</div>
+        {% if e.relative %}<div class="rel-time">{{ e.relative }}</div>{% endif %}
         <div class="date">{{ e.date }} &middot; {{ e.session }}</div>
         {% if e.verdict %}
         <div class="badge {{ e.verdict_class }}">{{ e.verdict }} (z {{ "%+.2f"|format(e.zscore) }})</div>
@@ -753,6 +990,9 @@ _TEMPLATE = r"""<!doctype html>
         </li>
         {% endfor %}
       </ul>
+      {% if g.more_count %}
+      <div class="headline-more">{{ g.more_count }} more in the run's scraped_data.json</div>
+      {% endif %}
       {% else %}
       <div class="empty">No headlines captured.</div>
       {% endif %}
@@ -769,6 +1009,9 @@ _TEMPLATE = r"""<!doctype html>
         </li>
         {% endfor %}
       </ul>
+      {% if macro_more_count %}
+      <div class="headline-more">{{ macro_more_count }} more in the run's scraped_data.json</div>
+      {% endif %}
     </div>
     {% endif %}
   </section>
