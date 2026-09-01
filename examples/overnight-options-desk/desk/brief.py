@@ -42,8 +42,21 @@ EARNINGS_DISPLAY_WINDOW_DAYS = 90
 # value beyond the cap still renders (full bar + exact number in the cell),
 # it just stops growing the bar past 100% width. `_ZSCORE_SCALE` additionally
 # gets a small overflow marker past the cap (see `_zscore_bar_svg`).
-_ZSCORE_SCALE = 3.0
+# Was 3.0, which every real reading exceeded: on 2026-08-31 the five ranked
+# symbols scored +6.48/+4.78/+4.72/+3.71/-3.45, so all five bars clipped to full
+# width and four were pixel-identical — the column looked like an encoding and
+# carried no information. 8.0 keeps a fixed run-over-run scale (same argument as
+# _VOL_CAP_ANN) while leaving real spread visible.
+_ZSCORE_SCALE = 8.0
 _ZSCORE_STRETCH = 1.5  # mirrors model_code/signals.py's Z_STRETCH — display-only threshold, kept local so brief.py stays decoupled from the sandbox-side model code
+
+# Diverging pair for z-score direction. Deliberately NOT green/red: this is a
+# position reading (above vs below the fitted mean), and green/red would read as
+# buy/sell. Warm = above, cool = below, grey = inside the stretch threshold.
+# CVD-validated against the #0d1117 panel: ΔE 17.8 protan / 21.9 normal, contrast >= 3:1.
+_ZBAR_ABOVE = "#d29922"
+_ZBAR_BELOW = "#2ab7bd"
+_ZBAR_MUTED = "#6e7681"
 _VOL_CAP_ANN = 0.60  # fixed annualized-vol scale so bars are comparable run over run, not just within one brief
 
 # GRE-3464: the same rule-table thresholds `decide_verdict` uses, kept local
@@ -127,7 +140,10 @@ def _zscore_bar_svg(z: float) -> str:
     overflow = abs(z) > _ZSCORE_SCALE
     clipped = max(-_ZSCORE_SCALE, min(_ZSCORE_SCALE, z))
     half = clipped / _ZSCORE_SCALE * center
-    color = "#d29922" if abs(z) >= _ZSCORE_STRETCH else "#6e7681"
+    if abs(z) < _ZSCORE_STRETCH:
+        color = _ZBAR_MUTED
+    else:
+        color = _ZBAR_ABOVE if z >= 0 else _ZBAR_BELOW
     x = center if half >= 0 else center + half
     w = abs(half)
     marker = ""
@@ -139,10 +155,23 @@ def _zscore_bar_svg(z: float) -> str:
             f'<text x="{marker_x}" y="{height - 3}" font-size="9" '
             f'fill="{color}" text-anchor="{anchor}">{arrow}</text>'
         )
+    # +/- _ZSCORE_STRETCH ticks: make "stretched" a position the eye can read off
+    # the axis, not a rule you have to already know from the colour change.
+    tick_off = _ZSCORE_STRETCH / _ZSCORE_SCALE * center
+    ticks = "".join(
+        f'<line x1="{center + s * tick_off:.1f}" y1="1" '
+        f'x2="{center + s * tick_off:.1f}" y2="{height - 1}" '
+        f'stroke="#484f58" stroke-width="1" stroke-dasharray="2 2"/>'
+        for s in (-1, 1)
+    )
     return (
         f'<svg class="bar zbar" viewBox="0 0 {width} {height}" '
-        f'role="img" aria-label="z-score {z:+.2f}{" (beyond +/-" + str(_ZSCORE_SCALE) + " scale)" if overflow else ""}">'
-        f'<line x1="{center}" y1="0" x2="{center}" y2="{height}" stroke="#484f58" stroke-width="1"/>'
+        f'role="img" aria-label="z-score {z:+.2f}, '
+        f'{"above" if z >= 0 else "below"} the fitted mean'
+        f'{", stretched" if abs(z) >= _ZSCORE_STRETCH else ""}'
+        f'{" (beyond +/-" + str(_ZSCORE_SCALE) + " scale)" if overflow else ""}">'
+        f"{ticks}"
+        f'<line x1="{center}" y1="0" x2="{center}" y2="{height}" stroke="#8b949e" stroke-width="1"/>'
         f'<rect x="{x:.1f}" y="2" width="{w:.1f}" height="{height - 4}" fill="{color}" rx="1"/>'
         f"{marker}"
         f"</svg>"
@@ -162,6 +191,18 @@ def _vol_bar_svg(vol_ann: float) -> str:
         f'<rect x="0" y="2" width="{w:.1f}" height="{height - 4}" fill="#d29922" rx="1"/>'
         f"</svg>"
     )
+
+
+def _half_life_note(days: float) -> str:
+    """Qualitative read on an OU half-life, relative to the 5-day momentum
+    window the rest of the brief uses. A bare '46.8' tells a reader nothing
+    about whether the reversion is reachable inside their horizon; 'slow'
+    does. Boundaries are the horizon itself and 4x it."""
+    if days <= 5:
+        return "within 5d window"
+    if days <= 20:
+        return "beyond 5d window"
+    return "slow — weeks out"
 
 
 def _momentum_arrow(m: float) -> str:
@@ -577,6 +618,7 @@ def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
                 "zscore_svg": _zscore_bar_svg(sig.ou_zscore),
                 "zscore_stretched": abs(sig.ou_zscore) >= _ZSCORE_STRETCH,
                 "half_life": sig.ou_half_life_d,
+                "half_life_note": _half_life_note(sig.ou_half_life_d),
                 "momentum": sig.momentum_5d,
                 "momentum_html": _momentum_arrow(sig.momentum_5d),
                 "verdict": sig.verdict,
@@ -764,8 +806,14 @@ _TEMPLATE = r"""<!doctype html>
   .mom-up { color: var(--green); }
   .mom-down { color: var(--red); }
   .mom-flat { color: var(--dim); }
-  .zscore-num { font-variant-numeric: tabular-nums; }
-  .zscore-num.stretched { color: var(--amber); }
+  /* The bar carries direction and magnitude; the number stays in text ink so
+     amber means one thing (above the mean) instead of three. Weight, not hue,
+     marks a stretched reading. */
+  .zscore-num { font-variant-numeric: tabular-nums; color: var(--text); }
+  .zscore-num.stretched { font-weight: 700; }
+  .hl-note { display: block; font-size: .62rem; color: var(--dim); margin-top: .1rem; }
+  .metric-text { white-space: nowrap; }
+  .verdict-label { white-space: nowrap; }
   .badge {
     display: inline-block;
     padding: .1rem .5rem;
@@ -890,7 +938,7 @@ _TEMPLATE = r"""<!doctype html>
         <tr>
           <th>#</th><th>Sym</th><th class="num">Last</th><th class="num">Chg</th>
           <th>Vol (1d / ann)<span class="col-sub">expected move</span></th>
-          <th>OU z-score<span class="col-sub">distance from 1-yr mean</span></th>
+          <th>OU z-score<span class="col-sub">0 = 1-yr mean &middot; dashed ticks at &plusmn;1.5</span></th>
           <th class="num">Half-life (d)<span class="col-sub">days for stretch to halve</span></th>
           <th>Mom 5d<span class="col-sub">5-day price change</span></th>
           <th>Verdict</th>
@@ -905,7 +953,7 @@ _TEMPLATE = r"""<!doctype html>
           <td data-label="Chg" class="num">{% if r.chg_pct is not none %}<span class="{{ 'mom-up' if r.chg_pct >= 0 else 'mom-down' }}">{{ "%+.2f%%"|format(r.chg_pct * 100) }}</span>{% else %}&mdash;{% endif %}</td>
           <td data-label="Vol 1d/ann"><span class="cell-metric">{{ r.vol_svg|safe }}<span class="metric-text">1d {{ "%.2f%%"|format(r.garch_1d * 100) }} &middot; ann {{ "%.1f%%"|format(r.garch_ann * 100) }}</span></span></td>
           <td data-label="OU z-score"><span class="cell-metric">{{ r.zscore_svg|safe }}<span class="zscore-num{{ ' stretched' if r.zscore_stretched else '' }}">{{ "%+.2f"|format(r.zscore) }}</span></span></td>
-          <td data-label="Half-life" class="num">{{ "%.1f"|format(r.half_life) }}</td>
+          <td data-label="Half-life" class="num">{{ "%.1f"|format(r.half_life) }}<span class="hl-note">{{ r.half_life_note }}</span></td>
           <td data-label="Momentum 5d">{{ r.momentum_html|safe }}</td>
           <td data-label="Verdict"><span class="badge {{ r.verdict_class }}">{{ r.verdict }}</span>{% if r.label %}<span class="verdict-label">{{ r.label }}</span>{% endif %}<span class="verdict-interp">{{ r.interpretation }}</span></td>
         </tr>

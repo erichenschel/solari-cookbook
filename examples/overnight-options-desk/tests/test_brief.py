@@ -754,7 +754,10 @@ def test_rendered_verdict_cell_interpretation_respects_earnings_priority(rendere
 def test_column_subtitles_present(rendered):
     signals_section = rendered.split('id="signals"')[1].split("</section>")[0]
     assert '<span class="col-sub">expected move</span>' in signals_section
-    assert '<span class="col-sub">distance from 1-yr mean</span>' in signals_section
+    assert (
+        '<span class="col-sub">0 = 1-yr mean &middot; dashed ticks at &plusmn;1.5</span>'
+        in signals_section
+    )
     assert '<span class="col-sub">days for stretch to halve</span>' in signals_section
     assert '<span class="col-sub">5-day price change</span>' in signals_section
     # subtitles live inside <thead>, which the mobile media query hides
@@ -953,3 +956,51 @@ def test_header_demotes_scraped_and_signals_as_of_to_small_muted_detail(rendered
     # data the old single "As of ... signals as of ..." line carried.
     assert "2026-08-31 06:00 UTC" in detail  # scraped.as_of
     assert "2026-08-31 06:15 UTC" in detail  # signals.as_of
+
+
+# --- z-score bar encoding -------------------------------------------------
+# Regression guard for GRE-3464: _ZSCORE_SCALE was 3.0 while real readings ran
+# +3.4 to +6.5, so every bar clipped to full width and four of five rendered
+# pixel-identical. The column looked like an encoding and carried no signal.
+
+
+def _zbar_geometry(z):
+    """(x, width, fill) of the value rect in the rendered z-score bar."""
+    from desk.brief import _zscore_bar_svg
+
+    svg = _zscore_bar_svg(z)
+    rect = re.search(r'<rect x="([\d.]+)" y="2" width="([\d.]+)"[^>]*fill="(#\w+)"', svg)
+    return float(rect.group(1)), float(rect.group(2)), rect.group(3)
+
+
+def test_zscore_bars_differentiate_across_observed_range():
+    """The five symbols from the 2026-08-31 run must render five distinct widths."""
+    observed = [6.48, 4.78, 4.72, 3.71, -3.45]
+    widths = [round(_zbar_geometry(z)[1], 1) for z in observed]
+    assert len(set(widths)) == len(observed), f"bars collapsed to {widths}"
+    assert max(widths) < 50.0, "widths at the 50.0 cap mean the scale saturates again"
+
+
+def test_zscore_bar_direction_uses_diverging_pair_not_red_green():
+    _, _, above = _zbar_geometry(4.72)
+    x_below, _, below = _zbar_geometry(-3.45)
+    assert above != below, "direction must be distinguishable by hue"
+    assert x_below < 50.0, "a negative z must render left of the zero axis"
+    # never green/red: those read as buy/sell on a research-only brief
+    assert {above, below}.isdisjoint({"#3fb950", "#f85149"})
+
+
+def test_zscore_bar_marks_the_stretch_threshold():
+    from desk.brief import _ZBAR_MUTED, _zscore_bar_svg
+
+    svg = _zscore_bar_svg(4.72)
+    assert svg.count("stroke-dasharray") == 2, "expected a tick each side of zero"
+    assert _zbar_geometry(0.8)[2] == _ZBAR_MUTED, "inside +/-1.5 must stay muted"
+
+
+def test_half_life_note_is_relative_to_the_five_day_window():
+    from desk.brief import _half_life_note
+
+    assert "within" in _half_life_note(3.2)
+    assert "beyond" in _half_life_note(14.3)
+    assert "slow" in _half_life_note(46.8)
