@@ -105,14 +105,13 @@
   .warn-row details { margin-top: .35rem; }
   .warn-row summary { cursor: pointer; color: var(--dim); font-size: .72rem; }
   .warn-row .warn-raw {
-    margin: .4rem 0 0;
+    margin: .35rem 0 0;
     padding-left: 1.1rem;
     color: var(--dim);
     font-size: .74rem;
-    white-space: pre-wrap;
     word-break: break-word;
   }
-  .warn-row .warn-raw li { margin-bottom: .4rem; }
+  .warn-row .warn-raw li { margin-bottom: .15rem; }
   footer.provenance {
     border-top: 1px solid var(--border);
     margin-top: 2.5rem;
@@ -248,24 +247,9 @@
         <div class="warn-headline"><span class="warn-icon">&#9888;</span><span>nasdaq_earnings blocked for all 5 symbols (net::ERR_HTTP2_PROTOCOL_ERROR) — recovered via fallback</span></div>
         
         <details>
-          <summary>raw warnings (5)</summary>
+          <summary>affected pages (5) — full traces in the run's scraped_data.json</summary>
           <ul class="warn-raw">
-            <li>nasdaq_earnings failed for AAPL: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/aapl/earnings
-Call log:
-  - navigating to &#34;https://www.nasdaq.com/market-activity/stocks/aapl/earnings&#34;, waiting until &#34;load&#34;
-</li><li>nasdaq_earnings failed for NVDA: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/nvda/earnings
-Call log:
-  - navigating to &#34;https://www.nasdaq.com/market-activity/stocks/nvda/earnings&#34;, waiting until &#34;load&#34;
-</li><li>nasdaq_earnings failed for MSFT: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/msft/earnings
-Call log:
-  - navigating to &#34;https://www.nasdaq.com/market-activity/stocks/msft/earnings&#34;, waiting until &#34;load&#34;
-</li><li>nasdaq_earnings failed for TSLA: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/tsla/earnings
-Call log:
-  - navigating to &#34;https://www.nasdaq.com/market-activity/stocks/tsla/earnings&#34;, waiting until &#34;load&#34;
-</li><li>nasdaq_earnings failed for AMZN: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/amzn/earnings
-Call log:
-  - navigating to &#34;https://www.nasdaq.com/market-activity/stocks/amzn/earnings&#34;, waiting until &#34;load&#34;
-</li>
+            <li>AAPL — https://www.nasdaq.com/market-activity/stocks/aapl/earnings</li><li>NVDA — https://www.nasdaq.com/market-activity/stocks/nvda/earnings</li><li>MSFT — https://www.nasdaq.com/market-activity/stocks/msft/earnings</li><li>TSLA — https://www.nasdaq.com/market-activity/stocks/tsla/earnings</li><li>AMZN — https://www.nasdaq.com/market-activity/stocks/amzn/earnings</li>
           </ul>
         </details>
         
@@ -680,7 +664,7 @@ Call log:
       <div class="prov-ids"><code>&hellip;_YXHiDeg</code>, <code>&hellip;p3xCtWYg</code>, <code>&hellip;Y3a1nQwg</code>, <code>&hellip;2IQOt5rA</code>, <code>&hellip;ZCu3OKng</code>, <code>&hellip;Qplnst2g</code>, <code>&hellip;M69aO1KA</code>, <code>&hellip;kYmvVrfQ</code>, <code>&hellip;LryGUVfg</code>, <code>&hellip;NTXjFyww</code>, <code>&hellip;T1qCrMJw</code>, <code>&hellip;gvwfMafQ</code>, <code>&hellip;UvmdwkFA</code>, <code>&hellip;uokVn-lg</code>, <code>&hellip;_g08kWHw</code></div>
     </details>
     
-    <div>Rendered 2026-09-01 01:05 UTC &middot; desk/brief.py (hermetic, no external requests)</div>
+    <div>Rendered 2026-09-01 01:30 UTC &middot; desk/brief.py (hermetic, no external requests)</div>
   </div>
 </footer>
 

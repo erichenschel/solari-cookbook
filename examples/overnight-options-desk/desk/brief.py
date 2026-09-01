@@ -150,6 +150,7 @@ _SOURCE_FAILURE_RE = re.compile(
 )
 _GENERIC_SYMBOL_RE = re.compile(r"\bfor ([A-Z][A-Z0-9.]*)\b")
 _NET_ERR_RE = re.compile(r"net::ERR_[A-Z0-9_]+")
+_URL_RE = re.compile(r"https?://[^\s\"']+")
 
 
 def _error_signature(detail: str) -> str:
@@ -211,6 +212,18 @@ def _fallback_outcome(scraped: ScrapedData, source: str, symbols: list[str]) -> 
     return "no data recovered from any source"
 
 
+def _detail_line(symbol: Optional[str], w: str) -> str:
+    """One compact line per warning for the expanded view: the symbol and the
+    URL that failed. The error signature already lives in the group headline,
+    and the full raw text (Playwright call logs included) stays in the run's
+    scraped_data.json — repeating either here is noise."""
+    m = _URL_RE.search(w)
+    if symbol and m:
+        return f"{symbol} — {m.group(0).rstrip('\",.')}"
+    first = w.split("Call log", 1)[0].splitlines()[0].strip()
+    return first[:120] if len(first) <= 120 else first[:117] + "..."
+
+
 def _summarize_warnings(warnings: list[str], universe_size: int, scraped: ScrapedData) -> list[dict]:
     groups: "OrderedDict[tuple[str, str], list[tuple[Optional[str], str]]]" = OrderedDict()
     for w in warnings:
@@ -228,7 +241,8 @@ def _summarize_warnings(warnings: list[str], universe_size: int, scraped: Scrape
             headline = sig.replace("{symbol}", _who(symbols, universe_size), 1)
         else:
             headline = sig
-        summaries.append({"headline": headline, "raw": raw, "count": len(raw)})
+        details = [_detail_line(s, w) for s, w in entries]
+        summaries.append({"headline": headline, "raw": raw, "details": details, "count": len(raw)})
     return summaries
 
 
@@ -462,14 +476,13 @@ _TEMPLATE = r"""<!doctype html>
   .warn-row details { margin-top: .35rem; }
   .warn-row summary { cursor: pointer; color: var(--dim); font-size: .72rem; }
   .warn-row .warn-raw {
-    margin: .4rem 0 0;
+    margin: .35rem 0 0;
     padding-left: 1.1rem;
     color: var(--dim);
     font-size: .74rem;
-    white-space: pre-wrap;
     word-break: break-word;
   }
-  .warn-row .warn-raw li { margin-bottom: .4rem; }
+  .warn-row .warn-raw li { margin-bottom: .15rem; }
   footer.provenance {
     border-top: 1px solid var(--border);
     margin-top: 2.5rem;
@@ -557,11 +570,11 @@ _TEMPLATE = r"""<!doctype html>
       {% for g in warning_groups %}
       <div class="warn-row">
         <div class="warn-headline"><span class="warn-icon">&#9888;</span><span>{{ g.headline }}</span></div>
-        {% if g.count > 1 or g.raw[0] != g.headline %}
+        {% if g.count > 1 or g.details[0] != g.headline %}
         <details>
-          <summary>raw warning{{ 's' if g.count != 1 else '' }} ({{ g.count }})</summary>
+          <summary>affected page{{ 's' if g.count != 1 else '' }} ({{ g.count }}) — full traces in the run's scraped_data.json</summary>
           <ul class="warn-raw">
-            {% for line in g.raw %}<li>{{ line }}</li>{% endfor %}
+            {% for line in g.details %}<li>{{ line }}</li>{% endfor %}
           </ul>
         </details>
         {% endif %}

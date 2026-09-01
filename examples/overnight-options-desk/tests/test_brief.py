@@ -183,8 +183,9 @@ def test_no_external_resource_references(rendered):
 def test_repeated_warnings_collapse_into_one_summary_row(scraped, signals):
     """GRE-3464: five near-identical per-symbol failures (same source, same
     error) must render as ONE compact amber row with a dedup'd headline —
-    not five stacked raw stack traces — with the raw text still available,
-    just collapsed inside <details>."""
+    not five stacked raw stack traces — with one compact symbol+URL line per
+    warning collapsed inside <details> (full traces stay in the run
+    artifact, never the brief)."""
     symbols = ["AAPL", "NVDA", "MSFT", "TSLA", "AMZN"]
     repeated = replace(
         scraped,
@@ -204,8 +205,12 @@ def test_repeated_warnings_collapse_into_one_summary_row(scraped, signals):
     assert "net::ERR_HTTP2_PROTOCOL_ERROR" in signals_section
     assert "<details>" in signals_section
     assert "<summary>" in signals_section
-    # the raw per-symbol lines are still present, just inside the disclosure
-    assert signals_section.count("net::ERR_HTTP2_PROTOCOL_ERROR") == 6  # 1 summary + 5 raw
+    # one compact symbol+URL line per warning inside the disclosure; the
+    # error signature appears once (headline), never re-dumped per symbol
+    assert signals_section.count("net::ERR_HTTP2_PROTOCOL_ERROR") == 1
+    for sym in symbols:
+        assert f"{sym} — https://www.nasdaq.com/market-activity/stocks/{sym.lower()}/earnings" in signals_section
+    assert "Call log" not in signals_section
 
 
 def test_zscore_bar_never_uses_direction_color_only_amber_or_grey(rendered):
