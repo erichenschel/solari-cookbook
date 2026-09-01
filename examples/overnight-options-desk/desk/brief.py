@@ -891,6 +891,16 @@ _TEMPLATE = r"""<!doctype html>
   .how-to-read { margin-top: 1.5rem; padding: 1rem 0 0; border-top: 1px solid var(--border); }
   .how-to-read summary { color: var(--muted); font-size: .82rem; font-weight: 500; }
   .how-to-read p { color: var(--text); font-size: .88rem; line-height: 1.7; margin: .9rem 0 0; }
+  .htr { display: flex; flex-direction: column; gap: 1rem; margin-top: .9rem; font-size: .88rem; line-height: 1.65; }
+  .htr-models { display: flex; flex-direction: column; }
+  .htr-row { display: grid; grid-template-columns: 9rem 1fr; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid var(--border); }
+  .htr-row:last-child { border-bottom: 0; }
+  .htr-row b { font-weight: 600; }
+  .htr-rules b { font-weight: 600; }
+  .htr-rules ol { margin: .5rem 0 0; padding-left: 1.3rem; }
+  .htr-rules li { margin-bottom: .3rem; }
+  .htr-note { margin: 0; }
+  @media (max-width: 640px) { .htr-row { grid-template-columns: 1fr; gap: .15rem; } }
   .how-to-read .boundary { color: var(--yellow-text); }
   .uncovered-note { color: var(--muted); font-size: .82rem; margin-top: 1rem; }
   .callouts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
@@ -1047,24 +1057,27 @@ _TEMPLATE = r"""<!doctype html>
     </div>
     <details class="how-to-read" id="how-to-read">
       <summary>How to read this</summary>
-      <p>
-        Three textbook models feed the table above: a GARCH(1,1) forecast of
-        tomorrow's volatility (Vol 1d/ann), an Ornstein&ndash;Uhlenbeck fit of
-        how far the price has stretched from its own fitted 1-year mean (OU
-        z-score) and how many days that stretch takes to halve (Half-life),
-        and a plain 5-day percent change (Mom 5d). The Verdict column applies
-        these, in order: an earnings date within 3 calendar days flags
-        <code>avoid</code> (event-risk, since the vol forecast likely
-        understates an earnings move); a z-score of &ge;1.5&sigma; alongside
-        &ge;35% annualized vol flags <code>avoid</code>
-        (mean-reversion-watch); under 20% vol with 5-day momentum beyond
-        &plusmn;2% flags <code>bullish</code> or <code>bearish</code>
-        (trend-watch); anything else is <code>neutral</code>. Every verdict
-        traces back to these three numbers &mdash; nothing here is hidden or
-        proprietary.
+      <div class="htr">
+        <div class="htr-models">
+          <div class="htr-row"><b>Vol (1d / ann)</b><span>GARCH(1,1) forecast of tomorrow's volatility &mdash; how much movement to expect, daily and annualized.</span></div>
+          <div class="htr-row"><b>OU z-score</b><span>Ornstein&ndash;Uhlenbeck fit &mdash; how many standard deviations the price sits from its own fitted 1-year mean. 0 means "at its normal level".</span></div>
+          <div class="htr-row"><b>Half-life</b><span>from the same fit &mdash; how many days a stretch like this has historically taken to decay halfway back.</span></div>
+          <div class="htr-row"><b>Mom 5d</b><span>plain 5-day percent change &mdash; which way it's leaning right now.</span></div>
+        </div>
+        <div class="htr-rules">
+          <b>The Verdict applies these rules, first match wins:</b>
+          <ol>
+            <li>fewer than 60 days of history &rarr; <code>avoid</code> (insufficient data)</li>
+            <li>earnings within 3 calendar days &rarr; <code>avoid</code> (event-risk: the vol forecast likely understates an earnings move)</li>
+            <li>z-score &ge;1.5&sigma; and annualized vol &ge;35% &rarr; <code>avoid</code> (stretched and volatile &mdash; mean-reversion watch)</li>
+            <li>annualized vol under 20% and 5-day momentum beyond &plusmn;2% &rarr; <code>bullish</code> / <code>bearish</code> (quiet trend)</li>
+            <li>anything else &rarr; <code>neutral</code></li>
+          </ol>
+        </div>
+        <p class="htr-note">Every verdict traces back to these numbers &mdash; nothing here is hidden or proprietary.
         <span class="boundary">These are research labels, not trade
-        instructions. {{ disclaimer }}</span>
-      </p>
+        instructions. {{ disclaimer }}</span></p>
+      </div>
     </details>
     {% if uncovered %}
     <div class="uncovered-note">No signal coverage: {% for s in uncovered %}{{ s }}{% if not loop.last %}, {% endif %}{% endfor %}</div>
