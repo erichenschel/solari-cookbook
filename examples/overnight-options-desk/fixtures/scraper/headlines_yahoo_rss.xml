@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<rss version="2.0">
+    <channel>
+        <copyright>Copyright (c) 2026 Yahoo Inc. All rights reserved.</copyright>
+        <description>Latest Financial News for AAPL</description>
+        <image>
+            <height>45</height>
+            <link>http://finance.yahoo.com/q/h?s=AAPL</link>
+            <title>Yahoo! Finance: AAPL News</title>
+            <url>https://s.yimg.com/rz/stage/p/yahoo_finance_en-US_h_p_finance_2.png</url>
+            <width>144</width>
+        </image>
+        
+        <item>
+            <description>Tim Cook's first product launch as Apple's (AAPL) CEO on Oct. 4, 2011, featured the unveiling of the iPhone 4s and the debut of Siri.</description>
+            <guid isPermaLink="false">fde95cbb-7221-4d06-b204-e2840d71afc3</guid>
+            <link>https://finance.yahoo.com/video/rewind-2011-tim-cooks-first-212632931.html?.tsrc=rss</link>
+            <pubDate>Mon, 31 Aug 2026 21:26:32 +0000</pubDate>
+            <title>Rewind to 2011: Tim Cook's first Apple product launch as CEO</title>
+        </item>
+        <item>
+            <description>Market Domination host Josh Lipton reports on Apple (AAPL) CEO Tim Cook's departing message on X on his last day as the company head, and on the departure of Phil Schiller, who led the App Store and product events.</description>
+            <guid isPermaLink="false">13c48b2f-15b6-4421-abec-a81cd830d92a</guid>
+            <link>https://finance.yahoo.com/video/heres-tim-cook-posted-last-193127146.html?.tsrc=rss</link>
+            <pubDate>Mon, 31 Aug 2026 19:31:27 +0000</pubDate>
+            <title>Here's what Tim Cook posted on his last day as Apple's CEO</title>
+        </item>
+        <item>
+            <description>Tim Cook's Final Message as Apple CEO: 'You Have Brought Out the Best in Me'</description>
+            <guid isPermaLink="false">fe1da628-c17f-3e48-9b04-dd9d22f0b840</guid>
+            <link>https://finance.yahoo.com/markets/stocks/articles/ceo-tim-cook-sends-goodbye-020725672.html?.tsrc=rss</link>
+            <pubDate>Tue, 01 Sep 2026 02:07:25 +0000</pubDate>
+            <title>CEO Tim Cook Sends Goodbye Message to Apple Staff as 15-Year Run Ends</title>
+        </item>
+        <item>
+            <description>Apple says it has evidence that a former employee destroyed evidence of data theft after learning he was under investigation.</description>
+            <guid isPermaLink="false">f71d333a-4833-3734-ada6-71e107c3bde4</guid>
+            <link>https://finance.yahoo.com/technology/articles/apple-shares-shocking-evidence-against-001300436.html?.tsrc=rss</link>
+            <pubDate>Tue, 01 Sep 2026 00:13:00 +0000</pubDate>
+            <title>Apple shares ‘shocking evidence’ against former employee accused of stealing company data for OpenAI</title>
+        </item>
+    </channel>
+</rss>

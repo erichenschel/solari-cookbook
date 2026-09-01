@@ -24,14 +24,36 @@ Per-source failures (network error, unparseable page, or an injected
 in `tests/test_scraper_fallback.py`.
 
 Build-time source verification (see the generator report for detail):
-  - Stooq's `/q/l/` CSV endpoint 404s outright (site restructure), and even
-    if it resolved, that field-set has no previous-close column, so it can
-    never alone satisfy the quotes contract. Kept as the coded fallback
-    (raises a documented, specific error) so the chain still reaches CBOE.
   - Yahoo Finance (earnings calendar, per-symbol news, quote page),
-    StockAnalysis.com (earnings), Google News RSS, MarketWatch RSS, and CBOE
-    delayed quotes (JSON) all verified working against a vanilla browser /
-    plain HTTP at build time.
+    StockAnalysis.com (earnings), Yahoo per-symbol headlines RSS, Google
+    News RSS, Yahoo's chart JSON endpoint, and CBOE delayed quotes (JSON)
+    all verified working against a vanilla browser / plain HTTP at build
+    time.
+
+GRE-3464 fallback repairs: two of the plain-HTTP fallbacks were
+structurally broken (see the generator report for full live-verification
+transcripts):
+  - `stooq_csv` (the quotes chain's 2nd fallback) 404d on every shape of
+    Stooq's `/q/l/` last-quote endpoint tried live (`f=sd2t2ohlcv&h&e=csv`
+    and several variants) — the endpoint itself appears to have been
+    retired/restructured site-wide, not a URL typo in this repo. Replaced
+    with `yahoo_chart_quote`: Yahoo's chart JSON endpoint
+    (`query1.finance.yahoo.com/v8/finance/chart/{SYM}?range=5d&interval=1d`,
+    plain HTTP, no browser), reading `last`/`prev_close` off the last two
+    entries of `indicators.quote[0].close` — verified live and cross-checked
+    against `parse_yahoo_quote`'s own fixture values for AAPL (both agree:
+    last 316.85, prev_close 319.70).
+  - `marketwatch_rss` (the headlines chain's 2nd fallback) filtered
+    MarketWatch's general top-stories RSS feed by symbol substring — a feed
+    that is, by construction, almost never about any one given symbol, so
+    the fallback warned on nearly every run instead of ever actually
+    recovering data. A fallback that structurally cannot succeed is noise,
+    not resilience, so it's removed outright (not demoted) and replaced
+    with `yahoo_headlines_rss`: Yahoo's real per-symbol RSS feed
+    (`feeds.finance.yahoo.com/rss/2.0/headline?s={SYM}&region=US&lang=en-US`),
+    verified live returning real per-symbol articles over plain HTTP.
+    `google_news_rss` (browser-fetched, proven live) stays as the deeper
+    3rd fallback per NG-3.
 
 GRE-3464 earnings-chain fix: Nasdaq's HTML earnings page
 (`nasdaq.com/market-activity/stocks/{sym}/earnings`) was the original coded
@@ -314,13 +336,13 @@ def parse_google_news_rss(fetch: FetchResult, symbol: str, now: datetime) -> lis
     return out
 
 
-def parse_marketwatch_rss(fetch: FetchResult, symbol: str, now: datetime) -> list[dict]:
-    """MarketWatch's public RSS is a general top-stories feed, not
-    per-symbol — filter to items that actually mention the symbol."""
+def parse_yahoo_headlines_rss(fetch: FetchResult, symbol: str, now: datetime) -> list[dict]:
+    """Yahoo's per-symbol headline RSS (GRE-3464, replaces marketwatch_rss —
+    see module docstring). Unlike MarketWatch's general top-stories feed,
+    this is scoped to the symbol server-side, so every item is relevant by
+    construction — no title-substring filtering needed."""
     out = []
     for item in _parse_rss_items(fetch.text):
-        if symbol.lower() not in item["title"].lower():
-            continue
         try:
             published = _parse_rfc822(item["pubdate"]) if item["pubdate"] else now
         except (TypeError, ValueError):
@@ -329,13 +351,13 @@ def parse_marketwatch_rss(fetch: FetchResult, symbol: str, now: datetime) -> lis
             {
                 "symbol": symbol,
                 "title": item["title"],
-                "source": "MarketWatch",
+                "source": item["source"] or "Yahoo Finance",
                 "url": item["url"],
                 "published": _iso(published),
             }
         )
     if not out:
-        raise ValueError(f"no symbol-relevant headlines in marketwatch topstories for {symbol}")
+        raise ValueError(f"no headlines parsed from yahoo headlines rss for {symbol}")
     return out
 
 
@@ -350,21 +372,24 @@ def parse_yahoo_quote(fetch: FetchResult, symbol: str, now: datetime) -> dict:
     }
 
 
-def parse_stooq_csv(fetch: FetchResult, symbol: str, now: datetime) -> dict:
-    lines = [ln for ln in fetch.text.strip().splitlines() if ln.strip()]
-    if len(lines) < 2:
-        raise ValueError(f"stooq CSV for {symbol} has no data row (endpoint unreachable/moved)")
-    header = [h.strip() for h in lines[0].split(",")]
-    values = [v.strip() for v in lines[1].split(",")]
-    row = dict(zip(header, values))
-    if row.get("Close") in (None, "", "N/D"):
-        raise ValueError(f"stooq has no quote data for {symbol}")
-    # Stooq's last-quote field-set (`sd2t2ohlcv`) has no previous-close
-    # column — even when the endpoint is reachable it cannot alone satisfy
-    # the {last, prev_close} contract. Documented in the module docstring.
-    raise ValueError(
-        "stooq CSV field-set has no previous-close column; cannot satisfy the quotes contract alone"
-    )
+def parse_yahoo_chart_quote(fetch: FetchResult, symbol: str, now: datetime) -> dict:
+    """GRE-3464: replaces the structurally-broken `stooq_csv` fallback (its
+    `/q/l/` last-quote endpoint 404s outright — see module docstring).
+    Yahoo's chart JSON endpoint (plain HTTP, no browser) returns a daily
+    `close` series; `last`/`prev_close` are the two most recent *usable*
+    (non-null) entries — the newest bar can be null pre-market, so a plain
+    `[-1]`/`[-2]` slice without filtering could silently pick up a stale or
+    missing point."""
+    try:
+        payload = json.loads(fetch.text)
+        result = payload["chart"]["result"][0]
+        closes = result["indicators"]["quote"][0]["close"]
+    except (json.JSONDecodeError, KeyError, IndexError, TypeError) as exc:
+        raise ValueError(f"yahoo chart response missing close series for {symbol}") from exc
+    usable = [c for c in closes if c is not None]
+    if len(usable) < 2:
+        raise ValueError(f"yahoo chart response has fewer than 2 usable closes for {symbol}")
+    return {"last": float(usable[-1]), "prev_close": float(usable[-2])}
 
 
 def parse_cboe_quote(fetch: FetchResult, symbol: str, now: datetime) -> dict:
@@ -420,11 +445,16 @@ HEADLINE_SOURCES: list[Source] = [
         lambda s: f"https://finance.yahoo.com/quote/{s}/news",
         parse_yahoo_news,
     ),
+    # GRE-3464: replaces marketwatch_rss (filtered a general top-stories
+    # feed by symbol substring — almost always empty; see module
+    # docstring). Yahoo's per-symbol RSS is scoped server-side and plain
+    # HTTP (no browser needed), so it's also a genuinely browserless
+    # fallback — not just a swap of one browser source for another.
     Source(
-        "marketwatch_rss",
-        "browser",
-        lambda s: "https://www.marketwatch.com/rss/topstories",
-        parse_marketwatch_rss,
+        "yahoo_headlines_rss",
+        "http",
+        lambda s: f"https://feeds.finance.yahoo.com/rss/2.0/headline?s={s}&region=US&lang=en-US",
+        parse_yahoo_headlines_rss,
     ),
     Source(
         "google_news_rss",
@@ -441,11 +471,14 @@ QUOTE_SOURCES: list[Source] = [
         lambda s: f"https://finance.yahoo.com/quote/{s}",
         parse_yahoo_quote,
     ),
+    # GRE-3464: replaces stooq_csv (its /q/l/ last-quote endpoint 404s on
+    # every URL shape tried live — see module docstring). Yahoo's chart
+    # JSON endpoint is also plain HTTP (no browser needed).
     Source(
-        "stooq_csv",
+        "yahoo_chart_quote",
         "http",
-        lambda s: f"https://stooq.com/q/l/?s={s.lower()}.us&f=sd2t2ohlcv&h&e=csv",
-        parse_stooq_csv,
+        lambda s: f"https://query1.finance.yahoo.com/v8/finance/chart/{s}?range=5d&interval=1d",
+        parse_yahoo_chart_quote,
     ),
     Source(
         "cboe_quotes",

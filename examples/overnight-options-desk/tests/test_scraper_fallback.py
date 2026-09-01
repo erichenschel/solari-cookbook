@@ -41,10 +41,6 @@ def _fixture_router(fixtures_dir):
             result = load("headlines_yahoo_news.txt", as_html=True)
             result.session_id = "fake-sess-yahoo-news"
             return result
-        if "marketwatch.com/rss" in url:
-            result = load("headlines_marketwatch_rss.xml")
-            result.session_id = "fake-sess-marketwatch"
-            return result
         if "news.google.com/rss" in url:
             result = load("headlines_google_news_rss.xml")
             result.session_id = "fake-sess-google-news"
@@ -56,8 +52,10 @@ def _fixture_router(fixtures_dir):
         raise AssertionError(f"unexpected browser fetch url in test: {url}")
 
     async def fake_http_fetch(url: str) -> scraper.FetchResult:
-        if "stooq.com" in url:
-            raise RuntimeError("404 (simulated, matches build-time finding: endpoint moved)")
+        if "feeds.finance.yahoo.com/rss" in url:
+            return load("headlines_yahoo_rss.xml")
+        if "query1.finance.yahoo.com/v8/finance/chart" in url:
+            return load("quotes_yahoo_chart.json")
         if "cboe.com" in url:
             return load("quotes_cboe.json")
         raise AssertionError(f"unexpected http fetch url in test: {url}")
@@ -140,21 +138,37 @@ async def test_scrape_with_all_earnings_sources_unreachable_degrades_gracefully(
     assert "AAPL" in payload["quotes"]
 
 
-async def test_scrape_with_yahoo_quote_and_stooq_unreachable_falls_back_to_cboe(patched_fetchers):
-    """Two-level fallback: yahoo_quote forced unreachable, stooq's real
-    build-time failure (missing prev_close) still applies -> cboe_quotes
-    (plain HTTP, last resort) supplies the quote."""
+async def test_scrape_with_yahoo_quote_unreachable_falls_back_to_yahoo_chart_quote(patched_fetchers):
+    """GRE-3464: yahoo_chart_quote replaces stooq_csv as the 2nd-level quote
+    fallback and, unlike stooq_csv, actually works — yahoo_quote forced
+    unreachable -> yahoo_chart_quote supplies the quote, cboe never tried."""
     data = await scraper.scrape(["AAPL"], force_unreachable={"yahoo_quote"})
+    payload = data.to_dict()
+    validate_scraped(payload)
+    assert payload["quotes"]["AAPL"]["last"] == pytest.approx(316.85)
+    assert payload["quotes"]["AAPL"]["prev_close"] == pytest.approx(319.70)
+    assert any("yahoo_quote" in w for w in payload["warnings"])
+    assert not any("yahoo_chart_quote" in w for w in payload["warnings"])
+    assert not any("cboe_quotes" in w for w in payload["warnings"])
+
+
+async def test_scrape_with_yahoo_quote_and_yahoo_chart_quote_unreachable_falls_back_to_cboe(
+    patched_fetchers,
+):
+    """Three-level fallback: both browser and HTTP-chart quote sources
+    forced unreachable -> cboe_quotes (plain HTTP, last resort) supplies
+    the quote."""
+    data = await scraper.scrape(["AAPL"], force_unreachable={"yahoo_quote", "yahoo_chart_quote"})
     payload = data.to_dict()
     validate_scraped(payload)
     assert payload["quotes"]["AAPL"] == {"last": 317.08, "prev_close": 319.7}
     assert any("yahoo_quote" in w for w in payload["warnings"])
-    assert any("stooq_csv" in w for w in payload["warnings"])
+    assert any("yahoo_chart_quote" in w for w in payload["warnings"])
 
 
 async def test_scrape_with_all_quote_sources_unreachable_omits_symbol_and_warns(patched_fetchers):
     data = await scraper.scrape(
-        ["AAPL"], force_unreachable={"yahoo_quote", "stooq_csv", "cboe_quotes"}
+        ["AAPL"], force_unreachable={"yahoo_quote", "yahoo_chart_quote", "cboe_quotes"}
     )
     payload = data.to_dict()
     validate_scraped(payload)  # must not raise
