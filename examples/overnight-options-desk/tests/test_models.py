@@ -117,6 +117,19 @@ def test_earnings_outside_window_does_not_force_avoid(fixtures_dir):
     assert not any("event-risk" in n for n in sig["notes"])
 
 
+def test_past_earnings_date_does_not_force_event_risk(fixtures_dir):
+    """GRE-3464 consistency check (brief.py's earnings-window filter was
+    the actual bug): `has_earnings_soon`'s `0 <= delta <= window_days`
+    guard already excludes a date before `as_of` (AS_OF is 2026-03-01) —
+    this locks that behavior in with a test rather than leaving it
+    implicit. A report 2 days *before* as_of must not trigger event-risk,
+    even though it's within 3 calendar days of it."""
+    earnings = [{"symbol": "NEUTRAL", "date": "2026-02-27", "session": "amc"}]
+    sig = _signal_for(fixtures_dir, "NEUTRAL", earnings=earnings)
+    assert sig["verdict"] == "neutral"
+    assert not any("event-risk" in n for n in sig["notes"])
+
+
 def test_constant_price_series_does_not_crash(fixtures_dir):
     """A flat 80-day price series is a genuine pathological input: zero
     variance trips GARCH into non-convergence and the AR(1) OLS design

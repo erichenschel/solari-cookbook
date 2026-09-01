@@ -180,6 +180,32 @@ python -m desk.run_overnight --symbols AAPL,NVDA,MSFT,TSLA,AMZN --serve-hold-sec
   `runs/2026-09-01/brief.html` (verified via checksum) — real universe,
   real quotes, real labels, not the fixture data used by the hermetic
   tests.
+- **Earnings-window rendering fix, same review pass**: the first render of
+  this run's brief showed NVDA twice — a past date (`2026-08-26`, 5 days
+  before this run's `as_of`) alongside its real next date (`2026-11-17`).
+  `scraped_data.json`'s `earnings[]` is a raw, unfiltered record on
+  purpose (`desk/scraper.py`'s scrape-time window is `-7d..+180d`, so a
+  source legitimately reporting "reported 5 days ago" is expected there);
+  the brief's "Earnings in window" section was rendering that raw list
+  directly instead of presenting it. Fixed in `desk/brief.py` with
+  `_upcoming_earnings()`: forward-looking only (`as_of` date through
+  `EARNINGS_DISPLAY_WINDOW_DAYS` = 90, inclusive both ends — a report due
+  the same day as `as_of` still counts as upcoming), one row per symbol
+  (soonest date wins on a duplicate). `runs/2026-09-01/brief.html` and
+  `docs/latest/index.html` were re-rendered from the same
+  `scraped_data.json`/`signals.json` (a pure, hermetic re-render — no new
+  Solari calls) to reflect the fix; NVDA now shows once, at `2026-11-17`.
+  Hermetic tests: `tests/test_brief.py`'s
+  `test_upcoming_earnings_excludes_past_dates`,
+  `_dedupes_symbol_to_soonest_upcoming`, `_includes_run_day_itself`
+  (boundary), `_excludes_beyond_display_window`,
+  `_includes_display_window_upper_boundary`, and an end-to-end
+  `test_rendered_earnings_section_excludes_past_and_dedupes`. The models
+  lane's separate `event-risk` rule (`has_earnings_soon`,
+  `desk/model_code/signals.py`) was audited for the same class of bug and
+  was already correct (`0 <= delta <= window_days` already excludes a
+  past date) — `tests/test_models.py`'s new
+  `test_past_earnings_date_does_not_force_event_risk` locks that in.
 
 #### What blocked a fully clean (zero-warning) demo, and the evidence (GRE-3464)
 

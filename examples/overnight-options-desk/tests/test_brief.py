@@ -14,8 +14,8 @@ from pathlib import Path
 
 import pytest
 
-from desk.brief import main, render_brief
-from desk.contracts import ScrapedData, Signals
+from desk.brief import _upcoming_earnings, main, render_brief
+from desk.contracts import Earnings, ScrapedData, Signals
 
 pytestmark = pytest.mark.filterwarnings("ignore")
 
@@ -85,6 +85,74 @@ def test_section_3_earnings_callouts_present(rendered):
     assert "2026-09-04" in earnings_section
     assert "Before open" in earnings_section  # bmo
     assert "After close" in earnings_section  # amc
+
+
+# GRE-3464: "Earnings in window" must be forward-looking-only, one row per
+# symbol (the soonest upcoming date), out to EARNINGS_DISPLAY_WINDOW_DAYS.
+# Eric caught a real rendered bug this covers: a past NVDA date
+# (2026-08-26) shown alongside a future one (2026-11-17) on a run whose
+# as_of was 2026-08-31.
+
+_AS_OF = "2026-08-31T06:00:00Z"  # matches the `scraped` fixture's as_of
+
+
+def test_upcoming_earnings_excludes_past_dates():
+    earnings = [
+        Earnings(symbol="NVDA", date="2026-08-26", session="amc"),  # 5 days before as_of
+        Earnings(symbol="AAPL", date="2026-09-15", session="amc"),
+    ]
+    rows = _upcoming_earnings(earnings, _AS_OF)
+    assert [e.symbol for e in rows] == ["AAPL"]
+
+
+def test_upcoming_earnings_dedupes_symbol_to_soonest_upcoming():
+    earnings = [
+        Earnings(symbol="NVDA", date="2026-11-17", session="unknown"),
+        Earnings(symbol="NVDA", date="2026-09-10", session="amc"),  # earlier -> wins
+        Earnings(symbol="NVDA", date="2026-08-26", session="amc"),  # past -> excluded outright
+    ]
+    rows = _upcoming_earnings(earnings, _AS_OF)
+    assert len(rows) == 1
+    assert rows[0].symbol == "NVDA"
+    assert rows[0].date == "2026-09-10"
+
+
+def test_upcoming_earnings_includes_run_day_itself():
+    """Boundary: a report dated the same calendar day as `as_of` is still
+    "upcoming" to a reader of this morning's brief, not "past" -- the
+    lower bound is inclusive."""
+    earnings = [Earnings(symbol="TSLA", date="2026-08-31", session="bmo")]
+    rows = _upcoming_earnings(earnings, _AS_OF)
+    assert [e.symbol for e in rows] == ["TSLA"]
+
+
+def test_upcoming_earnings_excludes_beyond_display_window():
+    earnings = [Earnings(symbol="MSFT", date="2027-06-01", session="amc")]
+    assert _upcoming_earnings(earnings, _AS_OF) == []
+
+
+def test_upcoming_earnings_includes_display_window_upper_boundary():
+    earnings = [Earnings(symbol="MSFT", date="2026-11-29", session="amc")]  # exactly +90d
+    assert [e.symbol for e in _upcoming_earnings(earnings, _AS_OF)] == ["MSFT"]
+
+
+def test_rendered_earnings_section_excludes_past_and_dedupes(scraped, signals):
+    """End-to-end: render_brief() must reflect the same filtering, not just
+    the helper in isolation."""
+    hostile_scraped = replace(
+        scraped,
+        earnings=[
+            Earnings(symbol="NVDA", date="2026-08-26", session="amc"),  # past
+            Earnings(symbol="NVDA", date="2026-11-17", session="unknown"),  # keep
+            Earnings(symbol="NVDA", date="2026-09-10", session="amc"),  # soonest -> keep, not 11-17
+        ],
+    )
+    out = render_brief(hostile_scraped, signals)
+    earnings_section = out.split('id="earnings"')[1].split("</section>")[0]
+    assert "2026-08-26" not in earnings_section
+    assert "2026-11-17" not in earnings_section
+    assert earnings_section.count(">NVDA<") == 1
+    assert "2026-09-10" in earnings_section
 
 
 def test_section_4_headlines_with_source_links_present(rendered):

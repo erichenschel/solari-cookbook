@@ -15,17 +15,28 @@ from __future__ import annotations
 import argparse
 import re
 from collections import OrderedDict
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlsplit
 
 from jinja2 import Environment
 
-from desk.contracts import ScrapedData, Signals, load_scraped, load_signals
+from desk.contracts import Earnings, ScrapedData, Signals, load_scraped, load_signals
 
 DISCLAIMER = "Research only — not investment advice."
 _ALLOWED_URL_SCHEMES = {"http", "https"}
+
+# GRE-3464: "Earnings in window" is presentation, not the raw record —
+# scraped_data.json's earnings[] intentionally keeps a short look-back
+# (desk/scraper.py's EARNINGS_WINDOW is -7d..+180d, so a source can
+# legitimately report "reported 5 days ago") and can carry more than one
+# row per symbol (e.g. yahoo's calendar page listing both a recent past
+# report and a further-out estimate). The brief should only ever show what
+# an analyst reading it *this morning* would call "upcoming" -- one row per
+# symbol, never a date that's already happened. Filtering lives here
+# (not in scraper.py) so scraped_data.json stays the unfiltered raw record.
+EARNINGS_DISPLAY_WINDOW_DAYS = 90
 
 # Visual scale caps for the inline SVG bars — clipped, not truncated data: a
 # value beyond the cap still renders (full bar + exact number in the cell),
@@ -267,6 +278,46 @@ def _short_id(session_id: str) -> str:
     return session_id[-8:] if len(session_id) > 8 else session_id
 
 
+def _as_of_date(as_of_iso: str) -> Optional[date]:
+    """Date-level (UTC) parse of `scraped.as_of` for window comparisons.
+    `None` on anything unparseable — callers treat that as "can't filter,
+    show nothing" rather than guessing (never crash rendering a brief)."""
+    try:
+        return datetime.fromisoformat(as_of_iso.replace("Z", "+00:00")).astimezone(timezone.utc).date()
+    except (ValueError, AttributeError):
+        return None
+
+
+def _upcoming_earnings(earnings: list[Earnings], as_of_iso: str) -> list[Earnings]:
+    """Filter `scraped.earnings` down to what belongs in the brief's
+    "Earnings in window" section (GRE-3464): forward-looking only (the run
+    day itself counts as forward-looking — a report due *today* is still
+    "upcoming" to a reader of this morning's brief), out to
+    `EARNINGS_DISPLAY_WINDOW_DAYS`, one row per symbol (the soonest
+    upcoming date wins if a source returned more than one).
+
+    `scraped_data.json` is left untouched — this is presentation
+    filtering, not re-scraping; the raw multi-row / recent-past-report
+    record stays the source of truth on disk."""
+    as_of = _as_of_date(as_of_iso)
+    if as_of is None:
+        return []
+    hi = as_of + timedelta(days=EARNINGS_DISPLAY_WINDOW_DAYS)
+
+    best: "OrderedDict[str, Earnings]" = OrderedDict()
+    for e in sorted(earnings, key=lambda e: e.date):
+        try:
+            e_date = date.fromisoformat(e.date)
+        except (ValueError, TypeError):
+            continue  # unparseable date -> can't judge "upcoming", drop it
+        if not (as_of <= e_date <= hi):
+            continue
+        current = best.get(e.symbol)
+        if current is None or e_date < date.fromisoformat(current.date):
+            best[e.symbol] = e
+    return list(best.values())
+
+
 def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
     covered = signals.per_symbol
 
@@ -302,7 +353,7 @@ def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
         )
     uncovered = [s for s in scraped.universe if s not in covered]
 
-    earnings_sorted = sorted(scraped.earnings, key=lambda e: e.date)
+    earnings_sorted = _upcoming_earnings(scraped.earnings, scraped.as_of)
     earnings_rows = []
     for e in earnings_sorted:
         sig = covered.get(e.symbol)
