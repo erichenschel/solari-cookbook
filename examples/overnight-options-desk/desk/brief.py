@@ -520,10 +520,12 @@ def _dedupe_and_group_headlines(
     return by_symbol, promoted
 
 
-def _newest_first_capped(items: list[Headline], cap: int = HEADLINE_CAP) -> tuple[list[Headline], int]:
-    """Sort newest-published-first and cap at `cap`; return (shown, more_count)."""
+def _newest_first_capped(items: list[Headline], cap: int = HEADLINE_CAP) -> tuple[list[Headline], list[Headline]]:
+    """Sort newest-published-first and cap at `cap`; return (shown, overflow).
+    Overflow renders inside a collapsed <details> dropdown rather than being
+    pointed at the run artifact — the reader expands in place."""
     ordered = sorted(items, key=lambda h: _parse_dt(h.published), reverse=True)
-    return ordered[:cap], max(0, len(ordered) - cap)
+    return ordered[:cap], ordered[cap:]
 
 
 def _earnings_within(
@@ -665,7 +667,7 @@ def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
     by_symbol, promoted = _dedupe_and_group_headlines(scraped.headlines, scraped.universe)
     headline_groups = []
     for symbol in scraped.universe:
-        shown, more_count = _newest_first_capped(by_symbol[symbol])
+        shown, overflow = _newest_first_capped(by_symbol[symbol])
         headline_groups.append(
             {
                 "symbol": symbol,
@@ -674,12 +676,15 @@ def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
                 # before item access, so `g.items` would silently resolve to
                 # the bound method instead of this list.
                 "headlines": [_headline_ctx(h) for h in shown],
-                "more_count": more_count,
+                "more_headlines": [_headline_ctx(h) for h in overflow],
+                "more_count": len(overflow),
             }
         )
     macro_raw = [h for h in scraped.headlines if h.symbol is None] + promoted
-    macro_shown, macro_more_count = _newest_first_capped(macro_raw)
+    macro_shown, macro_overflow = _newest_first_capped(macro_raw)
     macro_headlines = [_headline_ctx(h) for h in macro_shown]
+    macro_more_headlines = [_headline_ctx(h) for h in macro_overflow]
+    macro_more_count = len(macro_overflow)
 
     sessions = list(scraped.provenance.sessions)
     replays = list(getattr(scraped.provenance, "replays", None) or [])
@@ -719,6 +724,7 @@ def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
         "earnings_rows": earnings_rows,
         "headline_groups": headline_groups,
         "macro_headlines": macro_headlines,
+        "macro_more_headlines": macro_more_headlines,
         "macro_more_count": macro_more_count,
         "provenance_claim": _provenance_claim(sessions, replays),
         "session_ids_short": [_short_id(s) for s in sessions],
@@ -900,7 +906,9 @@ _TEMPLATE = r"""<!doctype html>
   .headline-group li:last-child { border-bottom: none; }
   .headline-group li a { display: block; color: var(--text); font-size: .92rem; }
   .headline-meta { font-family: var(--font-mono); color: var(--muted); font-size: .74rem; margin-top: .3rem; }
-  .headline-more { color: var(--muted); font-size: .78rem; padding: .5rem 0 0; }
+  details.headline-more { padding: .5rem 0 0; border: 0; }
+  details.headline-more > summary { color: var(--muted); font-size: .78rem; cursor: pointer; }
+  details.headline-more > ul { margin: .35rem 0 0; }
   .empty { color: var(--muted); font-size: .85rem; }
   .warnings { margin-top: 1rem; display: flex; flex-direction: column; gap: .5rem; }
   .warn-row {
@@ -1115,7 +1123,17 @@ _TEMPLATE = r"""<!doctype html>
         {% endfor %}
       </ul>
       {% if g.more_count %}
-      <div class="headline-more">{{ g.more_count }} more in the run's scraped_data.json</div>
+      <details class="headline-more">
+        <summary>{{ g.more_count }} more headline{{ 's' if g.more_count != 1 else '' }}</summary>
+        <ul>
+          {% for h in g.more_headlines %}
+          <li>
+            <a href="{{ h.url }}" rel="noopener noreferrer nofollow" target="_blank">{{ h.title }}</a>
+            <div class="headline-meta">{{ h.source }} &middot; {{ h.published }}</div>
+          </li>
+          {% endfor %}
+        </ul>
+      </details>
       {% endif %}
       {% else %}
       <div class="empty">No headlines captured.</div>
@@ -1134,7 +1152,17 @@ _TEMPLATE = r"""<!doctype html>
         {% endfor %}
       </ul>
       {% if macro_more_count %}
-      <div class="headline-more">{{ macro_more_count }} more in the run's scraped_data.json</div>
+      <details class="headline-more">
+        <summary>{{ macro_more_count }} more headline{{ 's' if macro_more_count != 1 else '' }}</summary>
+        <ul>
+          {% for h in macro_more_headlines %}
+          <li>
+            <a href="{{ h.url }}" rel="noopener noreferrer nofollow" target="_blank">{{ h.title }}</a>
+            <div class="headline-meta">{{ h.source }} &middot; {{ h.published }}</div>
+          </li>
+          {% endfor %}
+        </ul>
+      </details>
       {% endif %}
     </div>
     {% endif %}

@@ -802,9 +802,11 @@ def _headline(symbol, title, published, source="Reuters", url="https://example.c
 
 def test_headline_cap_is_five_per_symbol():
     items = [_headline("AAPL", f"Story {i}", f"2026-08-{20+i:02d}T00:00:00Z") for i in range(8)]
-    shown, more = _newest_first_capped(items)
+    shown, overflow = _newest_first_capped(items)
     assert len(shown) == HEADLINE_CAP == 5
-    assert more == 3
+    assert len(overflow) == 3
+    # overflow keeps newest-first ordering and carries the actual headlines
+    assert [h.title for h in overflow] == ["Story 2", "Story 1", "Story 0"]
 
 
 def test_headline_newest_first_ordering():
@@ -813,9 +815,9 @@ def test_headline_newest_first_ordering():
         _headline("AAPL", "Newest", "2026-08-30T00:00:00Z"),
         _headline("AAPL", "Middle", "2026-08-25T00:00:00Z"),
     ]
-    shown, more = _newest_first_capped(items)
+    shown, overflow = _newest_first_capped(items)
     assert [h.title for h in shown] == ["Newest", "Middle", "Oldest"]
-    assert more == 0
+    assert overflow == []
 
 
 def test_headline_unparseable_published_sorts_last_not_crashes():
@@ -823,7 +825,7 @@ def test_headline_unparseable_published_sorts_last_not_crashes():
         _headline("AAPL", "Good date", "2026-08-30T00:00:00Z"),
         _headline("AAPL", "Bad date", "not-a-date"),
     ]
-    shown, more = _newest_first_capped(items)
+    shown, overflow = _newest_first_capped(items)
     assert [h.title for h in shown] == ["Good date", "Bad date"]
 
 
@@ -874,14 +876,18 @@ def test_rendered_headlines_show_more_note_when_capped(scraped, signals):
     headlines_section = out.split('id="headlines"')[1].split("</section>")[0]
     groups = headlines_section.split('<div class="headline-group">')
     aapl_group = next(g for g in groups if "<h3>AAPL</h3>" in g)
-    assert aapl_group.count("<li>") == 5
-    assert "2 more in the run's scraped_data.json" in aapl_group
+    # 5 visible + 2 inside the collapsed dropdown = 7 <li> total
+    assert aapl_group.count("<li>") == 7
+    assert '<details class="headline-more">' in aapl_group
+    assert "2 more headlines" in aapl_group
+    # the overflow stories are rendered in the dropdown, not pointed at a file
+    assert "scraped_data.json" not in aapl_group
 
 
-def test_rendered_headlines_no_more_note_when_under_cap(rendered):
+def test_rendered_headlines_no_more_dropdown_when_under_cap(rendered):
     # bundled fixture has exactly one headline per covered symbol.
     headlines_section = rendered.split('id="headlines"')[1].split("</section>")[0]
-    assert "more in the run" not in headlines_section
+    assert "headline-more" not in headlines_section
 
 
 # ---------------------------------------------------------------------------
