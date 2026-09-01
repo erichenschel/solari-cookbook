@@ -1111,7 +1111,7 @@ _TEMPLATE = r"""<!doctype html>
         {% if e.relative %}<div class="rel-time">{{ e.relative }}</div>{% endif %}
         <div class="date">{{ e.date }} &middot; {{ e.session }}</div>
         {% if e.verdict %}
-        <div class="badge {{ e.verdict_class }}">{{ e.verdict }} (z {{ "%+.2f"|format(e.zscore) }})</div>
+        <div class="badge {{ e.verdict_class }}">{{ e.verdict }}</div>
         {% endif %}
       </div>
       {% endfor %}
