@@ -449,7 +449,9 @@ def test_zscore_bar_never_uses_direction_color_only_amber_or_grey(rendered):
 def test_vol_cell_shows_1d_and_annualized_labels(rendered):
     signals_section = rendered.split('id="signals"')[1].split("</section>")[0]
     # fixture: AAPL garch_vol_forecast_1d=0.0118, garch_vol_forecast_ann=0.187
-    assert "1d 1.18% &middot; ann 18.7%" in signals_section
+    # header carries the 1d/ann labels; cells show bare order-matched values
+    assert "1.18% &middot; 18.7%" in signals_section
+    assert "1d 1.18%" not in signals_section
 
 
 def test_verdict_badge_is_not_forced_uppercase(rendered):

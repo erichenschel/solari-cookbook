@@ -1045,7 +1045,7 @@ _TEMPLATE = r"""<!doctype html>
           <td data-label="Symbol"><strong>{{ r.symbol }}</strong></td>
           <td data-label="Last" class="num mono">{% if r.last is not none %}{{ "%.2f"|format(r.last) }}{% else %}&mdash;{% endif %}</td>
           <td data-label="Chg" class="num mono">{% if r.chg_pct is not none %}<span class="{{ 'mom-up' if r.chg_pct >= 0 else 'mom-down' }}">{{ "%+.2f%%"|format(r.chg_pct * 100) }}</span>{% else %}&mdash;{% endif %}</td>
-          <td data-label="Vol 1d/ann"><span class="cell-metric">{{ r.vol_svg|safe }}<span class="metric-text mono">1d {{ "%.2f%%"|format(r.garch_1d * 100) }} &middot; ann {{ "%.1f%%"|format(r.garch_ann * 100) }}</span></span></td>
+          <td data-label="Vol 1d/ann"><span class="cell-metric">{{ r.vol_svg|safe }}<span class="metric-text mono">{{ "%.2f%%"|format(r.garch_1d * 100) }} &middot; {{ "%.1f%%"|format(r.garch_ann * 100) }}</span></span></td>
           <td data-label="OU z-score"><span class="cell-metric">{{ r.zscore_svg|safe }}<span class="zscore-num mono{{ ' stretched' if r.zscore_stretched else '' }}">{{ "%+.2f"|format(r.zscore) }}</span></span></td>
           <td data-label="Half-life" class="num mono">{{ "%.1f"|format(r.half_life) }}<span class="hl-note">{{ r.half_life_note }}</span></td>
           <td data-label="Momentum 5d">{{ r.momentum_html|safe }}</td>
