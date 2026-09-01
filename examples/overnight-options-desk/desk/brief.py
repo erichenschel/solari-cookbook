@@ -50,13 +50,15 @@ EARNINGS_DISPLAY_WINDOW_DAYS = 90
 _ZSCORE_SCALE = 8.0
 _ZSCORE_STRETCH = 1.5  # mirrors model_code/signals.py's Z_STRETCH — display-only threshold, kept local so brief.py stays decoupled from the sandbox-side model code
 
-# Diverging pair for z-score direction. Deliberately NOT green/red: this is a
-# position reading (above vs below the fitted mean), and green/red would read as
-# buy/sell. Warm = above, cool = below, grey = inside the stretch threshold.
-# CVD-validated against the #0d1117 panel: ΔE 17.8 protan / 21.9 normal, contrast >= 3:1.
-_ZBAR_ABOVE = "#d29922"
-_ZBAR_BELOW = "#2ab7bd"
-_ZBAR_MUTED = "#6e7681"
+# GRE-3464 restyle: bar fill is a MAGNITUDE reading only (inside vs. beyond
+# the stretch/elevated threshold) — never a direction/above-below reading.
+# Direction is still fully legible from bar position (left/right of the zero
+# axis) and from the aria-label text; encoding it a second time in hue would
+# read as buy/sell (green/red) or invent a second color axis nobody asked
+# for. One accent color, reused for both bars' "worth a second look" state.
+_BAR_TRACK = "#F1F0EE"
+_ZBAR_MUTED = "#C9C7C3"  # neutral fill — inside the stretch/elevated threshold
+_ZBAR_STRETCHED = "#956400"  # pale-yellow text tone — stretched (z) / elevated (vol)
 _VOL_CAP_ANN = 0.60  # fixed annualized-vol scale so bars are comparable run over run, not just within one brief
 
 # GRE-3464: the same rule-table thresholds `decide_verdict` uses, kept local
@@ -131,19 +133,18 @@ def _pct(x: float, digits: int = 2) -> str:
 
 
 def _zscore_bar_svg(z: float) -> str:
-    """Diverging horizontal bar centered at 0, clipped to +/- _ZSCORE_SCALE
-    with a small overflow marker (arrow) past the cap. Amber when |z| is
-    "stretched" (>= _ZSCORE_STRETCH), muted grey otherwise — never
-    green/red: this is a magnitude reading, not a buy/sell signal, and
-    direction color reads as advice (GRE-3464)."""
+    """Horizontal bar centered at 0, clipped to +/- _ZSCORE_SCALE with a
+    small overflow marker (arrow) past the cap. Direction (above/below the
+    fitted mean) reads from bar position and the aria-label text only; fill
+    color is a MAGNITUDE reading — the accent color when |z| is "stretched"
+    (>= _ZSCORE_STRETCH), neutral grey otherwise — never green/red, and
+    never direction-coded: this is a magnitude reading, not a buy/sell
+    signal (GRE-3464)."""
     width, height, center = 100, 14, 50
     overflow = abs(z) > _ZSCORE_SCALE
     clipped = max(-_ZSCORE_SCALE, min(_ZSCORE_SCALE, z))
     half = clipped / _ZSCORE_SCALE * center
-    if abs(z) < _ZSCORE_STRETCH:
-        color = _ZBAR_MUTED
-    else:
-        color = _ZBAR_ABOVE if z >= 0 else _ZBAR_BELOW
+    color = _ZBAR_STRETCHED if abs(z) >= _ZSCORE_STRETCH else _ZBAR_MUTED
     x = center if half >= 0 else center + half
     w = abs(half)
     marker = ""
@@ -161,7 +162,7 @@ def _zscore_bar_svg(z: float) -> str:
     ticks = "".join(
         f'<line x1="{center + s * tick_off:.1f}" y1="1" '
         f'x2="{center + s * tick_off:.1f}" y2="{height - 1}" '
-        f'stroke="#484f58" stroke-width="1" stroke-dasharray="2 2"/>'
+        f'stroke="#B9B7B2" stroke-width="1" stroke-dasharray="2 2"/>'
         for s in (-1, 1)
     )
     return (
@@ -170,8 +171,9 @@ def _zscore_bar_svg(z: float) -> str:
         f'{"above" if z >= 0 else "below"} the fitted mean'
         f'{", stretched" if abs(z) >= _ZSCORE_STRETCH else ""}'
         f'{" (beyond +/-" + str(_ZSCORE_SCALE) + " scale)" if overflow else ""}">'
+        f'<rect x="0" y="0" width="{width}" height="{height}" fill="{_BAR_TRACK}" rx="2"/>'
         f"{ticks}"
-        f'<line x1="{center}" y1="0" x2="{center}" y2="{height}" stroke="#8b949e" stroke-width="1"/>'
+        f'<line x1="{center}" y1="0" x2="{center}" y2="{height}" stroke="#C9C7C3" stroke-width="1"/>'
         f'<rect x="{x:.1f}" y="2" width="{w:.1f}" height="{height - 4}" fill="{color}" rx="1"/>'
         f"{marker}"
         f"</svg>"
@@ -180,15 +182,19 @@ def _zscore_bar_svg(z: float) -> str:
 
 def _vol_bar_svg(vol_ann: float) -> str:
     """Annualized-vol bar against the fixed `_VOL_CAP_ANN` scale (clipped
-    past the cap, same convention as the z-score bar)."""
+    past the cap, same convention as the z-score bar). Same magnitude-only
+    accent as the z-score bar: the fill turns from neutral to the accent
+    color once the forecast reaches `_VOL_HIGH_ANN` ("elevated"), rather
+    than growing more alarming the whole way up the scale."""
     width, height = 100, 14
     frac = max(0.0, min(1.0, vol_ann / _VOL_CAP_ANN))
     w = frac * width
+    color = _ZBAR_STRETCHED if vol_ann >= _VOL_HIGH_ANN else _ZBAR_MUTED
     return (
         f'<svg class="bar volbar" viewBox="0 0 {width} {height}" '
         f'role="img" aria-label="annualized vol forecast {vol_ann:.1%}">'
-        f'<rect x="0" y="2" width="{width}" height="{height - 4}" fill="#21262d" rx="1"/>'
-        f'<rect x="0" y="2" width="{w:.1f}" height="{height - 4}" fill="#d29922" rx="1"/>'
+        f'<rect x="0" y="0" width="{width}" height="{height}" fill="{_BAR_TRACK}" rx="2"/>'
+        f'<rect x="0" y="2" width="{w:.1f}" height="{height - 4}" fill="{color}" rx="1"/>'
         f"</svg>"
     )
 
@@ -731,181 +737,251 @@ _TEMPLATE = r"""<!doctype html>
 <title>Overnight Options Desk Brief — {{ as_of }}</title>
 <style>
   :root {
-    color-scheme: dark;
-    --bg: #0a0e14;
-    --panel: #0d1117;
-    --border: #21262d;
-    --text: #c9d1d9;
-    --dim: #7d8590;
-    --accent: #58a6ff;
-    --green: #3fb950;
-    --red: #f85149;
-    --amber: #d29922;
-    --gray: #8b949e;
+    color-scheme: light;
+    --canvas: #FBFBFA;
+    --surface: #FFFFFF;
+    --border: #EAEAEA;
+    --text: #111111;
+    --muted: #787774;
+    --neutral-bg: #F7F6F3;
+    --red-bg: #FDEBEC; --red-text: #9F2F2D;
+    --green-bg: #EDF3EC; --green-text: #346538;
+    --yellow-bg: #FBF3DB; --yellow-text: #956400;
+    --blue-bg: #E1F3FE; --blue-text: #1F6C9F;
+    --font-sans: -apple-system, "SF Pro Display", "Helvetica Neue", "Segoe UI", sans-serif;
+    --font-serif: "Iowan Old Style", "Palatino", Georgia, serif;
+    --font-mono: "SF Mono", "Geist Mono", Menlo, Consolas, monospace;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    background: var(--bg);
+    background: var(--canvas);
     color: var(--text);
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-    font-size: 14px;
-    line-height: 1.5;
-    padding: 0 0 3rem;
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 0 0 4rem;
   }
-  a { color: var(--accent); }
-  .wrap { max-width: 960px; margin: 0 auto; padding: 0 1rem; }
+  a { color: var(--text); text-decoration-color: var(--border); text-underline-offset: 2px; }
+  a:hover { text-decoration-color: currentColor; }
+  .wrap { max-width: 72rem; margin: 0 auto; padding: 0 1.5rem; }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+  /* CSS-only page-load motion: opacity + a short rise, staggered per
+     section. No JS, no scroll listeners — purely declarative, and fully
+     disabled for anyone who has asked for less motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    header.brief-header, section, footer.provenance {
+      animation: brief-rise 520ms ease-out both;
+    }
+    header.brief-header { animation-delay: 0ms; }
+    section:nth-of-type(1) { animation-delay: 60ms; }
+    section:nth-of-type(2) { animation-delay: 120ms; }
+    section:nth-of-type(3) { animation-delay: 180ms; }
+    footer.provenance { animation-delay: 240ms; }
+    @keyframes brief-rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+
   header.brief-header {
     border-bottom: 1px solid var(--border);
-    background: var(--panel);
-    padding: 1.25rem 0 1rem;
-    margin-bottom: 2rem;
+    padding: 2.5rem 0 1.5rem;
+    margin-bottom: 3rem;
   }
-  header.brief-header .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .5rem 1.5rem; }
-  h1 { font-size: 1.1rem; letter-spacing: .04em; text-transform: uppercase; margin: 0; color: #e6edf3; }
-  .as-of { color: var(--dim); font-size: .85rem; }
+  header.brief-header .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .5rem 2rem; }
+  h1 {
+    font-family: var(--font-serif);
+    font-size: 1.6rem;
+    letter-spacing: -.02em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .as-of { color: var(--muted); font-size: .85rem; text-align: right; }
   .run-time { color: var(--text); font-size: .9rem; }
-  .run-time strong { color: #e6edf3; }
-  .as-of-detail { color: var(--dim); font-size: .72rem; margin-top: .15rem; }
-  .universe { color: var(--dim); font-size: .85rem; }
-  .universe strong { color: var(--text); }
-  .tldr-wrap { padding-top: .75rem; margin-top: .5rem; border-top: 1px dotted var(--border); }
+  .run-time strong { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); font-weight: 600; }
+  .as-of-detail { font-family: var(--font-mono); color: var(--muted); font-size: .72rem; margin-top: .2rem; }
+  .universe { color: var(--muted); font-size: .85rem; }
+  .universe strong { font-family: var(--font-mono); color: var(--text); font-weight: 600; }
+  .tldr-wrap { padding-top: 1.25rem; margin-top: 1rem; border-top: 1px solid var(--border); }
   .tldr { display: flex; flex-wrap: wrap; gap: .5rem; }
   .chip {
     display: inline-block;
-    padding: .2rem .65rem;
-    border-radius: 12px;
-    font-size: .72rem;
+    padding: .3rem .8rem;
+    border-radius: 9999px;
+    font-size: .78rem;
     border: 1px solid var(--border);
     color: var(--text);
-    background: var(--panel);
+    background: var(--surface);
     text-decoration: none;
   }
-  a.chip:hover { text-decoration: underline; }
-  .tldr-ok { color: var(--green); border-color: var(--green); }
-  .tldr-warn { color: var(--amber); border-color: var(--amber); }
-  section { margin: 0 0 3rem; }
+  a.chip:hover { text-decoration: underline; background: var(--neutral-bg); }
+  .tldr-ok { color: var(--green-text); background: var(--green-bg); border-color: var(--green-bg); }
+  .tldr-warn { color: var(--yellow-text); background: var(--yellow-bg); border-color: var(--yellow-bg); }
+  section { margin: 0 0 4rem; }
   section > h2 {
-    font-size: .8rem;
-    letter-spacing: .08em;
+    font-family: var(--font-sans);
+    font-size: .78rem;
+    letter-spacing: .1em;
     text-transform: uppercase;
-    color: var(--dim);
+    font-weight: 600;
+    color: var(--muted);
     border-bottom: 1px solid var(--border);
-    padding-bottom: .35rem;
-    margin: 0 0 1rem;
+    padding-bottom: .6rem;
+    margin: 0 0 1.5rem;
   }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
-  th { font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
-  .col-sub { display: block; font-size: .62rem; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--dim); margin-top: .15rem; }
-  tbody tr:hover { background: rgba(255,255,255,0.02); }
-  .num { text-align: right; font-variant-numeric: tabular-nums; }
-  .cell-metric { display: flex; align-items: center; gap: .5rem; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); }
+  .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  th, td { text-align: left; padding: .9rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  th { font-family: var(--font-sans); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .col-sub { display: block; font-size: .68rem; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--muted); margin-top: .2rem; }
+  .num { text-align: right; }
+  .cell-metric { display: flex; align-items: center; gap: .6rem; }
   .bar { display: block; width: 90px; height: 14px; flex: 0 0 auto; }
-  .metric-text { font-variant-numeric: tabular-nums; }
-  .mom-up { color: var(--green); }
-  .mom-down { color: var(--red); }
-  .mom-flat { color: var(--dim); }
-  /* The bar carries direction and magnitude; the number stays in text ink so
-     amber means one thing (above the mean) instead of three. Weight, not hue,
-     marks a stretched reading. */
-  .zscore-num { font-variant-numeric: tabular-nums; color: var(--text); }
-  .zscore-num.stretched { font-weight: 700; }
-  .hl-note { display: block; font-size: .62rem; color: var(--dim); margin-top: .1rem; }
   .metric-text { white-space: nowrap; }
-  .verdict-label { white-space: nowrap; }
+  .mom { display: inline-flex; align-items: center; gap: .3rem; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .mom-up { color: var(--green-text); }
+  .mom-down { color: var(--red-text); }
+  .mom-flat { color: var(--muted); }
+  /* The bar carries magnitude; the number stays in text ink so the accent
+     colour means one thing (stretched/elevated) instead of doing double
+     duty. Weight, not hue, marks a stretched reading in the numeral. */
+  .zscore-num { color: var(--text); }
+  .zscore-num.stretched { font-weight: 700; }
+  .hl-note { display: block; font-size: .68rem; color: var(--muted); margin-top: .15rem; }
   .badge {
     display: inline-block;
-    padding: .1rem .5rem;
-    border-radius: 3px;
+    padding: .2rem .7rem;
+    border-radius: 9999px;
     font-size: .72rem;
-    letter-spacing: .02em;
-    font-weight: 700;
+    font-family: var(--font-sans);
+    letter-spacing: .01em;
+    font-weight: 600;
     border: 1px solid transparent;
   }
-  .v-bullish { color: var(--green); border-color: var(--green); background: rgba(63,185,80,.1); }
-  .v-bearish { color: var(--red); border-color: var(--red); background: rgba(248,81,73,.1); }
-  .v-avoid   { color: var(--red); border-color: var(--red); background: rgba(248,81,73,.15); }
-  .v-neutral { color: var(--gray); border-color: var(--gray); background: rgba(139,148,158,.08); }
-  .verdict-label { display: block; color: var(--dim); font-size: .68rem; margin-top: .25rem; letter-spacing: .02em; }
-  .verdict-interp { display: block; color: var(--dim); font-size: .72rem; margin-top: .2rem; line-height: 1.35; max-width: 22ch; }
-  .how-to-read { margin-top: 1rem; border: 1px solid var(--border); border-radius: 6px; padding: .6rem .8rem; }
-  .how-to-read summary { cursor: pointer; color: var(--dim); font-size: .78rem; }
-  .how-to-read p { color: var(--text); font-size: .82rem; line-height: 1.6; margin: .6rem 0 0; }
-  .how-to-read .boundary { color: var(--amber); }
-  .uncovered-note { color: var(--dim); font-size: .8rem; margin-top: .75rem; }
-  .callouts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .75rem; }
-  .callout { border: 1px solid var(--border); background: var(--panel); border-radius: 6px; padding: .75rem .9rem; }
-  .callout .sym { font-weight: 700; color: #e6edf3; font-size: .95rem; }
-  .callout .rel-time { color: var(--accent); font-size: .82rem; font-weight: 600; margin-top: .3rem; }
-  .callout .date { color: var(--dim); font-size: .75rem; margin-top: .15rem; }
-  .callout .badge { margin-top: .5rem; }
-  .headline-group { margin-bottom: 1.25rem; }
-  .headline-group h3 { font-size: .85rem; color: #e6edf3; margin: 0 0 .35rem; }
-  .headline-group ul { list-style: none; margin: 0; padding: 0; }
-  .headline-group li { padding: .35rem 0; border-bottom: 1px dotted var(--border); }
-  .headline-group li:last-child { border-bottom: none; }
-  .headline-meta { color: var(--dim); font-size: .78rem; }
-  .headline-more { color: var(--dim); font-size: .76rem; font-style: italic; padding: .35rem 0 0; }
-  .empty { color: var(--dim); font-style: italic; font-size: .85rem; }
-  .warnings { margin-top: .75rem; display: flex; flex-direction: column; gap: .4rem; }
-  .warn-row {
-    border: 1px solid rgba(210,153,34,.35);
-    background: rgba(210,153,34,.07);
-    border-radius: 4px;
-    padding: .45rem .65rem;
-    font-size: .8rem;
-    color: var(--amber);
+  .v-bullish { color: var(--green-text); background: var(--green-bg); }
+  .v-bearish { color: var(--yellow-text); background: var(--yellow-bg); }
+  .v-avoid   { color: var(--red-text); background: var(--red-bg); }
+  .v-neutral { color: var(--muted); background: var(--neutral-bg); }
+  .verdict-interp { display: block; color: var(--muted); font-size: .78rem; margin-top: .4rem; line-height: 1.5; max-width: 26ch; }
+
+  /* Sharp +/- disclosure toggle, CSS only — no JS. */
+  details > summary { cursor: pointer; list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before {
+    content: "+";
+    display: inline-block;
+    width: 1em;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--muted);
   }
-  .warn-row .warn-headline { display: flex; gap: .5rem; align-items: baseline; }
-  .warn-row .warn-icon { flex: 0 0 auto; }
-  .warn-row details { margin-top: .35rem; }
-  .warn-row summary { cursor: pointer; color: var(--dim); font-size: .72rem; }
+  details[open] > summary::before { content: "\2212"; }
+
+  .how-to-read { margin-top: 1.5rem; padding: 1rem 0 0; border-top: 1px solid var(--border); }
+  .how-to-read summary { color: var(--muted); font-size: .82rem; font-weight: 500; }
+  .how-to-read p { color: var(--text); font-size: .88rem; line-height: 1.7; margin: .9rem 0 0; }
+  .how-to-read .boundary { color: var(--yellow-text); }
+  .uncovered-note { color: var(--muted); font-size: .82rem; margin-top: 1rem; }
+  .callouts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+  .callout { border: 1px solid var(--border); background: var(--surface); border-radius: 8px; padding: 1.1rem 1.2rem; }
+  .callout .sym { font-family: var(--font-sans); font-weight: 700; color: var(--text); font-size: .95rem; }
+  .callout .rel-time { font-family: var(--font-sans); font-weight: 600; color: var(--text); font-size: 1.15rem; margin-top: .5rem; }
+  .callout .date { font-family: var(--font-mono); color: var(--muted); font-size: .74rem; margin-top: .35rem; }
+  .callout .badge { margin-top: .7rem; }
+  .headline-group { margin-bottom: 1.75rem; }
+  .headline-group h3 { font-family: var(--font-sans); font-size: .85rem; font-weight: 700; color: var(--text); margin: 0 0 .5rem; }
+  .headline-group ul { list-style: none; margin: 0; padding: 0; }
+  .headline-group li { padding: .7rem 0; border-bottom: 1px solid var(--border); }
+  .headline-group li:last-child { border-bottom: none; }
+  .headline-group li a { display: block; color: var(--text); font-size: .92rem; }
+  .headline-meta { font-family: var(--font-mono); color: var(--muted); font-size: .74rem; margin-top: .3rem; }
+  .headline-more { color: var(--muted); font-size: .78rem; padding: .5rem 0 0; }
+  .empty { color: var(--muted); font-size: .85rem; }
+  .warnings { margin-top: 1rem; display: flex; flex-direction: column; gap: .5rem; }
+  .warn-row {
+    border: 1px solid var(--border);
+    background: var(--yellow-bg);
+    border-radius: 8px;
+    padding: .7rem .9rem;
+    font-size: .82rem;
+    color: var(--yellow-text);
+  }
+  .warn-row .warn-headline { display: flex; gap: .55rem; align-items: flex-start; }
+  .warn-row .warn-icon { flex: 0 0 auto; margin-top: .15rem; }
+  .warn-row .warn-icon svg { display: block; width: 13px; height: 13px; }
+  .warn-row details { margin-top: .45rem; }
+  .warn-row summary { color: var(--muted); font-size: .74rem; }
   .warn-row .warn-raw {
-    margin: .35rem 0 0;
-    padding-left: 1.1rem;
-    color: var(--dim);
-    font-size: .74rem;
+    margin: .45rem 0 0;
+    padding-left: 1.4rem;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: .72rem;
     word-break: break-word;
   }
-  .warn-row .warn-raw li { margin-bottom: .15rem; }
+  .warn-row .warn-raw li { margin-bottom: .2rem; }
   footer.provenance {
     border-top: 1px solid var(--border);
-    margin-top: 2.5rem;
-    padding-top: 1rem;
-    color: var(--dim);
-    font-size: .78rem;
+    margin-top: 3rem;
+    padding-top: 1.25rem;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: .76rem;
   }
   footer.provenance .disclaimer {
-    color: var(--amber);
+    font-family: var(--font-sans);
+    color: var(--yellow-text);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .04em;
-    font-size: .75rem;
-    margin-bottom: .5rem;
+    font-size: .74rem;
+    margin-bottom: .6rem;
   }
-  footer.provenance .prov-claim { margin-bottom: .35rem; }
-  footer.provenance details.prov-detail { margin-bottom: .5rem; }
-  footer.provenance details.prov-detail summary { cursor: pointer; color: var(--dim); }
-  footer.provenance .prov-ids { margin-top: .3rem; }
-  footer.provenance .prov-ids code { color: var(--text); }
+  footer.provenance .prov-claim { margin-bottom: .4rem; }
+  footer.provenance details.prov-detail { margin-bottom: .6rem; }
+  footer.provenance details.prov-detail summary { color: var(--muted); }
+  footer.provenance .prov-ids { margin-top: .4rem; }
+  kbd {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    color: var(--text);
+    background: var(--neutral-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: .1rem .4rem;
+  }
 
   @media (max-width: 640px) {
     table.responsive thead { display: none; }
     table.responsive, table.responsive tbody, table.responsive tr, table.responsive td {
       display: block; width: 100%;
     }
-    table.responsive tr { border: 1px solid var(--border); border-radius: 6px; margin-bottom: .6rem; padding: .3rem .6rem; }
+    table.responsive tr { border-bottom: 1px solid var(--border); margin-bottom: 0; padding: .6rem 1rem; }
+    table.responsive tr:last-child { border-bottom: none; }
     table.responsive td {
-      display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px dotted var(--border); padding: .4rem 0; text-align: right;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      border-bottom: none; padding: .45rem 0; text-align: right; gap: .75rem;
     }
-    table.responsive td:last-child { border-bottom: none; }
     table.responsive td::before {
       content: attr(data-label);
-      color: var(--dim); text-transform: uppercase; font-size: .68rem;
-      letter-spacing: .04em; margin-right: .5rem; text-align: left;
+      flex: 0 0 auto;
+      color: var(--muted); text-transform: uppercase; font-size: .68rem;
+      letter-spacing: .04em; margin-right: .5rem; margin-top: .15rem; text-align: left;
     }
+    /* The vol/z-score cells pair a fixed-width bar with a text label — at
+       390px there isn't room for both on one line without either wrapping
+       or being clipped by the card edge. Wrap and shrink the bar rather
+       than let it overflow. */
+    table.responsive .cell-metric { flex-wrap: wrap; justify-content: flex-end; row-gap: .3rem; }
+    table.responsive .metric-text { white-space: normal; text-align: right; }
+    table.responsive .bar { width: 64px; }
+    table.responsive .verdict-interp { max-width: 20ch; }
   }
 </style>
 </head>
@@ -932,7 +1008,7 @@ _TEMPLATE = r"""<!doctype html>
 
   <section id="signals">
     <h2>Ranked signals (by |OU z-score|)</h2>
-    <div style="overflow-x:auto">
+    <div style="overflow-x:auto" class="table-card">
     <table class="responsive">
       <thead>
         <tr>
@@ -947,15 +1023,15 @@ _TEMPLATE = r"""<!doctype html>
       <tbody>
         {% for r in signal_rows %}
         <tr>
-          <td data-label="#">{{ r.rank }}</td>
+          <td data-label="#" class="mono">{{ r.rank }}</td>
           <td data-label="Symbol"><strong>{{ r.symbol }}</strong></td>
-          <td data-label="Last" class="num">{% if r.last is not none %}{{ "%.2f"|format(r.last) }}{% else %}&mdash;{% endif %}</td>
-          <td data-label="Chg" class="num">{% if r.chg_pct is not none %}<span class="{{ 'mom-up' if r.chg_pct >= 0 else 'mom-down' }}">{{ "%+.2f%%"|format(r.chg_pct * 100) }}</span>{% else %}&mdash;{% endif %}</td>
-          <td data-label="Vol 1d/ann"><span class="cell-metric">{{ r.vol_svg|safe }}<span class="metric-text">1d {{ "%.2f%%"|format(r.garch_1d * 100) }} &middot; ann {{ "%.1f%%"|format(r.garch_ann * 100) }}</span></span></td>
-          <td data-label="OU z-score"><span class="cell-metric">{{ r.zscore_svg|safe }}<span class="zscore-num{{ ' stretched' if r.zscore_stretched else '' }}">{{ "%+.2f"|format(r.zscore) }}</span></span></td>
-          <td data-label="Half-life" class="num">{{ "%.1f"|format(r.half_life) }}<span class="hl-note">{{ r.half_life_note }}</span></td>
+          <td data-label="Last" class="num mono">{% if r.last is not none %}{{ "%.2f"|format(r.last) }}{% else %}&mdash;{% endif %}</td>
+          <td data-label="Chg" class="num mono">{% if r.chg_pct is not none %}<span class="{{ 'mom-up' if r.chg_pct >= 0 else 'mom-down' }}">{{ "%+.2f%%"|format(r.chg_pct * 100) }}</span>{% else %}&mdash;{% endif %}</td>
+          <td data-label="Vol 1d/ann"><span class="cell-metric">{{ r.vol_svg|safe }}<span class="metric-text mono">1d {{ "%.2f%%"|format(r.garch_1d * 100) }} &middot; ann {{ "%.1f%%"|format(r.garch_ann * 100) }}</span></span></td>
+          <td data-label="OU z-score"><span class="cell-metric">{{ r.zscore_svg|safe }}<span class="zscore-num mono{{ ' stretched' if r.zscore_stretched else '' }}">{{ "%+.2f"|format(r.zscore) }}</span></span></td>
+          <td data-label="Half-life" class="num mono">{{ "%.1f"|format(r.half_life) }}<span class="hl-note">{{ r.half_life_note }}</span></td>
           <td data-label="Momentum 5d">{{ r.momentum_html|safe }}</td>
-          <td data-label="Verdict"><span class="badge {{ r.verdict_class }}">{{ r.verdict }}</span>{% if r.label %}<span class="verdict-label">{{ r.label }}</span>{% endif %}<span class="verdict-interp">{{ r.interpretation }}</span></td>
+          <td data-label="Verdict"><span class="badge {{ r.verdict_class }}"{% if r.label %} title="{{ r.label }}"{% endif %}>{{ r.verdict }}</span><span class="verdict-interp">{{ r.interpretation }}</span></td>
         </tr>
         {% endfor %}
       </tbody>
@@ -989,7 +1065,7 @@ _TEMPLATE = r"""<!doctype html>
     <div class="warnings">
       {% for g in warning_groups %}
       <div class="warn-row">
-        <div class="warn-headline"><span class="warn-icon">&#9888;</span><span>{{ g.headline }}</span></div>
+        <div class="warn-headline"><span class="warn-icon" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M8 1.5 L15 14.5 L1 14.5 Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><line x1="8" y1="6.2" x2="8" y2="10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="12.3" r=".9" fill="currentColor"/></svg></span><span>{{ g.headline }}</span></div>
         {% if g.count > 1 or g.details[0] != g.headline %}
         <details>
           <summary>affected page{{ 's' if g.count != 1 else '' }} ({{ g.count }}) — full traces in the run's scraped_data.json</summary>
@@ -1073,7 +1149,7 @@ _TEMPLATE = r"""<!doctype html>
     {% if session_ids_short %}
     <details class="prov-detail">
       <summary>session ids, last 8 chars ({{ session_ids_short|length }})</summary>
-      <div class="prov-ids">{% for s in session_ids_short %}<code>&hellip;{{ s }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</div>
+      <div class="prov-ids">{% for s in session_ids_short %}<kbd>&hellip;{{ s }}</kbd>{% if not loop.last %} {% endif %}{% endfor %}</div>
     </details>
     {% endif %}
     <div>Rendered {{ generated_at }} &middot; desk/brief.py (hermetic, no external requests)</div>

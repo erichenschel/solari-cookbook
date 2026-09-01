@@ -431,14 +431,19 @@ def test_zscore_bar_never_uses_direction_color_only_amber_or_grey(rendered):
     signals_section = rendered.split('id="signals"')[1].split("</section>")[0]
     zbar_svgs = re.findall(r'<svg class="bar zbar".*?</svg>', signals_section, re.DOTALL)
     assert len(zbar_svgs) == 3  # AAPL, NVDA, TSLA are signal-covered; MSFT isn't
+    from desk.brief import _ZBAR_MUTED, _ZBAR_STRETCHED
+
     for svg in zbar_svgs:
         assert "#3fb950" not in svg  # green
         assert "#f85149" not in svg  # red
-    # fixture: NVDA |z|=1.92 >= 1.5 stretch threshold -> amber; TSLA |z|=1.15 -> muted grey
+    # fixture: NVDA |z|=1.92 >= 1.5 stretch threshold -> stretched fill;
+    # TSLA |z|=1.15 -> muted. Assert against the constants, not literals, so a
+    # palette change restyles the bar without falsely failing this test — what
+    # it guards is the *rule* (magnitude, never direction), not the hex.
     nvda_row = signals_section.split('<strong>NVDA')[1].split("</tr>")[0]
     tsla_row = signals_section.split('<strong>TSLA')[1].split("</tr>")[0]
-    assert "#d29922" in nvda_row
-    assert "#6e7681" in tsla_row
+    assert _ZBAR_STRETCHED in nvda_row
+    assert _ZBAR_MUTED in tsla_row
 
 
 def test_vol_cell_shows_1d_and_annualized_labels(rendered):
@@ -981,13 +986,12 @@ def test_zscore_bars_differentiate_across_observed_range():
     assert max(widths) < 50.0, "widths at the 50.0 cap mean the scale saturates again"
 
 
-def test_zscore_bar_direction_uses_diverging_pair_not_red_green():
-    _, _, above = _zbar_geometry(4.72)
-    x_below, _, below = _zbar_geometry(-3.45)
-    assert above != below, "direction must be distinguishable by hue"
-    assert x_below < 50.0, "a negative z must render left of the zero axis"
-    # never green/red: those read as buy/sell on a research-only brief
-    assert {above, below}.isdisjoint({"#3fb950", "#f85149"})
+def test_negative_zscore_renders_left_of_the_zero_axis():
+    """Direction is carried by position, not hue (the bar fill is a magnitude
+    reading only). That makes the left/right placement load-bearing."""
+    x_below, _, _ = _zbar_geometry(-3.45)
+    x_above, _, _ = _zbar_geometry(4.72)
+    assert x_below < 50.0 <= x_above
 
 
 def test_zscore_bar_marks_the_stretch_threshold():

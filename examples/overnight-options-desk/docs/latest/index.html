@@ -6,175 +6,251 @@
 <title>Overnight Options Desk Brief — 2026-09-01 03:07 UTC</title>
 <style>
   :root {
-    color-scheme: dark;
-    --bg: #0a0e14;
-    --panel: #0d1117;
-    --border: #21262d;
-    --text: #c9d1d9;
-    --dim: #7d8590;
-    --accent: #58a6ff;
-    --green: #3fb950;
-    --red: #f85149;
-    --amber: #d29922;
-    --gray: #8b949e;
+    color-scheme: light;
+    --canvas: #FBFBFA;
+    --surface: #FFFFFF;
+    --border: #EAEAEA;
+    --text: #111111;
+    --muted: #787774;
+    --neutral-bg: #F7F6F3;
+    --red-bg: #FDEBEC; --red-text: #9F2F2D;
+    --green-bg: #EDF3EC; --green-text: #346538;
+    --yellow-bg: #FBF3DB; --yellow-text: #956400;
+    --blue-bg: #E1F3FE; --blue-text: #1F6C9F;
+    --font-sans: -apple-system, "SF Pro Display", "Helvetica Neue", "Segoe UI", sans-serif;
+    --font-serif: "Iowan Old Style", "Palatino", Georgia, serif;
+    --font-mono: "SF Mono", "Geist Mono", Menlo, Consolas, monospace;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    background: var(--bg);
+    background: var(--canvas);
     color: var(--text);
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-    font-size: 14px;
-    line-height: 1.5;
-    padding: 0 0 3rem;
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 0 0 4rem;
   }
-  a { color: var(--accent); }
-  .wrap { max-width: 960px; margin: 0 auto; padding: 0 1rem; }
+  a { color: var(--text); text-decoration-color: var(--border); text-underline-offset: 2px; }
+  a:hover { text-decoration-color: currentColor; }
+  .wrap { max-width: 72rem; margin: 0 auto; padding: 0 1.5rem; }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+  /* CSS-only page-load motion: opacity + a short rise, staggered per
+     section. No JS, no scroll listeners — purely declarative, and fully
+     disabled for anyone who has asked for less motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    header.brief-header, section, footer.provenance {
+      animation: brief-rise 520ms ease-out both;
+    }
+    header.brief-header { animation-delay: 0ms; }
+    section:nth-of-type(1) { animation-delay: 60ms; }
+    section:nth-of-type(2) { animation-delay: 120ms; }
+    section:nth-of-type(3) { animation-delay: 180ms; }
+    footer.provenance { animation-delay: 240ms; }
+    @keyframes brief-rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+
   header.brief-header {
     border-bottom: 1px solid var(--border);
-    background: var(--panel);
-    padding: 1.25rem 0 1rem;
-    margin-bottom: 2rem;
+    padding: 2.5rem 0 1.5rem;
+    margin-bottom: 3rem;
   }
-  header.brief-header .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .5rem 1.5rem; }
-  h1 { font-size: 1.1rem; letter-spacing: .04em; text-transform: uppercase; margin: 0; color: #e6edf3; }
-  .as-of { color: var(--dim); font-size: .85rem; }
+  header.brief-header .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .5rem 2rem; }
+  h1 {
+    font-family: var(--font-serif);
+    font-size: 1.6rem;
+    letter-spacing: -.02em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .as-of { color: var(--muted); font-size: .85rem; text-align: right; }
   .run-time { color: var(--text); font-size: .9rem; }
-  .run-time strong { color: #e6edf3; }
-  .as-of-detail { color: var(--dim); font-size: .72rem; margin-top: .15rem; }
-  .universe { color: var(--dim); font-size: .85rem; }
-  .universe strong { color: var(--text); }
-  .tldr-wrap { padding-top: .75rem; margin-top: .5rem; border-top: 1px dotted var(--border); }
+  .run-time strong { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); font-weight: 600; }
+  .as-of-detail { font-family: var(--font-mono); color: var(--muted); font-size: .72rem; margin-top: .2rem; }
+  .universe { color: var(--muted); font-size: .85rem; }
+  .universe strong { font-family: var(--font-mono); color: var(--text); font-weight: 600; }
+  .tldr-wrap { padding-top: 1.25rem; margin-top: 1rem; border-top: 1px solid var(--border); }
   .tldr { display: flex; flex-wrap: wrap; gap: .5rem; }
   .chip {
     display: inline-block;
-    padding: .2rem .65rem;
-    border-radius: 12px;
-    font-size: .72rem;
+    padding: .3rem .8rem;
+    border-radius: 9999px;
+    font-size: .78rem;
     border: 1px solid var(--border);
     color: var(--text);
-    background: var(--panel);
+    background: var(--surface);
     text-decoration: none;
   }
-  a.chip:hover { text-decoration: underline; }
-  .tldr-ok { color: var(--green); border-color: var(--green); }
-  .tldr-warn { color: var(--amber); border-color: var(--amber); }
-  section { margin: 0 0 3rem; }
+  a.chip:hover { text-decoration: underline; background: var(--neutral-bg); }
+  .tldr-ok { color: var(--green-text); background: var(--green-bg); border-color: var(--green-bg); }
+  .tldr-warn { color: var(--yellow-text); background: var(--yellow-bg); border-color: var(--yellow-bg); }
+  section { margin: 0 0 4rem; }
   section > h2 {
-    font-size: .8rem;
-    letter-spacing: .08em;
+    font-family: var(--font-sans);
+    font-size: .78rem;
+    letter-spacing: .1em;
     text-transform: uppercase;
-    color: var(--dim);
+    font-weight: 600;
+    color: var(--muted);
     border-bottom: 1px solid var(--border);
-    padding-bottom: .35rem;
-    margin: 0 0 1rem;
+    padding-bottom: .6rem;
+    margin: 0 0 1.5rem;
   }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
-  th { font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
-  .col-sub { display: block; font-size: .62rem; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--dim); margin-top: .15rem; }
-  tbody tr:hover { background: rgba(255,255,255,0.02); }
-  .num { text-align: right; font-variant-numeric: tabular-nums; }
-  .cell-metric { display: flex; align-items: center; gap: .5rem; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); }
+  .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  th, td { text-align: left; padding: .9rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  th { font-family: var(--font-sans); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .col-sub { display: block; font-size: .68rem; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--muted); margin-top: .2rem; }
+  .num { text-align: right; }
+  .cell-metric { display: flex; align-items: center; gap: .6rem; }
   .bar { display: block; width: 90px; height: 14px; flex: 0 0 auto; }
-  .metric-text { font-variant-numeric: tabular-nums; }
-  .mom-up { color: var(--green); }
-  .mom-down { color: var(--red); }
-  .mom-flat { color: var(--dim); }
-  .zscore-num { font-variant-numeric: tabular-nums; }
-  .zscore-num.stretched { color: var(--amber); }
+  .metric-text { white-space: nowrap; }
+  .mom { display: inline-flex; align-items: center; gap: .3rem; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .mom-up { color: var(--green-text); }
+  .mom-down { color: var(--red-text); }
+  .mom-flat { color: var(--muted); }
+  /* The bar carries magnitude; the number stays in text ink so the accent
+     colour means one thing (stretched/elevated) instead of doing double
+     duty. Weight, not hue, marks a stretched reading in the numeral. */
+  .zscore-num { color: var(--text); }
+  .zscore-num.stretched { font-weight: 700; }
+  .hl-note { display: block; font-size: .68rem; color: var(--muted); margin-top: .15rem; }
   .badge {
     display: inline-block;
-    padding: .1rem .5rem;
-    border-radius: 3px;
+    padding: .2rem .7rem;
+    border-radius: 9999px;
     font-size: .72rem;
-    letter-spacing: .02em;
-    font-weight: 700;
+    font-family: var(--font-sans);
+    letter-spacing: .01em;
+    font-weight: 600;
     border: 1px solid transparent;
   }
-  .v-bullish { color: var(--green); border-color: var(--green); background: rgba(63,185,80,.1); }
-  .v-bearish { color: var(--red); border-color: var(--red); background: rgba(248,81,73,.1); }
-  .v-avoid   { color: var(--red); border-color: var(--red); background: rgba(248,81,73,.15); }
-  .v-neutral { color: var(--gray); border-color: var(--gray); background: rgba(139,148,158,.08); }
-  .verdict-label { display: block; color: var(--dim); font-size: .68rem; margin-top: .25rem; letter-spacing: .02em; }
-  .verdict-interp { display: block; color: var(--dim); font-size: .72rem; margin-top: .2rem; line-height: 1.35; max-width: 22ch; }
-  .how-to-read { margin-top: 1rem; border: 1px solid var(--border); border-radius: 6px; padding: .6rem .8rem; }
-  .how-to-read summary { cursor: pointer; color: var(--dim); font-size: .78rem; }
-  .how-to-read p { color: var(--text); font-size: .82rem; line-height: 1.6; margin: .6rem 0 0; }
-  .how-to-read .boundary { color: var(--amber); }
-  .uncovered-note { color: var(--dim); font-size: .8rem; margin-top: .75rem; }
-  .callouts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .75rem; }
-  .callout { border: 1px solid var(--border); background: var(--panel); border-radius: 6px; padding: .75rem .9rem; }
-  .callout .sym { font-weight: 700; color: #e6edf3; font-size: .95rem; }
-  .callout .rel-time { color: var(--accent); font-size: .82rem; font-weight: 600; margin-top: .3rem; }
-  .callout .date { color: var(--dim); font-size: .75rem; margin-top: .15rem; }
-  .callout .badge { margin-top: .5rem; }
-  .headline-group { margin-bottom: 1.25rem; }
-  .headline-group h3 { font-size: .85rem; color: #e6edf3; margin: 0 0 .35rem; }
-  .headline-group ul { list-style: none; margin: 0; padding: 0; }
-  .headline-group li { padding: .35rem 0; border-bottom: 1px dotted var(--border); }
-  .headline-group li:last-child { border-bottom: none; }
-  .headline-meta { color: var(--dim); font-size: .78rem; }
-  .headline-more { color: var(--dim); font-size: .76rem; font-style: italic; padding: .35rem 0 0; }
-  .empty { color: var(--dim); font-style: italic; font-size: .85rem; }
-  .warnings { margin-top: .75rem; display: flex; flex-direction: column; gap: .4rem; }
-  .warn-row {
-    border: 1px solid rgba(210,153,34,.35);
-    background: rgba(210,153,34,.07);
-    border-radius: 4px;
-    padding: .45rem .65rem;
-    font-size: .8rem;
-    color: var(--amber);
+  .v-bullish { color: var(--green-text); background: var(--green-bg); }
+  .v-bearish { color: var(--yellow-text); background: var(--yellow-bg); }
+  .v-avoid   { color: var(--red-text); background: var(--red-bg); }
+  .v-neutral { color: var(--muted); background: var(--neutral-bg); }
+  .verdict-interp { display: block; color: var(--muted); font-size: .78rem; margin-top: .4rem; line-height: 1.5; max-width: 26ch; }
+
+  /* Sharp +/- disclosure toggle, CSS only — no JS. */
+  details > summary { cursor: pointer; list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before {
+    content: "+";
+    display: inline-block;
+    width: 1em;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--muted);
   }
-  .warn-row .warn-headline { display: flex; gap: .5rem; align-items: baseline; }
-  .warn-row .warn-icon { flex: 0 0 auto; }
-  .warn-row details { margin-top: .35rem; }
-  .warn-row summary { cursor: pointer; color: var(--dim); font-size: .72rem; }
+  details[open] > summary::before { content: "\2212"; }
+
+  .how-to-read { margin-top: 1.5rem; padding: 1rem 0 0; border-top: 1px solid var(--border); }
+  .how-to-read summary { color: var(--muted); font-size: .82rem; font-weight: 500; }
+  .how-to-read p { color: var(--text); font-size: .88rem; line-height: 1.7; margin: .9rem 0 0; }
+  .how-to-read .boundary { color: var(--yellow-text); }
+  .uncovered-note { color: var(--muted); font-size: .82rem; margin-top: 1rem; }
+  .callouts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+  .callout { border: 1px solid var(--border); background: var(--surface); border-radius: 8px; padding: 1.1rem 1.2rem; }
+  .callout .sym { font-family: var(--font-sans); font-weight: 700; color: var(--text); font-size: .95rem; }
+  .callout .rel-time { font-family: var(--font-sans); font-weight: 600; color: var(--text); font-size: 1.15rem; margin-top: .5rem; }
+  .callout .date { font-family: var(--font-mono); color: var(--muted); font-size: .74rem; margin-top: .35rem; }
+  .callout .badge { margin-top: .7rem; }
+  .headline-group { margin-bottom: 1.75rem; }
+  .headline-group h3 { font-family: var(--font-sans); font-size: .85rem; font-weight: 700; color: var(--text); margin: 0 0 .5rem; }
+  .headline-group ul { list-style: none; margin: 0; padding: 0; }
+  .headline-group li { padding: .7rem 0; border-bottom: 1px solid var(--border); }
+  .headline-group li:last-child { border-bottom: none; }
+  .headline-group li a { display: block; color: var(--text); font-size: .92rem; }
+  .headline-meta { font-family: var(--font-mono); color: var(--muted); font-size: .74rem; margin-top: .3rem; }
+  .headline-more { color: var(--muted); font-size: .78rem; padding: .5rem 0 0; }
+  .empty { color: var(--muted); font-size: .85rem; }
+  .warnings { margin-top: 1rem; display: flex; flex-direction: column; gap: .5rem; }
+  .warn-row {
+    border: 1px solid var(--border);
+    background: var(--yellow-bg);
+    border-radius: 8px;
+    padding: .7rem .9rem;
+    font-size: .82rem;
+    color: var(--yellow-text);
+  }
+  .warn-row .warn-headline { display: flex; gap: .55rem; align-items: flex-start; }
+  .warn-row .warn-icon { flex: 0 0 auto; margin-top: .15rem; }
+  .warn-row .warn-icon svg { display: block; width: 13px; height: 13px; }
+  .warn-row details { margin-top: .45rem; }
+  .warn-row summary { color: var(--muted); font-size: .74rem; }
   .warn-row .warn-raw {
-    margin: .35rem 0 0;
-    padding-left: 1.1rem;
-    color: var(--dim);
-    font-size: .74rem;
+    margin: .45rem 0 0;
+    padding-left: 1.4rem;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: .72rem;
     word-break: break-word;
   }
-  .warn-row .warn-raw li { margin-bottom: .15rem; }
+  .warn-row .warn-raw li { margin-bottom: .2rem; }
   footer.provenance {
     border-top: 1px solid var(--border);
-    margin-top: 2.5rem;
-    padding-top: 1rem;
-    color: var(--dim);
-    font-size: .78rem;
+    margin-top: 3rem;
+    padding-top: 1.25rem;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: .76rem;
   }
   footer.provenance .disclaimer {
-    color: var(--amber);
+    font-family: var(--font-sans);
+    color: var(--yellow-text);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .04em;
-    font-size: .75rem;
-    margin-bottom: .5rem;
+    font-size: .74rem;
+    margin-bottom: .6rem;
   }
-  footer.provenance .prov-claim { margin-bottom: .35rem; }
-  footer.provenance details.prov-detail { margin-bottom: .5rem; }
-  footer.provenance details.prov-detail summary { cursor: pointer; color: var(--dim); }
-  footer.provenance .prov-ids { margin-top: .3rem; }
-  footer.provenance .prov-ids code { color: var(--text); }
+  footer.provenance .prov-claim { margin-bottom: .4rem; }
+  footer.provenance details.prov-detail { margin-bottom: .6rem; }
+  footer.provenance details.prov-detail summary { color: var(--muted); }
+  footer.provenance .prov-ids { margin-top: .4rem; }
+  kbd {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    color: var(--text);
+    background: var(--neutral-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: .1rem .4rem;
+  }
 
   @media (max-width: 640px) {
     table.responsive thead { display: none; }
     table.responsive, table.responsive tbody, table.responsive tr, table.responsive td {
       display: block; width: 100%;
     }
-    table.responsive tr { border: 1px solid var(--border); border-radius: 6px; margin-bottom: .6rem; padding: .3rem .6rem; }
+    table.responsive tr { border-bottom: 1px solid var(--border); margin-bottom: 0; padding: .6rem 1rem; }
+    table.responsive tr:last-child { border-bottom: none; }
     table.responsive td {
-      display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px dotted var(--border); padding: .4rem 0; text-align: right;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      border-bottom: none; padding: .45rem 0; text-align: right; gap: .75rem;
     }
-    table.responsive td:last-child { border-bottom: none; }
     table.responsive td::before {
       content: attr(data-label);
-      color: var(--dim); text-transform: uppercase; font-size: .68rem;
-      letter-spacing: .04em; margin-right: .5rem; text-align: left;
+      flex: 0 0 auto;
+      color: var(--muted); text-transform: uppercase; font-size: .68rem;
+      letter-spacing: .04em; margin-right: .5rem; margin-top: .15rem; text-align: left;
     }
+    /* The vol/z-score cells pair a fixed-width bar with a text label — at
+       390px there isn't room for both on one line without either wrapping
+       or being clipped by the card edge. Wrap and shrink the bar rather
+       than let it overflow. */
+    table.responsive .cell-metric { flex-wrap: wrap; justify-content: flex-end; row-gap: .3rem; }
+    table.responsive .metric-text { white-space: normal; text-align: right; }
+    table.responsive .bar { width: 64px; }
+    table.responsive .verdict-interp { max-width: 20ch; }
   }
 </style>
 </head>
@@ -207,13 +283,13 @@
 
   <section id="signals">
     <h2>Ranked signals (by |OU z-score|)</h2>
-    <div style="overflow-x:auto">
+    <div style="overflow-x:auto" class="table-card">
     <table class="responsive">
       <thead>
         <tr>
           <th>#</th><th>Sym</th><th class="num">Last</th><th class="num">Chg</th>
           <th>Vol (1d / ann)<span class="col-sub">expected move</span></th>
-          <th>OU z-score<span class="col-sub">distance from 1-yr mean</span></th>
+          <th>OU z-score<span class="col-sub">0 = 1-yr mean &middot; dashed ticks at &plusmn;1.5</span></th>
           <th class="num">Half-life (d)<span class="col-sub">days for stretch to halve</span></th>
           <th>Mom 5d<span class="col-sub">5-day price change</span></th>
           <th>Verdict</th>
@@ -222,63 +298,63 @@
       <tbody>
         
         <tr>
-          <td data-label="#">1</td>
+          <td data-label="#" class="mono">1</td>
           <td data-label="Symbol"><strong>MSFT</strong></td>
-          <td data-label="Last" class="num">507.29</td>
-          <td data-label="Chg" class="num"><span class="mom-down">-1.22%</span></td>
-          <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 41.9%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="69.9" height="10" fill="#d29922" rx="1"/></svg><span class="metric-text">1d 2.64% &middot; ann 41.9%</span></span></td>
-          <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +6.48 (beyond +/-3.0 scale)"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#d29922" rx="1"/><text x="97" y="11" font-size="9" fill="#d29922" text-anchor="end">&#9656;</text></svg><span class="zscore-num stretched">+6.48</span></span></td>
-          <td data-label="Half-life" class="num">46.8</td>
+          <td data-label="Last" class="num mono">507.29</td>
+          <td data-label="Chg" class="num mono"><span class="mom-down">-1.22%</span></td>
+          <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 41.9%"><rect x="0" y="0" width="100" height="14" fill="#F1F0EE" rx="2"/><rect x="0" y="2" width="69.9" height="10" fill="#956400" rx="1"/></svg><span class="metric-text mono">1d 2.64% &middot; ann 41.9%</span></span></td>
+          <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +6.48, above the fitted mean, stretched"><rect x="0" y="0" width="100" height="14" fill="#F1F0EE" rx="2"/><line x1="40.6" y1="1" x2="40.6" y2="13" stroke="#B9B7B2" stroke-width="1" stroke-dasharray="2 2"/><line x1="59.4" y1="1" x2="59.4" y2="13" stroke="#B9B7B2" stroke-width="1" stroke-dasharray="2 2"/><line x1="50" y1="0" x2="50" y2="14" stroke="#C9C7C3" stroke-width="1"/><rect x="50.0" y="2" width="40.5" height="10" fill="#956400" rx="1"/></svg><span class="zscore-num mono stretched">+6.48</span></span></td>
+          <td data-label="Half-life" class="num mono">46.8<span class="hl-note">slow — weeks out</span></td>
           <td data-label="Momentum 5d"><span class="mom mom-up">&#9650; +4.10%</span></td>
-          <td data-label="Verdict"><span class="badge v-avoid">avoid</span><span class="verdict-label">mean-reversion-watch</span><span class="verdict-interp">6.5σ above 1-yr mean, high vol — reversion risk</span></td>
+          <td data-label="Verdict"><span class="badge v-avoid" title="mean-reversion-watch">avoid</span><span class="verdict-interp">6.5σ above 1-yr mean, high vol — reversion risk</span></td>
         </tr>
         
         <tr>
-          <td data-label="#">2</td>
+          <td data-label="#" class="mono">2</td>
           <td data-label="Symbol"><strong>NVDA</strong></td>
-          <td data-label="Last" class="num">220.78</td>
-          <td data-label="Chg" class="num"><span class="mom-up">+1.48%</span></td>
-          <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 39.9%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="66.5" height="10" fill="#d29922" rx="1"/></svg><span class="metric-text">1d 2.52% &middot; ann 39.9%</span></span></td>
-          <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +4.78 (beyond +/-3.0 scale)"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#d29922" rx="1"/><text x="97" y="11" font-size="9" fill="#d29922" text-anchor="end">&#9656;</text></svg><span class="zscore-num stretched">+4.78</span></span></td>
-          <td data-label="Half-life" class="num">14.6</td>
+          <td data-label="Last" class="num mono">220.78</td>
+          <td data-label="Chg" class="num mono"><span class="mom-up">+1.48%</span></td>
+          <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 39.9%"><rect x="0" y="0" width="100" height="14" fill="#F1F0EE" rx="2"/><rect x="0" y="2" width="66.5" height="10" fill="#956400" rx="1"/></svg><span class="metric-text mono">1d 2.52% &middot; ann 39.9%</span></span></td>
+          <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +4.78, above the fitted mean, stretched"><rect x="0" y="0" width="100" height="14" fill="#F1F0EE" rx="2"/><line x1="40.6" y1="1" x2="40.6" y2="13" stroke="#B9B7B2" stroke-width="1" stroke-dasharray="2 2"/><line x1="59.4" y1="1" x2="59.4" y2="13" stroke="#B9B7B2" stroke-width="1" stroke-dasharray="2 2"/><line x1="50" y1="0" x2="50" y2="14" stroke="#C9C7C3" stroke-width="1"/><rect x="50.0" y="2" width="29.9" height="10" fill="#956400" rx="1"/></svg><span class="zscore-num mono stretched">+4.78</span></span></td>
+          <td data-label="Half-life" class="num mono">14.6<span class="hl-note">beyond 5d window</span></td>
           <td data-label="Momentum 5d"><span class="mom mom-up">&#9650; +5.90%</span></td>
-          <td data-label="Verdict"><span class="badge v-avoid">avoid</span><span class="verdict-label">mean-reversion-watch</span><span class="verdict-interp">4.8σ above 1-yr mean, high vol — reversion risk</span></td>
+          <td data-label="Verdict"><span class="badge v-avoid" title="mean-reversion-watch">avoid</span><span class="verdict-interp">4.8σ above 1-yr mean, high vol — reversion risk</span></td>
         </tr>
         
         <tr>
-          <td data-label="#">3</td>
+          <td data-label="#" class="mono">3</td>
           <td data-label="Symbol"><strong>AAPL</strong></td>
-          <td data-label="Last" class="num">316.85</td>
-          <td data-label="Chg" class="num"><span class="mom-down">-0.89%</span></td>
-          <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 24.6%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="40.9" height="10" fill="#d29922" rx="1"/></svg><span class="metric-text">1d 1.55% &middot; ann 24.6%</span></span></td>
-          <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +4.72 (beyond +/-3.0 scale)"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#d29922" rx="1"/><text x="97" y="11" font-size="9" fill="#d29922" text-anchor="end">&#9656;</text></svg><span class="zscore-num stretched">+4.72</span></span></td>
-          <td data-label="Half-life" class="num">34.7</td>
+          <td data-label="Last" class="num mono">316.85</td>
+          <td data-label="Chg" class="num mono"><span class="mom-down">-0.89%</span></td>
+          <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 24.6%"><rect x="0" y="0" width="100" height="14" fill="#F1F0EE" rx="2"/><rect x="0" y="2" width="40.9" height="10" fill="#C9C7C3" rx="1"/></svg><span class="metric-text mono">1d 1.55% &middot; ann 24.6%</span></span></td>
+          <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +4.72, above the fitted mean, stretched"><rect x="0" y="0" width="100" height="14" fill="#F1F0EE" rx="2"/><line x1="40.6" y1="1" x2="40.6" y2="13" stroke="#B9B7B2" stroke-width="1" stroke-dasharray="2 2"/><line x1="59.4" y1="1" x2="59.4" y2="13" stroke="#B9B7B2" stroke-width="1" stroke-dasharray="2 2"/><line x1="50" y1="0" x2="50" y2="14" stroke="#C9C7C3" stroke-width="1"/><rect x="50.0" y="2" width="29.5" height="10" fill="#956400" rx="1"/></svg><span class="zscore-num mono stretched">+4.72</span></span></td>
+          <td data-label="Half-life" class="num mono">34.7<span class="hl-note">slow — weeks out</span></td>
           <td data-label="Momentum 5d"><span class="mom mom-up">&#9650; +2.10%</span></td>
-          <td data-label="Verdict"><span class="badge v-neutral">neutral</span><span class="verdict-label">no-strong-signal</span><span class="verdict-interp">no strong signal — inside normal ranges</span></td>
+          <td data-label="Verdict"><span class="badge v-neutral" title="no-strong-signal">neutral</span><span class="verdict-interp">no strong signal — inside normal ranges</span></td>
         </tr>
         
         <tr>
-          <td data-label="#">4</td>
+          <td data-label="#" class="mono">4</td>
           <td data-label="Symbol"><strong>AMZN</strong></td>
-          <td data-label="Last" class="num">259.77</td>
-          <td data-label="Chg" class="num"><span class="mom-down">-2.50%</span></td>
-          <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 38.3%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="63.9" height="10" fill="#d29922" rx="1"/></svg><span class="metric-text">1d 2.41% &middot; ann 38.3%</span></span></td>
-          <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +3.71 (beyond +/-3.0 scale)"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#d29922" rx="1"/><text x="97" y="11" font-size="9" fill="#d29922" text-anchor="end">&#9656;</text></svg><span class="zscore-num stretched">+3.71</span></span></td>
-          <td data-label="Half-life" class="num">21.6</td>
+          <td data-label="Last" class="num mono">259.77</td>
+          <td data-label="Chg" class="num mono"><span class="mom-down">-2.50%</span></td>
+          <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 38.3%"><rect x="0" y="0" width="100" height="14" fill="#F1F0EE" rx="2"/><rect x="0" y="2" width="63.9" height="10" fill="#956400" rx="1"/></svg><span class="metric-text mono">1d 2.41% &middot; ann 38.3%</span></span></td>
+          <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +3.71, above the fitted mean, stretched"><rect x="0" y="0" width="100" height="14" fill="#F1F0EE" rx="2"/><line x1="40.6" y1="1" x2="40.6" y2="13" stroke="#B9B7B2" stroke-width="1" stroke-dasharray="2 2"/><line x1="59.4" y1="1" x2="59.4" y2="13" stroke="#B9B7B2" stroke-width="1" stroke-dasharray="2 2"/><line x1="50" y1="0" x2="50" y2="14" stroke="#C9C7C3" stroke-width="1"/><rect x="50.0" y="2" width="23.2" height="10" fill="#956400" rx="1"/></svg><span class="zscore-num mono stretched">+3.71</span></span></td>
+          <td data-label="Half-life" class="num mono">21.6<span class="hl-note">slow — weeks out</span></td>
           <td data-label="Momentum 5d"><span class="mom mom-down">&#9660; -0.88%</span></td>
-          <td data-label="Verdict"><span class="badge v-avoid">avoid</span><span class="verdict-label">mean-reversion-watch</span><span class="verdict-interp">3.7σ above 1-yr mean, high vol — reversion risk</span></td>
+          <td data-label="Verdict"><span class="badge v-avoid" title="mean-reversion-watch">avoid</span><span class="verdict-interp">3.7σ above 1-yr mean, high vol — reversion risk</span></td>
         </tr>
         
         <tr>
-          <td data-label="#">5</td>
+          <td data-label="#" class="mono">5</td>
           <td data-label="Symbol"><strong>TSLA</strong></td>
-          <td data-label="Last" class="num">367.95</td>
-          <td data-label="Chg" class="num"><span class="mom-up">+5.51%</span></td>
-          <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 48.6%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="80.9" height="10" fill="#d29922" rx="1"/></svg><span class="metric-text">1d 3.06% &middot; ann 48.6%</span></span></td>
-          <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score -3.45 (beyond +/-3.0 scale)"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="0.0" y="2" width="50.0" height="10" fill="#d29922" rx="1"/><text x="3" y="11" font-size="9" fill="#d29922" text-anchor="start">&#9666;</text></svg><span class="zscore-num stretched">-3.45</span></span></td>
-          <td data-label="Half-life" class="num">14.3</td>
+          <td data-label="Last" class="num mono">367.95</td>
+          <td data-label="Chg" class="num mono"><span class="mom-up">+5.51%</span></td>
+          <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 48.6%"><rect x="0" y="0" width="100" height="14" fill="#F1F0EE" rx="2"/><rect x="0" y="2" width="80.9" height="10" fill="#956400" rx="1"/></svg><span class="metric-text mono">1d 3.06% &middot; ann 48.6%</span></span></td>
+          <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score -3.45, below the fitted mean, stretched"><rect x="0" y="0" width="100" height="14" fill="#F1F0EE" rx="2"/><line x1="40.6" y1="1" x2="40.6" y2="13" stroke="#B9B7B2" stroke-width="1" stroke-dasharray="2 2"/><line x1="59.4" y1="1" x2="59.4" y2="13" stroke="#B9B7B2" stroke-width="1" stroke-dasharray="2 2"/><line x1="50" y1="0" x2="50" y2="14" stroke="#C9C7C3" stroke-width="1"/><rect x="28.4" y="2" width="21.6" height="10" fill="#956400" rx="1"/></svg><span class="zscore-num mono stretched">-3.45</span></span></td>
+          <td data-label="Half-life" class="num mono">14.3<span class="hl-note">beyond 5d window</span></td>
           <td data-label="Momentum 5d"><span class="mom mom-up">&#9650; +5.44%</span></td>
-          <td data-label="Verdict"><span class="badge v-avoid">avoid</span><span class="verdict-label">mean-reversion-watch</span><span class="verdict-interp">3.4σ below 1-yr mean, high vol — reversion risk</span></td>
+          <td data-label="Verdict"><span class="badge v-avoid" title="mean-reversion-watch">avoid</span><span class="verdict-interp">3.4σ below 1-yr mean, high vol — reversion risk</span></td>
         </tr>
         
       </tbody>
@@ -586,10 +662,10 @@
     
     <details class="prov-detail">
       <summary>session ids, last 8 chars (15)</summary>
-      <div class="prov-ids"><code>&hellip;jSDwQoWg</code>, <code>&hellip;Wr-kYxZQ</code>, <code>&hellip;dXlUgKGQ</code>, <code>&hellip;RuzRPRVw</code>, <code>&hellip;au68AnOw</code>, <code>&hellip;YAg1puow</code>, <code>&hellip;tIgl1HHg</code>, <code>&hellip;pJyeiSxQ</code>, <code>&hellip;67ljTrPw</code>, <code>&hellip;S032Yj_Q</code>, <code>&hellip;CUdzB0uw</code>, <code>&hellip;RLNaE-ZQ</code>, <code>&hellip;jFk5PVHA</code>, <code>&hellip;hjc1MO1g</code>, <code>&hellip;CsSQM5JA</code></div>
+      <div class="prov-ids"><kbd>&hellip;jSDwQoWg</kbd> <kbd>&hellip;Wr-kYxZQ</kbd> <kbd>&hellip;dXlUgKGQ</kbd> <kbd>&hellip;RuzRPRVw</kbd> <kbd>&hellip;au68AnOw</kbd> <kbd>&hellip;YAg1puow</kbd> <kbd>&hellip;tIgl1HHg</kbd> <kbd>&hellip;pJyeiSxQ</kbd> <kbd>&hellip;67ljTrPw</kbd> <kbd>&hellip;S032Yj_Q</kbd> <kbd>&hellip;CUdzB0uw</kbd> <kbd>&hellip;RLNaE-ZQ</kbd> <kbd>&hellip;jFk5PVHA</kbd> <kbd>&hellip;hjc1MO1g</kbd> <kbd>&hellip;CsSQM5JA</kbd></div>
     </details>
     
-    <div>Rendered 2026-09-01 03:25 UTC &middot; desk/brief.py (hermetic, no external requests)</div>
+    <div>Rendered 2026-09-01 03:41 UTC &middot; desk/brief.py (hermetic, no external requests)</div>
   </div>
 </footer>
 
