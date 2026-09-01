@@ -281,6 +281,138 @@ def test_repeated_warnings_collapse_into_one_summary_row(scraped, signals):
     assert "Call log" not in signals_section
 
 
+def test_connect_failures_collapse_into_one_infra_group(scraped, signals):
+    """GRE-3464: a Solari browser-gateway outage (connect-level / session-
+    launch failure, before any page is even requested) must never render as
+    a per-source "X blocked for Y" line — it's a platform failure, not a
+    source failure — and must collapse into ONE group even though every
+    real instance carries a unique per-session WebSocket URL that would
+    otherwise defeat naive de-duplication (each of these 3 warnings has a
+    distinct session id)."""
+    warnings = [
+        "yahoo_news failed for AAPL: BrowserType.connect: WebSocket error: "
+        "wss://api.getsolari.com/ws/ip-10-0-11-41:aaaa1111-a10a-419c-9013-000000000001:sess:1.AAA",
+        "yahoo_quote failed for MSFT: BrowserType.connect: WebSocket error: "
+        "wss://api.getsolari.com/ws/ip-10-0-11-41:bbbb2222-a10a-419c-9013-000000000002:sess:2.BBB",
+        "yahoo_earnings_calendar failed for NVDA: BrowserType.connect: WebSocket error: "
+        "wss://api.getsolari.com/ws/ip-10-0-11-41:cccc3333-a10a-419c-9013-000000000003:sess:3.CCC",
+    ]
+    hostile = replace(scraped, warnings=warnings)
+    out = render_brief(hostile, signals)
+    signals_section = out.split('id="signals"')[1].split("</section>")[0]
+
+    assert signals_section.count('class="warn-row"') == 1
+    assert "Solari browser sessions unavailable for 3 fetches" in signals_section
+    assert "gateway error" in signals_section
+    assert "blocked for" not in signals_section  # never blames a data source
+    assert "BrowserType.connect" not in signals_section  # raw text stays out of the brief
+    assert "ip-10-0-11-41" not in signals_section  # internal-hostname hygiene
+    # fixture already has quotes/earnings/headlines covering all 3 affected
+    # symbols via other sources -> full recovery
+    assert "recovered via HTTP fallbacks where available" in signals_section
+
+
+def test_connect_failure_singular_fetch_grammar(scraped, signals):
+    warnings = [
+        "yahoo_news failed for AAPL: BrowserType.connect: WebSocket error: "
+        "wss://api.getsolari.com/ws/ip-10-0-11-41:x:1.AAA",
+    ]
+    hostile = replace(scraped, warnings=warnings)
+    out = render_brief(hostile, signals)
+    signals_section = out.split('id="signals"')[1].split("</section>")[0]
+    assert "Solari browser sessions unavailable for 1 fetch (" in signals_section
+    assert "1 fetches" not in signals_section
+
+
+def test_precondition_required_signature_detected_as_infra(scraped, signals):
+    """A 428 version-skew failure that never reaches the
+    `BrowserType.connect` wording (e.g. raised earlier, at session-create
+    time) must still classify as infra via the 'Precondition Required'
+    signature."""
+    warnings = [
+        "yahoo_quote failed for AAPL: SolariError: 428 Precondition Required "
+        "(server version: v1.62, client version: v1.59)",
+    ]
+    hostile = replace(scraped, warnings=warnings)
+    out = render_brief(hostile, signals)
+    signals_section = out.split('id="signals"')[1].split("</section>")[0]
+    assert "Solari browser sessions unavailable for 1 fetch" in signals_section
+
+
+def test_connect_failure_outcome_partial_recovery(scraped, signals):
+    """MSFT has no headline in the fixture (only AAPL/NVDA do) -> its
+    connect-failed headlines fetch never recovered; AAPL's did -> partial."""
+    warnings = [
+        "yahoo_news failed for MSFT: BrowserType.connect: WebSocket error: "
+        "wss://api.getsolari.com/ws/x:1.AAA",
+        "yahoo_news failed for AAPL: BrowserType.connect: WebSocket error: "
+        "wss://api.getsolari.com/ws/x:2.BBB",
+    ]
+    hostile = replace(scraped, warnings=warnings)
+    out = render_brief(hostile, signals)
+    signals_section = out.split('id="signals"')[1].split("</section>")[0]
+    assert "partially recovered via HTTP fallbacks" in signals_section
+
+
+def test_connect_failure_outcome_no_recovery(scraped, signals):
+    """MSFT has neither headlines nor earnings in the fixture -> both
+    connect-failed fetches for it stayed uncovered -> no recovery."""
+    warnings = [
+        "yahoo_news failed for MSFT: BrowserType.connect: WebSocket error: "
+        "wss://api.getsolari.com/ws/x:1.AAA",
+        "yahoo_earnings_calendar failed for MSFT: BrowserType.connect: WebSocket error: "
+        "wss://api.getsolari.com/ws/x:2.BBB",
+    ]
+    hostile = replace(scraped, warnings=warnings)
+    out = render_brief(hostile, signals)
+    signals_section = out.split('id="signals"')[1].split("</section>")[0]
+    assert "no data recovered via HTTP fallbacks" in signals_section
+
+
+def test_mixed_infra_and_genuine_source_failures_render_separate_groups(scraped, signals):
+    """A run that hits both a gateway outage AND a real per-source failure
+    must render two distinct groups — the infra collapse must not swallow
+    a genuine source failure, and vice versa."""
+    warnings = [
+        "yahoo_news failed for AAPL: BrowserType.connect: WebSocket error: "
+        "wss://api.getsolari.com/ws/x:1.AAA",
+        "yahoo_news failed for MSFT: BrowserType.connect: WebSocket error: "
+        "wss://api.getsolari.com/ws/x:2.BBB",
+        "nasdaq_earnings failed for TSLA: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR "
+        "at https://www.nasdaq.com/market-activity/stocks/tsla/earnings\n"
+        'Call log:\n  - navigating to "...", waiting until "load"\n',
+    ]
+    hostile = replace(scraped, warnings=warnings)
+    out = render_brief(hostile, signals)
+    signals_section = out.split('id="signals"')[1].split("</section>")[0]
+
+    assert signals_section.count('class="warn-row"') == 2
+    assert "Solari browser sessions unavailable for 2 fetches" in signals_section
+    assert "nasdaq_earnings blocked for TSLA" in signals_section
+    assert "net::ERR_HTTP2_PROTOCOL_ERROR" in signals_section
+
+
+def test_genuine_source_failures_of_various_kinds_stay_ungrouped_with_infra(scraped, signals):
+    """HTTP2 block, 404, timeout, and empty-feed failures are real source
+    failures (not gateway/connect failures) — each keeps its own per-source
+    group, never swept into the infra bucket."""
+    warnings = [
+        "nasdaq_earnings failed for AAPL: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR "
+        "at https://www.nasdaq.com/market-activity/stocks/aapl/earnings\nCall log:\n  - x\n",
+        "yahoo_chart_quote failed for MSFT: Client error '404 Not Found' for url "
+        "'https://query1.finance.yahoo.com/v8/finance/chart/MSFT?range=5d&interval=1d'",
+        "stockanalysis_earnings failed for NVDA: Page.goto: Timeout 30000ms exceeded.\n"
+        'Call log:\n  - navigating to "https://stockanalysis.com/stocks/nvda/", waiting until "load"\n',
+        "google_news_rss failed for TSLA: no headlines parsed from google news rss for TSLA",
+    ]
+    hostile = replace(scraped, warnings=warnings)
+    out = render_brief(hostile, signals)
+    signals_section = out.split('id="signals"')[1].split("</section>")[0]
+
+    assert signals_section.count('class="warn-row"') == 4
+    assert "Solari browser sessions unavailable" not in signals_section
+
+
 def test_zscore_bar_never_uses_direction_color_only_amber_or_grey(rendered):
     """GRE-3464: z-score is a magnitude reading, not a buy/sell call —
     green/red would read as directional advice."""

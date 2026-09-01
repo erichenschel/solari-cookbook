@@ -163,6 +163,52 @@ _GENERIC_SYMBOL_RE = re.compile(r"\bfor ([A-Z][A-Z0-9.]*)\b")
 _NET_ERR_RE = re.compile(r"net::ERR_[A-Z0-9_]+")
 _URL_RE = re.compile(r"https?://[^\s\"']+")
 
+# GRE-3464: the Solari browser gateway itself can go down (a connect-level
+# / session-launch failure) before any page is even requested — see the
+# `open_browser_page` helper (BROWSER_LAUNCH_RETRIES) in the module that
+# wraps the Solari browser SDK, and this module's own docstring for the
+# live incident this was built from. That is a
+# failure of the *platform*, not of the data source being scraped, so it
+# must never render as e.g. "yahoo_news blocked for MSFT" (blames the
+# source) and must never flood the page with one row per fetch (every
+# instance carries a unique session id in its WebSocket URL, so naive
+# signature-based dedup treats each one as distinct). Matched on the raw
+# warning text emitted by desk/scraper.py's `_try_source`:
+#   - "BrowserType.connect: ..." — patchright/Playwright's own connect-
+#     failure exception, raised by solari_browser's `Solari.launch()` after
+#     `BROWSER_LAUNCH_RETRIES` attempts are exhausted.
+#   - "wss://api.getsolari.com/ws/..." / ".../getsolari.com/ws/" — the
+#     gateway's WebSocket endpoint, present in that same exception's text.
+#   - "Precondition Required" — the live incident's actual HTTP status text
+#     (428 version-skew between the gateway and the published SDK).
+_CONNECT_FAILURE_RE = re.compile(
+    r"BrowserType\.connect|getsolari\.com/ws/|Precondition Required",
+    re.IGNORECASE,
+)
+
+
+def _is_connect_failure(warning: str) -> bool:
+    return bool(_CONNECT_FAILURE_RE.search(warning))
+
+
+def _source_kind(source: str) -> str:
+    """Which `scraped_data` field a source's failure would have populated —
+    used to infer whether the affected (kind, symbol) pair ended up covered
+    anyway, regardless of which literal source id produced the warning."""
+    if "earnings" in source:
+        return "earnings"
+    if "quote" in source:
+        return "quotes"
+    return "headlines"
+
+
+def _kind_covered(scraped: ScrapedData, kind: str, symbol: str) -> bool:
+    if kind == "earnings":
+        return any(e.symbol == symbol for e in scraped.earnings)
+    if kind == "quotes":
+        return symbol in scraped.quotes
+    return any(h.symbol == symbol for h in scraped.headlines)
+
 
 def _error_signature(detail: str) -> str:
     """A short, stable label for an error message, used to group otherwise-
@@ -207,20 +253,31 @@ def _fallback_outcome(scraped: ScrapedData, source: str, symbols: list[str]) -> 
     anyway, inferred from `scraped_data` itself rather than importing
     `desk.scraper`'s source-chain constants (keeps this lane's pure-module
     boundary intact — see the module docstring's NG-3 note)."""
-    if "earnings" in source:
-        covered = lambda s: any(e.symbol == s for e in scraped.earnings)  # noqa: E731
-    elif "quote" in source or source in ("stooq_csv", "cboe_quotes"):
-        covered = lambda s: s in scraped.quotes  # noqa: E731
-    else:
-        covered = lambda s: any(h.symbol == s for h in scraped.headlines)  # noqa: E731
     if not symbols:
         return "outcome unknown"
-    hits = sum(1 for s in symbols if covered(s))
+    kind = _source_kind(source)
+    hits = sum(1 for s in symbols if _kind_covered(scraped, kind, s))
     if hits == len(symbols):
         return "recovered via fallback"
     if hits > 0:
         return "partially recovered via fallback"
     return "no data recovered from any source"
+
+
+def _connect_failure_outcome(scraped: ScrapedData, entries: list[tuple[str, Optional[str]]]) -> str:
+    """Same evidence-based read as `_fallback_outcome`, generalized across a
+    connect-failure group that can span multiple sources/kinds/symbols at
+    once (GRE-3464) — dedup to distinct (kind, symbol) pairs first so a
+    symbol that failed on two different sources isn't double-counted."""
+    pairs = {(_source_kind(source), symbol) for source, symbol in entries if symbol}
+    if not pairs:
+        return "outcome unknown"
+    hits = sum(1 for kind, symbol in pairs if _kind_covered(scraped, kind, symbol))
+    if hits == len(pairs):
+        return "recovered via HTTP fallbacks where available"
+    if hits > 0:
+        return "partially recovered via HTTP fallbacks"
+    return "no data recovered via HTTP fallbacks"
 
 
 def _detail_line(symbol: Optional[str], w: str) -> str:
@@ -235,13 +292,41 @@ def _detail_line(symbol: Optional[str], w: str) -> str:
     return first[:120] if len(first) <= 120 else first[:117] + "..."
 
 
+def _infra_detail_line(source: str, symbol: Optional[str]) -> str:
+    """Compact per-entry line for the collapsed connect-failure group — the
+    source id and symbol, no raw WebSocket URL (it embeds an internal
+    hostname, same hygiene rule as `_provenance_claim`'s session ids)."""
+    who = symbol or "unknown symbol"
+    return f"{who} — {source} (browser session failed to launch)"
+
+
 def _summarize_warnings(warnings: list[str], universe_size: int, scraped: ScrapedData) -> list[dict]:
     groups: "OrderedDict[tuple[str, str], list[tuple[Optional[str], str]]]" = OrderedDict()
+    infra: list[tuple[str, Optional[str], str]] = []  # (source, symbol, raw)
     for w in warnings:
         source, symbol, sig = _parse_warning(w)
+        if source and _is_connect_failure(w):
+            infra.append((source, symbol, w))
+            continue
         groups.setdefault((source, sig), []).append((symbol, w))
 
     summaries = []
+    if infra:
+        n = len(infra)
+        outcome = _connect_failure_outcome(scraped, [(source, symbol) for source, symbol, _ in infra])
+        headline = (
+            f"Solari browser sessions unavailable for {n} fetch{'es' if n != 1 else ''} "
+            f"(gateway error) — {outcome}"
+        )
+        summaries.append(
+            {
+                "headline": headline,
+                "raw": [w for _, _, w in infra],
+                "details": [_infra_detail_line(source, symbol) for source, symbol, _ in infra],
+                "count": n,
+            }
+        )
+
     for (source, sig), entries in groups.items():
         symbols = [s for s, _ in entries if s]
         raw = [w for _, w in entries]
