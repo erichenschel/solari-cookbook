@@ -435,6 +435,31 @@ computes, per symbol in `scraped_data.universe`:
 All formulas are textbook/public (a GARCH(1,1) forecast, an AR(1)/OU fit, an
 N-day percent change) — nothing here encodes proprietary signal logic.
 
+### Why these three models
+
+The selection is deliberate: three orthogonal reads an options researcher
+wants before the open, each answering a different question.
+
+- **GARCH — "how much will it move?"** Volatility is the variable options
+  are priced in; a next-day vol forecast is the single most
+  decision-relevant number for anyone buying premium.
+- **OU — "is it stretched?"** Distance from a fitted long-run mean, in
+  residual-std units, plus a half-life: a mean-reversion read with both a
+  magnitude and a timescale, not just a vibe.
+- **Momentum — "which way is it leaning?"** Kept deliberately primitive
+  (5-day percent change); it acts as a direction tiebreaker in the rule
+  table, never a standalone signal.
+
+Three practical constraints also shaped the pick: each model fits in
+seconds on ~1 year of daily closes (the whole universe runs in one
+short-lived sandbox), each has a battle-tested public implementation
+(`arch`, `statsmodels`), and none carries proprietary edge — the right
+trade for a public cookbook example. Deliberately absent: ML ensembles,
+intraday microstructure, and options-surface calibration — those need data
+and modeling depth that don't belong in an example repo, and the rule
+table below stays interpretable precisely because every verdict can be
+traced back to these three numbers.
+
 ### Verdict rule table
 
 Applied top-to-bottom, first match wins (`desk/model_code/signals.py`,
