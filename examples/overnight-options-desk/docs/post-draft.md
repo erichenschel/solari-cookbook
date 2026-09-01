@@ -19,7 +19,7 @@ logs and a fresh-clone test on 2026-09-01 — see "Fact basis" at bottom.**
 ## Main post (quote-tweeting the challenge)
 
 ```
-Your posting says $300K. My application cost nine cents. Every morning it rents a browser, a VM, and a web server for 90 seconds, reads the market, runs the models, and publishes my options brief before I wake up. @getsolari @harrychow_
+Your posting says $300K. My application cost about a dime. Every morning it rents a browser, a VM, and a web server for 90 seconds, reads the market, runs the models, and publishes my options brief before I wake up. @getsolari @harrychow_
 https://github.com/erichenschel/solari-cookbook
 https://erichenschel.github.io/solari-cookbook/examples/overnight-options-desk/docs/latest/index.html
 ```
@@ -33,7 +33,7 @@ Best part: Solari's browser gateway went down mid-build. The desk shrugged, fell
 ## Reply 2 — the receipts
 
 ```
-The receipts, because vibes aren't verification: 154 tests passing from a fresh clone with no API key, every scrape session recorded and replayable, per-stage budget logs, 3 bugs found and documented in Solari's own stack. Total spend for the entire build and every demo: about nine cents.
+The receipts, because vibes aren't verification: 154 tests passing from a fresh clone with no API key, every scrape session recorded and replayable, per-stage budget logs, 3 bugs found and documented in Solari's own stack. Total spend for the entire build and every demo: about a dime.
 ```
 
 ## Reply 3 — method + QuantMechanix
@@ -62,7 +62,7 @@ What it does, unattended, from a cold start:
 
 Mid-build, Solari's browser gateway had a real outage. The pipeline kept publishing via browserless HTTP fallbacks, we root-caused the failure as SDK version skew, and the next run came back with zero warnings. Three findings in the platform's own stack, documented in the README where they bite.
 
-Built with AI, deliberately: I wrote the contracts and acceptance criteria; four AI agent lanes built the stages in parallel; nothing merged without verification. Spec to live URL in one evening. 154 tests pass from a fresh clone. Total spend: about nine cents.
+Built with AI, deliberately: I wrote the contracts and acceptance criteria; four AI agent lanes built the stages in parallel; nothing merged without verification. Spec to live URL in one evening. 154 tests pass from a fresh clone. Total spend: about a dime.
 
 It's a research tool, not trading advice — every brief carries the disclaimer, and the model outputs are research labels, never buy/sell signals. Modeled on the research desk I run daily at QuantMechanix.
 
@@ -75,7 +75,7 @@ X thread: [link the X post here after publishing]
 
 ## Fact basis (all claims verified 2026-09-01)
 
-- "nine cents": cumulative live spend ≈ $0.091 across every probe/run.
+- "about a dime": cumulative live spend ≈ $0.10 across every probe/run (incl. the 2026-09-01 09:48 run).
 - "~90 seconds": stage wall-clock sums of real runs, 50–85s.
 - "154 tests / fresh clone / no key": re-verified via literal clone to a
   temp dir + new venv on 2026-09-01 — `154 passed`.
