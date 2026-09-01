@@ -31,7 +31,7 @@ sell signals.
 ```mermaid
 flowchart LR
     subgraph S1["1. desk.scraper — cloud browser"]
-        B["open_browser_page()<br/>Yahoo / MarketWatch RSS / Google News RSS<br/>+ CBOE JSON (plain HTTP fallback)"]
+        B["open_browser_page()<br/>Yahoo / Google News RSS<br/>+ Yahoo headlines RSS / Yahoo chart / CBOE JSON (plain HTTP fallbacks)"]
     end
     subgraph S2["2. desk.models — sandbox kernel"]
         F["fetch.py: Stooq CSV -&gt; Yahoo chart fallback"]
@@ -89,9 +89,9 @@ exception, `serve_preview`, is documented below).
 
 - **Cloud browser** (`solari.launch()` → `browser.new_page()`, wrapped as
   `open_browser_page`) — the scraper needs real rendered pages (Yahoo
-  Finance, MarketWatch RSS, Google News RSS); several of these don't behave
-  the same over a plain HTTP GET (missing JS-rendered content, or outright
-  blocked). Every fetch is a fresh, closed session.
+  Finance, Google News RSS); several of these don't behave the same over a
+  plain HTTP GET (missing JS-rendered content, or outright blocked). Every
+  fetch is a fresh, closed session.
 - **Sandbox code interpreter** (`SandboxClient.create()` → `run_code()`,
   wrapped as `run_in_sandbox`) — the quant models need `numpy`/`arch`/
   `statsmodels`; installing scientific-Python for every reader of this repo
@@ -278,6 +278,57 @@ URL — see "Orchestrator" below for what each flag does and "Real
 end-to-end run" for what a real run of it produced.
 
 ## Limitations (read before you rely on this)
+
+### Data sources & fallback chains
+
+Each data type tries its sources in order and stops at the first success
+(`desk/scraper.py`'s `EARNINGS_SOURCES` / `HEADLINE_SOURCES` /
+`QUOTE_SOURCES`). Per NG-3, the cloud browser stays primary for anything
+that needs real rendering; every plain-HTTP entry below is a *fallback*,
+never a replacement for the browser-backed primary.
+
+| Data type | 1st (primary) | 2nd (fallback) | 3rd (fallback) |
+|---|---|---|---|
+| Earnings | `yahoo_earnings_calendar` (browser) | `stockanalysis_earnings` (browser) | `nasdaq_earnings` (browser — blocked live, kept per NG-3) |
+| Headlines | `yahoo_news` (browser) | `yahoo_headlines_rss` (plain HTTP) | `google_news_rss` (browser) |
+| Quotes | `yahoo_quote` (browser) | `yahoo_chart_quote` (plain HTTP) | `cboe_quotes` (plain HTTP) |
+
+GRE-3464 replaced two fallbacks that were structurally incapable of ever
+succeeding rather than just occasionally failing: `stooq_csv` (its
+`/q/l/` last-quote endpoint 404s on every URL shape tried live — verified
+with a plain `curl`, not just this repo's code) is now `yahoo_chart_quote`
+(Yahoo's chart JSON endpoint, `last`/`prev_close` read off the two most
+recent closes); `marketwatch_rss` (filtered a general top-stories feed by
+symbol substring — almost always empty by construction) is now
+`yahoo_headlines_rss` (Yahoo's real per-symbol RSS feed), with
+`marketwatch_rss` removed outright rather than demoted — a fallback that
+cannot succeed is noise, not resilience.
+
+**Infra failures vs. source failures.** A browser-backed fetch can fail two
+different ways, and the rendered brief now tells them apart
+(`desk/brief.py`'s `_summarize_warnings`, GRE-3464). A *source* failure
+means the browser session launched fine and reached the target site, which
+then blocked/404'd/timed out/returned nothing — that's a fact about the
+site, grouped per source as before (e.g. `nasdaq_earnings blocked for
+AMZN (net::ERR_HTTP2_PROTOCOL_ERROR) — no data recovered from any
+source`). An *infra* failure means the Solari browser session itself never
+launched (a `BrowserType.connect` / gateway WebSocket error) — nothing
+about any data source was ever tested, so blaming "yahoo_news blocked for
+MSFT" would be wrong twice: it names the wrong culprit, and a gateway
+outage during a multi-symbol run floods the page with one near-identical
+row per failed fetch (each with a unique per-session URL, so naive
+dedup doesn't collapse them). Every infra failure across every source and
+symbol now collapses into one line — "Solari browser sessions unavailable
+for N fetches (gateway error) — \<recovered/partially recovered/no data
+recovered\> via HTTP fallbacks" — with the recovery verdict inferred from
+whether `scraped_data.json` ended up with that data anyway. This was
+motivated by a real incident: Solari's browser gateway had an active
+version-skew outage the night this fix was verified (see below), and the
+run that hit it recovered entirely through this repo's plain-HTTP
+fallbacks (`yahoo_chart_quote`, `cboe_quotes`) while every browser-backed
+source failed uniformly — the practical argument for keeping at least one
+browserless fallback per data type, not just for spreading load across
+sites.
 
 - **Preview lifetime is capped at ~1hr** (free-tier sandbox idle-kill
   window — `desk/serve.py`'s `MAX_HOLD_S`). The preview URL printed by a
