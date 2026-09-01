@@ -163,6 +163,7 @@
   .htr-rules ol { margin: .5rem 0 0; padding-left: 1.3rem; }
   .htr-rules li { margin-bottom: .3rem; }
   .htr-note { margin: 0; }
+  .htr-eq { display: block; margin-top: .2rem; font-size: .76rem; color: var(--muted); }
   @media (max-width: 640px) { .htr-row { grid-template-columns: 1fr; gap: .15rem; } }
   .how-to-read .boundary { color: var(--yellow-text); }
   .uncovered-note { color: var(--muted); font-size: .82rem; margin-top: 1rem; }
@@ -376,10 +377,14 @@
       <summary>How to read this</summary>
       <div class="htr">
         <div class="htr-models">
-          <div class="htr-row"><b>Vol (1d / ann)</b><span>GARCH(1,1) forecast of tomorrow's volatility &mdash; how much movement to expect, daily and annualized.</span></div>
-          <div class="htr-row"><b>OU z-score</b><span>Ornstein&ndash;Uhlenbeck fit &mdash; how many standard deviations the price sits from its own fitted 1-year mean. 0 means "at its normal level".</span></div>
-          <div class="htr-row"><b>Half-life</b><span>from the same fit &mdash; how many days a stretch like this has historically taken to decay halfway back.</span></div>
-          <div class="htr-row"><b>Mom 5d</b><span>plain 5-day percent change &mdash; which way it's leaning right now.</span></div>
+          <div class="htr-row"><b>Vol (1d / ann)</b><span>GARCH(1,1) forecast of tomorrow's volatility &mdash; how much movement to expect, daily and annualized.
+            <span class="htr-eq mono">&sigma;&sup2;(t) = &omega; + &alpha;&middot;r&sup2;(t&minus;1) + &beta;&middot;&sigma;&sup2;(t&minus;1) &nbsp;&middot;&nbsp; ann = 1d &times; &radic;252</span></span></div>
+          <div class="htr-row"><b>OU z-score</b><span>Ornstein&ndash;Uhlenbeck fit &mdash; how many standard deviations the price sits from its own fitted 1-year mean. 0 means "at its normal level".
+            <span class="htr-eq mono">ln P(t) = c + &phi;&middot;ln P(t&minus;1) + &epsilon; &nbsp;&middot;&nbsp; z = (ln P &minus; &mu;) / &sigma;&epsilon;, &nbsp;&mu; = c / (1&minus;&phi;)</span></span></div>
+          <div class="htr-row"><b>Half-life</b><span>from the same fit &mdash; how many days a stretch like this has historically taken to decay halfway back.
+            <span class="htr-eq mono">t&frac12; = ln 0.5 / ln &phi;</span></span></div>
+          <div class="htr-row"><b>Mom 5d</b><span>plain 5-day percent change &mdash; which way it's leaning right now.
+            <span class="htr-eq mono">P(t) / P(t&minus;5) &minus; 1</span></span></div>
         </div>
         <div class="htr-rules">
           <b>The Verdict applies these rules, first match wins:</b>
@@ -820,7 +825,7 @@
       <div class="prov-ids"><kbd>&hellip;jSDwQoWg</kbd> <kbd>&hellip;Wr-kYxZQ</kbd> <kbd>&hellip;dXlUgKGQ</kbd> <kbd>&hellip;RuzRPRVw</kbd> <kbd>&hellip;au68AnOw</kbd> <kbd>&hellip;YAg1puow</kbd> <kbd>&hellip;tIgl1HHg</kbd> <kbd>&hellip;pJyeiSxQ</kbd> <kbd>&hellip;67ljTrPw</kbd> <kbd>&hellip;S032Yj_Q</kbd> <kbd>&hellip;CUdzB0uw</kbd> <kbd>&hellip;RLNaE-ZQ</kbd> <kbd>&hellip;jFk5PVHA</kbd> <kbd>&hellip;hjc1MO1g</kbd> <kbd>&hellip;CsSQM5JA</kbd></div>
     </details>
     
-    <div>Rendered 2026-09-01 04:23 UTC &middot; desk/brief.py (hermetic, no external requests)</div>
+    <div>Rendered 2026-09-01 04:25 UTC &middot; desk/brief.py (hermetic, no external requests)</div>
   </div>
 </footer>
 
