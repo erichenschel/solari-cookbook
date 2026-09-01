@@ -238,11 +238,17 @@ permanent reliability improvement (a failed attempt releases in
 well under a second, so the added spend is negligible), but no client-side
 retry count survives a sustained 100% failure rate — that needs Solari's
 gateway to stabilize, or a newer `solari-browser` SDK release compatible
-with server v1.62 (none exists on PyPI as of this writing; latest
-published is `0.1.2`, pinned to `patchright<1.60`). If you see a burst of
-`428 Precondition Required` warnings spanning sources that share nothing
-but "used a browser," it's this incident, not a scraper defect — re-run
-later.
+with server v1.62. **Resolved later the same night:** Solari published
+`solari-browser 0.1.3`, and upgrading restored browser sessions
+immediately — the "outage" was, from the client's side, a protocol
+version skew, which is why `requirements.txt` now floors the SDK at
+`>=0.1.3` (0.1.2 can never connect to a v1.62+ gateway). The very next
+`run_overnight` after the upgrade completed with **zero warnings** and
+full provenance. If you see a burst of `428 Precondition Required` /
+WebSocket-connect warnings spanning sources that share nothing but "used
+a browser," check for an SDK update before blaming the platform — and
+either way, the browserless HTTP fallbacks below kept the pipeline
+producing briefs straight through the incident.
 - **Total live spend across this ticket's verification (all attempts,
   including the ones above and the runs discarded for the reasons above)**:
   **≈$0.031** — five `run_overnight` invocations ($0.0072 + $0.0072 +
