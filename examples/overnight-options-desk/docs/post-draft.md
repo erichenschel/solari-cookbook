@@ -38,6 +38,9 @@ The receipts, because vibes aren't verification: 154 tests passing from a fresh 
 
 ## Reply 3 — method + QuantMechanix
 
+**Attach `docs/architecture.png` to this reply** — the four-stage diagram
+with the Solari primitives and the contracts / resilience / receipts cards.
+
 ```
 And yes, AI wrote most of it — as instructed. I wrote the contracts and acceptance criteria, four agent lanes built the stages in parallel, nothing merged unverified. Spec → live URL in one evening. Modeled on the research desk I run daily at QuantMechanix.
 ```

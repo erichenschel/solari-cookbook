@@ -28,6 +28,36 @@ sell signals.
 
 ## Architecture
 
+![Overnight Options Desk — four stages on Solari](docs/architecture.png)
+
+### Engineering involved
+
+- **Contract-first design** — two JSON Schemas (`scraped_data`, `signals`)
+  are the only interface between stages, which is what let four AI agent
+  lanes build scraper / models / brief / orchestrator in parallel and
+  merge without seeing each other's code.
+- **Agent orchestration with verification gates** — acceptance criteria
+  and non-goals per lane, evidence ledgers per merge, 154 hermetic tests
+  that pass from a fresh clone with no API key.
+- **Resilience engineering** — per-source fallback chains (browser first,
+  browserless HTTP last), retry-then-degrade per stage, checkpoint/resume,
+  and warnings that distinguish "the source blocked us" from "the platform
+  was down" (see "Data sources & fallback chains").
+- **Numerical methods, kept honest** — GARCH(1,1), an OU/AR(1) fit with
+  half-life, and momentum; edge cases (non-convergence, short history,
+  constant prices) degrade with notes instead of crashing; thresholds and
+  equations published in the brief's own legend.
+- **Cloud-resource hygiene** — every Solari session opened in a context
+  manager and killed in `finally`; per-call spend estimates rolled into
+  `budget.json`; the whole project ran on ≈ $0.10 of free credit.
+- **Provenance and security** — recorded, replayable browser sessions
+  behind every scraped fact; autoescaped rendering with an href scheme
+  allowlist; zero JS and zero external requests in the published page;
+  secrets only ever in a gitignored `.env`.
+- **Upstream debugging** — three documented findings in Solari's own
+  stack (VM clock skew breaking TLS, a numpy/kernel C-ABI trap, and a
+  gateway version-skew outage diagnosed and resolved the same night).
+
 ```mermaid
 flowchart LR
     subgraph S1["1. desk.scraper — cloud browser"]
