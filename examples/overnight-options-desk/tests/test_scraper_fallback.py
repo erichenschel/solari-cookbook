@@ -84,14 +84,42 @@ async def test_scrape_happy_path_produces_schema_valid_output(patched_fetchers):
     assert payload["provenance"]["sessions"], "recording=True should populate session ids"
 
 
+def test_earnings_chain_order_puts_a_working_source_first():
+    """GRE-3464: yahoo_earnings_calendar (proven live) is primary;
+    nasdaq_earnings (100%-failing live, net::ERR_HTTP2_PROTOCOL_ERROR) is
+    demoted to last, never removed (NG-3 keeps all 3 sources)."""
+    ids = [s.id for s in scraper.EARNINGS_SOURCES]
+    assert ids == ["yahoo_earnings_calendar", "stockanalysis_earnings", "nasdaq_earnings"]
+
+
 async def test_scrape_with_primary_earnings_forced_unreachable_falls_back(patched_fetchers):
-    """AC-3: nasdaq_earnings forced unreachable -> output still schema-valid,
-    earnings still populated via the yahoo fallback, and the forced failure
-    is recorded in warnings[]."""
-    data = await scraper.scrape(["AAPL"], force_unreachable={"nasdaq_earnings"})
+    """AC-3: yahoo_earnings_calendar (the GRE-3464 primary) forced
+    unreachable -> output still schema-valid, earnings still populated via
+    the stockanalysis fallback, and the forced failure is recorded in
+    warnings[]."""
+    data = await scraper.scrape(["AAPL"], force_unreachable={"yahoo_earnings_calendar"})
     payload = data.to_dict()
     validate_scraped(payload)  # must not raise
-    assert len(payload["earnings"]) >= 1  # fell back to yahoo calendar successfully
+    assert len(payload["earnings"]) >= 1  # fell back to stockanalysis successfully
+    assert any("yahoo_earnings_calendar" in w and "AAPL" in w for w in payload["warnings"])
+
+
+async def test_scrape_with_primary_and_secondary_earnings_unreachable_falls_back_to_nasdaq(
+    patched_fetchers,
+):
+    """Both sources ahead of nasdaq_earnings in the chain forced unreachable
+    -> nasdaq_earnings is still tried (kept per NG-3) and, in this test's
+    fixture router, also fails (matches the real live finding) -> no
+    earnings rows, but still schema-valid with both failures warned."""
+    data = await scraper.scrape(
+        ["AAPL"],
+        force_unreachable={"yahoo_earnings_calendar", "stockanalysis_earnings"},
+    )
+    payload = data.to_dict()
+    validate_scraped(payload)  # must not raise
+    assert payload["earnings"] == []
+    assert any("yahoo_earnings_calendar" in w and "AAPL" in w for w in payload["warnings"])
+    assert any("stockanalysis_earnings" in w and "AAPL" in w for w in payload["warnings"])
     assert any("nasdaq_earnings" in w and "AAPL" in w for w in payload["warnings"])
 
 

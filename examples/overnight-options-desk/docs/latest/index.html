@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Overnight Options Desk Brief — 2026-08-31 23:26 UTC</title>
+<title>Overnight Options Desk Brief — 2026-09-01 01:38 UTC</title>
 <style>
   :root {
     color-scheme: dark;
@@ -156,7 +156,7 @@
 <header class="brief-header" id="header">
   <div class="wrap">
     <h1>Overnight Options Desk &mdash; Morning Brief</h1>
-    <div class="as-of">As of <strong>2026-08-31 23:26 UTC</strong> &middot; signals as of 2026-08-31 23:28 UTC</div>
+    <div class="as-of">As of <strong>2026-09-01 01:38 UTC</strong> &middot; signals as of 2026-09-01 01:39 UTC</div>
     <div class="universe">Universe: <strong>AAPL</strong>, <strong>NVDA</strong>, <strong>MSFT</strong>, <strong>TSLA</strong>, <strong>AMZN</strong></div>
   </div>
 </header>
@@ -215,8 +215,8 @@
         <tr>
           <td data-label="#">4</td>
           <td data-label="Symbol"><strong>AMZN</strong></td>
-          <td data-label="Last" class="num">259.77</td>
-          <td data-label="Chg" class="num"><span class="mom-down">-2.50%</span></td>
+          <td data-label="Last" class="num">260.20</td>
+          <td data-label="Chg" class="num"><span class="mom-down">-2.34%</span></td>
           <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 38.3%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="63.9" height="10" fill="#d29922" rx="1"/></svg><span class="metric-text">1d 2.41% &middot; ann 38.3%</span></span></td>
           <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +3.71 (beyond +/-3.0 scale)"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#d29922" rx="1"/><text x="97" y="11" font-size="9" fill="#d29922" text-anchor="end">&#9656;</text></svg><span class="zscore-num stretched">+3.71</span></span></td>
           <td data-label="Half-life" class="num">21.6</td>
@@ -227,8 +227,8 @@
         <tr>
           <td data-label="#">5</td>
           <td data-label="Symbol"><strong>TSLA</strong></td>
-          <td data-label="Last" class="num">367.95</td>
-          <td data-label="Chg" class="num"><span class="mom-up">+5.51%</span></td>
+          <td data-label="Last" class="num">367.45</td>
+          <td data-label="Chg" class="num"><span class="mom-up">+5.36%</span></td>
           <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 48.6%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="80.9" height="10" fill="#d29922" rx="1"/></svg><span class="metric-text">1d 3.06% &middot; ann 48.6%</span></span></td>
           <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score -3.45 (beyond +/-3.0 scale)"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="0.0" y="2" width="50.0" height="10" fill="#d29922" rx="1"/><text x="3" y="11" font-size="9" fill="#d29922" text-anchor="start">&#9666;</text></svg><span class="zscore-num stretched">-3.45</span></span></td>
           <td data-label="Half-life" class="num">14.3</td>
@@ -244,12 +244,108 @@
     <div class="warnings">
       
       <div class="warn-row">
-        <div class="warn-headline"><span class="warn-icon">&#9888;</span><span>nasdaq_earnings blocked for all 5 symbols (net::ERR_HTTP2_PROTOCOL_ERROR) — recovered via fallback</span></div>
+        <div class="warn-headline"><span class="warn-icon">&#9888;</span><span>yahoo_news blocked for MSFT (BrowserType.connect: WebSocket error: wss://api.getsolari.com/ws/ip-10-0-11-41:5) — recovered via fallback</span></div>
         
         <details>
-          <summary>affected pages (5) — full traces in the run's scraped_data.json</summary>
+          <summary>affected page (1) — full traces in the run's scraped_data.json</summary>
           <ul class="warn-raw">
-            <li>AAPL — https://www.nasdaq.com/market-activity/stocks/aapl/earnings</li><li>NVDA — https://www.nasdaq.com/market-activity/stocks/nvda/earnings</li><li>MSFT — https://www.nasdaq.com/market-activity/stocks/msft/earnings</li><li>TSLA — https://www.nasdaq.com/market-activity/stocks/tsla/earnings</li><li>AMZN — https://www.nasdaq.com/market-activity/stocks/amzn/earnings</li>
+            <li>yahoo_news failed for MSFT: BrowserType.connect: WebSocket error: wss://api.getsolari.com/ws/ip-10-0-11-41:5f8d3f04-a...</li>
+          </ul>
+        </details>
+        
+      </div>
+      
+      <div class="warn-row">
+        <div class="warn-headline"><span class="warn-icon">&#9888;</span><span>yahoo_quote blocked for TSLA (BrowserType.connect: WebSocket error: wss://api.getsolari.com/ws/ip-10-0-11-41:4) — recovered via fallback</span></div>
+        
+        <details>
+          <summary>affected page (1) — full traces in the run's scraped_data.json</summary>
+          <ul class="warn-raw">
+            <li>yahoo_quote failed for TSLA: BrowserType.connect: WebSocket error: wss://api.getsolari.com/ws/ip-10-0-11-41:4f6d6e8c-...</li>
+          </ul>
+        </details>
+        
+      </div>
+      
+      <div class="warn-row">
+        <div class="warn-headline"><span class="warn-icon">&#9888;</span><span>stooq_csv blocked for TSLA (Client error &#39;404 Not Found&#39; for url &#39;https://stooq.com/q/l/?s=tsla.us&amp;f=sd2t2oh) — recovered via fallback</span></div>
+        
+        <details>
+          <summary>affected page (1) — full traces in the run's scraped_data.json</summary>
+          <ul class="warn-raw">
+            <li>TSLA — https://stooq.com/q/l/?s=tsla.us&amp;f=sd2t2ohlcv&amp;h&amp;e=csv</li>
+          </ul>
+        </details>
+        
+      </div>
+      
+      <div class="warn-row">
+        <div class="warn-headline"><span class="warn-icon">&#9888;</span><span>yahoo_earnings_calendar blocked for AMZN (BrowserType.connect: WebSocket error: wss://api.getsolari.com/ws/ip-10-0-11-41:c) — no data recovered from any source</span></div>
+        
+        <details>
+          <summary>affected page (1) — full traces in the run's scraped_data.json</summary>
+          <ul class="warn-raw">
+            <li>yahoo_earnings_calendar failed for AMZN: BrowserType.connect: WebSocket error: wss://api.getsolari.com/ws/ip-10-0-11-...</li>
+          </ul>
+        </details>
+        
+      </div>
+      
+      <div class="warn-row">
+        <div class="warn-headline"><span class="warn-icon">&#9888;</span><span>yahoo_quote blocked for AMZN (BrowserType.connect: WebSocket error: wss://api.getsolari.com/ws/ip-10-0-11-41:d) — recovered via fallback</span></div>
+        
+        <details>
+          <summary>affected page (1) — full traces in the run's scraped_data.json</summary>
+          <ul class="warn-raw">
+            <li>yahoo_quote failed for AMZN: BrowserType.connect: WebSocket error: wss://api.getsolari.com/ws/ip-10-0-11-41:decb4f0e-...</li>
+          </ul>
+        </details>
+        
+      </div>
+      
+      <div class="warn-row">
+        <div class="warn-headline"><span class="warn-icon">&#9888;</span><span>stooq_csv blocked for AMZN (Client error &#39;404 Not Found&#39; for url &#39;https://stooq.com/q/l/?s=amzn.us&amp;f=sd2t2oh) — recovered via fallback</span></div>
+        
+        <details>
+          <summary>affected page (1) — full traces in the run's scraped_data.json</summary>
+          <ul class="warn-raw">
+            <li>AMZN — https://stooq.com/q/l/?s=amzn.us&amp;f=sd2t2ohlcv&amp;h&amp;e=csv</li>
+          </ul>
+        </details>
+        
+      </div>
+      
+      <div class="warn-row">
+        <div class="warn-headline"><span class="warn-icon">&#9888;</span><span>marketwatch_rss blocked for MSFT (no symbol-relevant headlines in marketwatch topstories for MSFT) — recovered via fallback</span></div>
+        
+        <details>
+          <summary>affected page (1) — full traces in the run's scraped_data.json</summary>
+          <ul class="warn-raw">
+            <li>marketwatch_rss failed for MSFT: no symbol-relevant headlines in marketwatch topstories for MSFT</li>
+          </ul>
+        </details>
+        
+      </div>
+      
+      <div class="warn-row">
+        <div class="warn-headline"><span class="warn-icon">&#9888;</span><span>stockanalysis_earnings blocked for AMZN (Page.goto: Timeout 30000ms exceeded.) — no data recovered from any source</span></div>
+        
+        <details>
+          <summary>affected page (1) — full traces in the run's scraped_data.json</summary>
+          <ul class="warn-raw">
+            <li>AMZN — https://stockanalysis.com/stocks/amzn/</li>
+          </ul>
+        </details>
+        
+      </div>
+      
+      <div class="warn-row">
+        <div class="warn-headline"><span class="warn-icon">&#9888;</span><span>nasdaq_earnings blocked for AMZN (net::ERR_HTTP2_PROTOCOL_ERROR) — no data recovered from any source</span></div>
+        
+        <details>
+          <summary>affected page (1) — full traces in the run's scraped_data.json</summary>
+          <ul class="warn-raw">
+            <li>AMZN — https://www.nasdaq.com/market-activity/stocks/amzn/earnings</li>
           </ul>
         </details>
         
@@ -297,14 +393,6 @@
       </div>
       
       <div class="callout">
-        <div class="sym">AMZN</div>
-        <div class="date">2026-10-29 &middot; After close</div>
-        
-        <div class="badge v-avoid">avoid (z +3.71)</div>
-        
-      </div>
-      
-      <div class="callout">
         <div class="sym">NVDA</div>
         <div class="date">2026-11-17 &middot; Unknown</div>
         
@@ -326,62 +414,62 @@
         
         <li>
           <a href="https://finance.yahoo.com/video/rewind-2011-tim-cooks-first-212632931.html" rel="noopener noreferrer nofollow" target="_blank">Rewind to 2011: Tim Cook&#39;s first Apple product launch as CEO</a>
-          <div class="headline-meta">Yahoo Finance Video &middot; 2026-08-31 21:26 UTC</div>
+          <div class="headline-meta">Yahoo Finance Video &middot; 2026-08-31 21:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/video/heres-tim-cook-posted-last-193127146.html" rel="noopener noreferrer nofollow" target="_blank">Here&#39;s what Tim Cook posted on his last day as Apple&#39;s CEO</a>
-          <div class="headline-meta">Yahoo Finance Video &middot; 2026-08-31 20:26 UTC</div>
+          <div class="headline-meta">Yahoo Finance Video &middot; 2026-08-31 19:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/technology/live/tech-stocks-today-apple-ceo-steps-down-nvidia-mag-7-145623375.html" rel="noopener noreferrer nofollow" target="_blank">Tech stocks today: Apple stock slips as Tim Cook prepares to step down</a>
-          <div class="headline-meta">Yahoo Finance &middot; 2026-08-31 19:26 UTC</div>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-08-31 19:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/technology/article/what-tim-cook-told-employees-on-his-last-day-at-apple-171506698.html" rel="noopener noreferrer nofollow" target="_blank">What Tim Cook told employees on his last day at Apple</a>
-          <div class="headline-meta">Yahoo Finance &middot; 2026-08-31 17:26 UTC</div>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-08-31 17:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/video/tim-cooks-final-day-apple-135615675.html" rel="noopener noreferrer nofollow" target="_blank">It&#39;s Tim Cook&#39;s final day as Apple CEO. Here&#39;s what investors need from John Ternus.</a>
-          <div class="headline-meta">Yahoo Finance Video &middot; 2026-08-31 14:26 UTC</div>
+          <div class="headline-meta">Yahoo Finance Video &middot; 2026-08-31 14:38 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/technology/articles/apple-shares-shocking-evidence-against-001300436.html" rel="noopener noreferrer nofollow" target="_blank">Apple shares ‘shocking evidence’ against former employee accused of stealing company data for OpenAI</a>
+          <div class="headline-meta">TechCrunch &middot; 2026-09-01 00:38 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/msft-stock-compound-way-higher-005337692.html" rel="noopener noreferrer nofollow" target="_blank">Can MSFT Stock Compound Its Way Higher?</a>
+          <div class="headline-meta">Trefis &middot; 2026-09-01 00:54 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/googl-stock-delivers-leader-priced-004125038.html" rel="noopener noreferrer nofollow" target="_blank">GOOGL Stock Delivers Like The Leader, Priced Like The Laggard</a>
+          <div class="headline-meta">Trefis &middot; 2026-09-01 00:42 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/markets/stocks/articles/dell-stock-could-halve-double-224813891.html" rel="noopener noreferrer nofollow" target="_blank">Dell Stock Could Halve Or Double Within Thirteen Months</a>
-          <div class="headline-meta">Trefis &middot; 2026-08-31 22:48 UTC</div>
+          <div class="headline-meta">Trefis &middot; 2026-08-31 23:38 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/technology/ai/articles/apple-says-openai-destroying-evidence-210352338.html" rel="noopener noreferrer nofollow" target="_blank">Apple Says OpenAI Is Destroying Evidence in Trade Secrets Case</a>
+          <div class="headline-meta">Bloomberg &middot; 2026-08-31 21:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/m/a8a193f1-e79f-328b-b784-83bb33fb41f5/apple-to-begin-new-chapter.html" rel="noopener noreferrer nofollow" target="_blank">Apple To Begin New Chapter With CEO John Ternus</a>
-          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-31 21:26 UTC</div>
+          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-31 20:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/markets/stocks/articles/jpmorgan-built-version-jepi-designed-214527094.html" rel="noopener noreferrer nofollow" target="_blank">JPMorgan Built a Version of JEPI Designed to Keep the IRS Waiting</a>
-          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 22:26 UTC</div>
-        </li>
-        
-        <li>
-          <a href="https://finance.yahoo.com/markets/stocks/articles/sector-tech-stocks-rise-afternoon-200045050.html" rel="noopener noreferrer nofollow" target="_blank">Sector Update: Tech Stocks Rise Late Afternoon</a>
-          <div class="headline-meta">MT Newswires &middot; 2026-08-31 20:26 UTC</div>
-        </li>
-        
-        <li>
-          <a href="https://finance.yahoo.com/markets/stocks/articles/apple-just-raised-mac-ipad-193518922.html" rel="noopener noreferrer nofollow" target="_blank">Apple Just Raised Mac and iPad Prices 20%, So Who Is Getting Rich Off the Shortage?</a>
-          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 20:26 UTC</div>
-        </li>
-        
-        <li>
-          <a href="https://finance.yahoo.com/technology/articles/tim-cooks-last-day-apple-193059903.html" rel="noopener noreferrer nofollow" target="_blank">Tim Cook&#39;s last day as Apple CEO: How he led the tech giant&#39;s rise to $4T</a>
-          <div class="headline-meta">Fox Business &middot; 2026-08-31 20:26 UTC</div>
-        </li>
-        
-        <li>
-          <a href="https://finance.yahoo.com/technology/articles/apple-ceo-tim-cook-gives-185856801.html" rel="noopener noreferrer nofollow" target="_blank">Apple CEO Tim Cook gives nod to founder Steve Jobs in final memo</a>
-          <div class="headline-meta">AFP &middot; 2026-08-31 19:26 UTC</div>
+          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 22:38 UTC</div>
         </li>
         
       </ul>
@@ -395,62 +483,62 @@
         
         <li>
           <a href="https://finance.yahoo.com/video/nvidias-stellar-q2-earnings-represent-153000546.html" rel="noopener noreferrer nofollow" target="_blank">What Nvidia&#39;s stellar Q2 earnings represent for AI in the rest of 2026</a>
-          <div class="headline-meta">Yahoo Finance Video &middot; 2026-08-31 16:26 UTC</div>
+          <div class="headline-meta">Yahoo Finance Video &middot; 2026-08-31 15:38 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/markets/crypto/articles/crypto-valuations-could-ready-double-225000771.html" rel="noopener noreferrer nofollow" target="_blank">Crypto Valuations Could Be Ready to Double, According to Bitwise&#39;s Matt Hougan -- But Only If This 1 Thing Happens</a>
-          <div class="headline-meta">Motley Fool &middot; 2026-08-31 22:50 UTC</div>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/nvda-stock-where-compounding-could-002538999.html" rel="noopener noreferrer nofollow" target="_blank">NVDA Stock: Where Compounding Could Take The Price</a>
+          <div class="headline-meta">Trefis &middot; 2026-09-01 00:38 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/articles/heres-retirement-could-look-65-005000479.html" rel="noopener noreferrer nofollow" target="_blank">Here&#39;s What Retirement Could Look Like for a 65-Year-Old With Average Savings, Plus Social Security</a>
+          <div class="headline-meta">Motley Fool &middot; 2026-09-01 00:50 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/down-14-high-genesis-energy-012000906.html" rel="noopener noreferrer nofollow" target="_blank">Down 14% From Its High, Is Genesis Energy a Buy?</a>
+          <div class="headline-meta">Motley Fool &middot; 2026-09-01 01:20 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/m/e094dafb-4fb9-3a61-892b-0d14bebedee4/dow-jones-futures-trump-s.html" rel="noopener noreferrer nofollow" target="_blank">Dow Jones Futures: Trump&#39;s Iran Warning Sparks Stock Market Losses; Elon Musk-Led SpaceX, Tesla Rally</a>
-          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-31 22:26 UTC</div>
+          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-09-01 00:38 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/markets/commodities/articles/nvidia-just-lined-500-billion-215900262.html" rel="noopener noreferrer nofollow" target="_blank">Nvidia just lined up $500 billion. Frank Holmes says the thing that’s scarce isn’t money, it’s copper</a>
-          <div class="headline-meta">TheStreet &middot; 2026-08-31 22:26 UTC</div>
+          <a href="https://finance.yahoo.com/technology/ai/articles/anthropic-seals-35-billion-cloud-235404995.html" rel="noopener noreferrer nofollow" target="_blank">Anthropic Seals $35 Billion Cloud Deal With Nvidia-Backed Lambda</a>
+          <div class="headline-meta">Bloomberg &middot; 2026-09-01 00:38 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/quote/NVDA/news" rel="noopener noreferrer nofollow" target="_blank">S&amp;P500, Dow End Lower On US-Iran Flare-Up, While Dow Records Fifth Straight Month Of Gains — NVDA, META, AON, MSTR, TSLA In Focus</a>
-          <div class="headline-meta">Stocktwits &middot; 2026-08-31 22:26 UTC</div>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/why-deere-stock-rallied-today-234646054.html" rel="noopener noreferrer nofollow" target="_blank">Why Deere Stock Rallied Today</a>
+          <div class="headline-meta">Motley Fool &middot; 2026-09-01 00:38 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/markets/stocks/articles/could-buy-nvidia-106-revenue-212000053.html" rel="noopener noreferrer nofollow" target="_blank">You Could Buy Nvidia for Its 106% Revenue Growth and 75% Gross Margin. But There&#39;s an Even Better Reason the AI Stock Has Room to Run.</a>
-          <div class="headline-meta">Motley Fool &middot; 2026-08-31 21:26 UTC</div>
+          <a href="https://finance.yahoo.com/technology/ai/articles/sundar-pichai-says-alphabet-cant-010201780.html" rel="noopener noreferrer nofollow" target="_blank">Sundar Pichai Says Alphabet Can&#39;t Build AI Capacity Fast Enough, and Anthropic Has Secured 5 Gigawatts of It.</a>
+          <div class="headline-meta">Motley Fool &middot; 2026-09-01 01:02 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/markets/stocks/articles/jpmorgan-built-version-jepi-designed-214527094.html" rel="noopener noreferrer nofollow" target="_blank">JPMorgan Built a Version of JEPI Designed to Keep the IRS Waiting</a>
-          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 22:26 UTC</div>
+          <a href="https://finance.yahoo.com/technology/ai/articles/nvidia-nvda-invests-3-5-234008357.html" rel="noopener noreferrer nofollow" target="_blank">Nvidia (NVDA) Invests $3.5 Billion in MediaTek. Is This the Next Leg of Its AI Growth?</a>
+          <div class="headline-meta">Insider Monkey &middot; 2026-09-01 00:38 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/markets/stocks/articles/science-applications-international-corporation-q2-205646479.html" rel="noopener noreferrer nofollow" target="_blank">Science Applications International Corporation Q2 2027 Earnings Call Summary</a>
-          <div class="headline-meta">Moby &middot; 2026-08-31 21:26 UTC</div>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/nvidia-stock-flashes-unusual-signal-233700334.html" rel="noopener noreferrer nofollow" target="_blank">Nvidia stock flashes unusual signal for investors</a>
+          <div class="headline-meta">TheStreet &middot; 2026-08-31 23:38 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/healthcare/articles/eli-lilly-acquiring-merdia-biosciences-220150170.html" rel="noopener noreferrer nofollow" target="_blank">Eli Lilly Is Acquiring Merdia Biosciences for Up to $2.88 Billion. Here&#39;s What That Means for Investors.</a>
-          <div class="headline-meta">Motley Fool &middot; 2026-08-31 22:26 UTC</div>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/jensen-huang-told-investors-june-233500155.html" rel="noopener noreferrer nofollow" target="_blank">Jensen Huang Told Investors in June to &#39;Buy at a Discount&#39; During Nvidia&#39;s Sell-Off. Nearly Three Months Later, Nvidia Is Up 4%, and a Broader AI Basket Gained 8%. Did His Call Pay Off?</a>
+          <div class="headline-meta">Motley Fool &middot; 2026-08-31 23:38 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/markets/stocks/articles/broadcoms-next-earnings-report-september-220501648.html" rel="noopener noreferrer nofollow" target="_blank">Broadcom&#39;s Next Earnings Report on September 2 Could Send the Stock Soaring. Here&#39;s Why.</a>
-          <div class="headline-meta">Motley Fool &middot; 2026-08-31 22:26 UTC</div>
-        </li>
-        
-        <li>
-          <a href="https://finance.yahoo.com/markets/stocks/articles/peter-lynch-made-fortune-investing-205000793.html" rel="noopener noreferrer nofollow" target="_blank">Peter Lynch Made a Fortune by Investing in Familiar Brands. Here Are 2 Consumer Stocks I Think He&#39;d Love Right Now.</a>
-          <div class="headline-meta">Motley Fool &middot; 2026-08-31 21:26 UTC</div>
-        </li>
-        
-        <li>
-          <a href="https://finance.yahoo.com/markets/options/articles/fidelity-now-charges-100-buy-215526713.html" rel="noopener noreferrer nofollow" target="_blank">Fidelity Now Charges $100 to Buy These ETFs. Here’s the List and the Free Alternatives</a>
-          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 22:26 UTC</div>
+          <a href="https://finance.yahoo.com/markets/crypto/articles/crypto-valuations-could-ready-double-225000771.html" rel="noopener noreferrer nofollow" target="_blank">Crypto Valuations Could Be Ready to Double, According to Bitwise&#39;s Matt Hougan -- But Only If This 1 Thing Happens</a>
+          <div class="headline-meta">Motley Fool &middot; 2026-08-31 23:38 UTC</div>
         </li>
         
       </ul>
@@ -463,53 +551,503 @@
       <ul>
         
         <li>
-          <a href="https://finance.yahoo.com/markets/article/here-comes-the-ai-capex-shocker-goldman-sachs-says-171026577.html" rel="noopener noreferrer nofollow" target="_blank">Here comes the AI capex shocker, Goldman Sachs says</a>
-          <div class="headline-meta">Yahoo Finance &middot; 2026-08-31 17:26 UTC</div>
+          <a href="https://news.google.com/rss/articles/CBMimwFBVV95cUxQZE82M0g2ajRwRjRFbGFMbnpzRERuTzlTSGFOMDlPSFkxTUIzWW5KZHMtN1ZLV1Q0RlZKZDZZNURzekZxa1NMUEFHZ09FMXhheUpBZ2NqWmZUVGg0d2p1SVh5aWh1TWQ3a1FURHdoMGZNZExhMXg0Y0xKT2lfN19SX3lfODh4c3RHeWxZcjNZLVNiR3RoSlp6WU55dw?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft, Stock Of The Day, Flashes New Buy Signal. Why It&#39;s Still An ‘AI Winner.&#39;</a>
+          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-28 16:17 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/technology/ai/articles/microsoft-msft-brings-arabic-language-210536821.html" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT) Brings Arabic Language AI Models To Its Ecosystem</a>
-          <div class="headline-meta">Simply Wall St. &middot; 2026-08-31 21:26 UTC</div>
+          <a href="https://news.google.com/rss/articles/CBMioAFBVV95cUxObE4yclE4ckdGNk5MTW8xSmVqenkwMVF6Vm5abXltY2t3VUV4OUpHdDRFejQxbzkybHFSeVBKcGg4alRVZFpZeWZOQXB2b055SGs5aldEMGdfZVRQYmttU3R1dHdqaldzQ3NhaTdrcXdtZkt5NWlXOFFTNUtnY1B1TXB4clVQOWxPVlRKdkk4c192cE1UYy1Db1owOE1pb1M4?oc=5" rel="noopener noreferrer nofollow" target="_blank">Can MSFT Stock Compound Its Way Higher?</a>
+          <div class="headline-meta">Trefis &middot; 2026-09-01 00:53 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/quote/MSFT/news" rel="noopener noreferrer nofollow" target="_blank">Software Stocks &amp; ETFs: Is the AI Sell-Off Over?</a>
-          <div class="headline-meta">Zacks &middot; 2026-08-31 21:26 UTC</div>
+          <a href="https://news.google.com/rss/articles/CBMinwFBVV95cUxQU3FNaXc3Nnp2S0RKdWI1MC1yQmIyY3lqZ3NKM1VoTUdfcng2bTdIaVFjRWpyaEZmWEhiQVk5eHgzSVQtOXYzeTRRS0FPVDdmVmRPX1ZKWnh0Y3RXZHlNNDdVSmx2NTRGMmJvZXhYTmZvb1BoQ2tLOGFYc0JiVXdXRkFfSDUzc3A0N0ZGTE5JTWhwb0VEdlU0LWVOazY3OW8?oc=5" rel="noopener noreferrer nofollow" target="_blank">SA Asks: What&#39;s the best AI cybersecurity stock play right now? (MSFT:NASDAQ)</a>
+          <div class="headline-meta">Seeking Alpha &middot; 2026-08-29 19:09 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/markets/stocks/articles/investors-may-respond-jpmorgan-chase-202254218.html" rel="noopener noreferrer nofollow" target="_blank">How Investors May Respond To JPMorgan Chase (JPM) Bond Issuance, Branch Expansion and Higher Payouts</a>
-          <div class="headline-meta">Simply Wall St. &middot; 2026-08-31 20:26 UTC</div>
+          <a href="https://news.google.com/rss/articles/CBMilwFBVV95cUxObVp5azE0RFpsQkFwRXkyenRjTXYzWWI1QXdSc19LUldtNy1ybUNYYU4zYWEzak8ycmhRV29qSjZ0Rm16WUFDM2xJaVJaQ3p1X3lCVzUxNUNZaWQwYzUxOE10ZzFZMHFLUUdUNUZrTU5Na2Q0aFFkQi1BeEZJdlh5aVdnR0xsTFpMdHQtZ1kwSHFIWHlzV19v?oc=5" rel="noopener noreferrer nofollow" target="_blank">Why Is Microsoft (MSFT) Up 12% Since Last Earnings Report?</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-08-28 15:30 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/markets/stocks/articles/microsoft-raised-dividend-every-more-183801141.html" rel="noopener noreferrer nofollow" target="_blank">Microsoft Has Raised Its Dividend Every Year for More Than a Decade. History Provides Clues of How Big This Year&#39;s Raise Might Be.</a>
-          <div class="headline-meta">Motley Fool &middot; 2026-08-31 19:26 UTC</div>
+          <a href="https://news.google.com/rss/articles/CBMipAFBVV95cUxQRzI0U2ZnRTlHQlByYzJ4eDIyaVB3NkM5c294M1hjOThWVFFvNGlIUWFOWVBHVXpDOGxWQ0ZuSVRCcWtNRGRuU05YNjUxbUxwUjFCTWJ2bWYxelhkdjBFMTZhdXRTN3ZsUlJleW9kNDNZR0g0VndNd0M1Y3k1MXpyeHZmUm83b0hrck5MdFdtME43X2dhV1NfSmRvaUtTT3hzb1B3OA?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft’s Split Verdict Tests Investing Without a Fed Safety Net</a>
+          <div class="headline-meta">MarketBeat &middot; 2026-08-31 13:53 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/markets/options/articles/adobes-options-price-runs-past-192201700.html" rel="noopener noreferrer nofollow" target="_blank">Adobe&#39;s Options Price A Year That Runs Past Its Own Range</a>
-          <div class="headline-meta">Trefis &middot; 2026-08-31 19:26 UTC</div>
+          <a href="https://news.google.com/rss/articles/CBMimgFBVV95cUxOWEdsY3NLMlJVMVl4cEpwME92UlhQWEVwQUxfSWREUEJsclQ1eUoxb29SUmlKVzFQRDA2UU54Zm9WT0VOOUFnbW9KVmdlZjItdG41LVVoMkEyb0ZGdjR1RVozaHBRU2x6emNFblRhZExKbVlPSjl0YTJ0a2FSTnlQU0FhWHI3cXpLYzdadmMzRmdDQXVVNEhuZkV3?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Stock Nears Golden Cross as Ackman&#39;s Bet Aligns - Microsoft (NASDAQ:MSFT)</a>
+          <div class="headline-meta">Benzinga &middot; 2026-08-31 14:27 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/markets/stocks/articles/meta-stock-gives-more-market-191243222.html" rel="noopener noreferrer nofollow" target="_blank">Meta Stock Gives You More Of The Market, Not Less Of It</a>
-          <div class="headline-meta">Trefis &middot; 2026-08-31 19:26 UTC</div>
+          <a href="https://news.google.com/rss/articles/CBMimAFBVV95cUxQWk9zb0RDcjhsaXljMDA2bk5vNEJZVnZvYVlWdWRVTlU1Vjc4UksyaWg4bll2ZXhtWnJsZXg4c3RzV1NFLWVNRElKOHhNVjBobzdFcURqSlJYdE50QXRzVy1vcW1Ma3VRZUNETkdxQ19fN2YyZTE2ZEVNYkFGbDJSYWJxZmFsVU5FOEVfLWVlT0hocjFvcUNndA?oc=5" rel="noopener noreferrer nofollow" target="_blank">Can Microsoft Stock Surge to a New All-Time High by the End of 2026 as Azure Cloud Demand Accelerates?</a>
+          <div class="headline-meta">The Motley Fool &middot; 2026-08-31 04:15 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/technology/ai/articles/bill-oracles-ai-build-arrived-185118557.html" rel="noopener noreferrer nofollow" target="_blank">The Bill For Oracle&#39;s AI Build Arrived Before The Revenue</a>
-          <div class="headline-meta">Trefis &middot; 2026-08-31 19:26 UTC</div>
+          <a href="https://news.google.com/rss/articles/CBMiuwFBVV95cUxOak1pVTU1QnBzU25mTV9zWUtQVGtIakdXVXRjWWVzaHpPdXY3NEY3cjVIRmVKVjB0ZnBTNS15TVNNLVRqLVIyREVvSjJpVUFrbXB2N3FNcVYtY0tUei1nSk1WZEdWdHdoeTFRbkFrZlNuek1Zc3hkZFZWcjU3enVMcV8wWTVld1JmTFBkZGZMT0xNandYbUw4MGVaLUVycGpRR2l3X2dzYXFJZ2tnWERaS0hjMWNRNURRWHlV?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Stock (MSFT) in Focus as Company Reassures Employees About AI Data Center Impacts</a>
+          <div class="headline-meta">TipRanks &middot; 2026-08-28 18:28 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/technology/ai/articles/microsoft-humain-expand-strategic-collaboration-164500702.html" rel="noopener noreferrer nofollow" target="_blank">Microsoft and HUMAIN Expand Strategic Collaboration at LEAP 2026 with New Enterprise AI Offering and AI PC</a>
-          <div class="headline-meta">PR Newswire &middot; 2026-08-31 17:26 UTC</div>
+          <a href="https://news.google.com/rss/articles/CBMiogFBVV95cUxNdGl3TDNiNXVSTUN6WlhtM3htUUlKOWd5WThFSUhwNFpFX0lCSjJEQkpqUGgwanY5R01DTWhPdktFNzJOdjRyaFNnZllTcW5ianRUcGRUR2UzWTlaMnk5Z1VfSUo3NlpmZzB1UWNVd0hIU1pZeUNUNjZvOU9vVE5udmo1YmZnTVE2OU15bWVDU2R6Qm9lZUVzSE5LR21ORU1Cdmc?oc=5" rel="noopener noreferrer nofollow" target="_blank">Rising Cloud Revenue Strengthens Alphabet Against MSFT &amp; AMZN</a>
+          <div class="headline-meta">Zacks Investment Research &middot; 2026-08-28 15:32 UTC</div>
         </li>
         
         <li>
-          <a href="https://finance.yahoo.com/markets/stocks/articles/iren-climbs-4-co-ceo-174735195.html" rel="noopener noreferrer nofollow" target="_blank">IREN Climbs 4% as Co-CEO Says Debt and Prepayments Can Fund FY27 Capex, TeraWulf Slips</a>
-          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 18:26 UTC</div>
+          <a href="https://news.google.com/rss/articles/CBMimwFBVV95cUxPTzEwWGlnVHZEQlJ2cjNFS20wc3g0cE9YTThIQnRoUGtpVXNoWDdMVFRKV2NXNWJPT19Vd3lLbnVPNUdPbExET1hRZjl1VWtmbEV4TUlQR1Z3enhDTTVkanRrbVFZbGYyalNjRWJNUTJsYXdTSElOVDFEQ3BIblFERlF0NXU3Q0ZRQWNKS29uRkJoRkFsdy1iRnk4TQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft: A High-Quality AI Name That Is No Longer Misunderstood</a>
+          <div class="headline-meta">Seeking Alpha &middot; 2026-08-30 14:27 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMi4AFBVV95cUxPWXlYNXpOMTFteXlTcElkZ3dGb1hiRzZPMWVmaXctRkt1TVZPQ2xGanNzekFrTHRweUNlR0NMNUk0WmtiUXduWVEtWi0yQkZSeHhZZk45LUU0YVN2a283bWlzTjV4cnVGQ1NBN09FRnluMUFUaWJkVGVCM3BWTUQyWXAxNWVmR2hxR0RoY3ZrTnNXbVNNLV9adGpkeE5YeFFhV0MyNUJQcnNCMGt5bFdfUDBMZ0x1Nm0wUFpOSzRnV2JhRFp1VEQ2TlZLRUZZazRTek9KVi04aVNVNDBLQS0wUg?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Layoffs Coming Next Week? MSFT Stock Climbs Overnight, Retail Stays Bullish</a>
+          <div class="headline-meta">Stocktwits &middot; 2026-08-31 10:42 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMitwFBVV95cUxOc3I5dFl2aDhyRGpJSVBUSFhfUmdjVWFRTlQ4dDFPSGpaaUVjbW5JdmZDZEl5UnoxX2JVZ19hNmFSZTd4ZlBvcnZBcHdQZ2EwYnU4NGptbEFiWDVqTC1nTFVrWFh4aS12em0yRURyMUZ4S2N4MnNIN2U5MlROdTZBT1ozdDAwY016eTZUb3hTajlEUXJ2WlRzNGxHcTRidWo0ODZxVjU0Y3Y4VTcxMDZPOHp2WnIxWEk?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Stock Alert: Moonshot Could Give Microsoft Another AI Revenue Stream</a>
+          <div class="headline-meta">Barchart.com &middot; 2026-08-28 18:57 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMixwFBVV95cUxQY2hMNmJPbll0b0h2ZE1mQk82YzFzNGlFTE9XN3dWTHROdmg1eTQ0d0pTSzdjTGVfdnR3LVdxSVJpZF8xWmg3QldCc182R2dBZTJVZDU3NG9od3BVdGhGN3Z0TUpIT1NpWkFkY2x2R001QzVVNVFwcEFpbWhock1kV0lVVXhKZTQyY1pvcHo3SXdMTjRVNEVDNVJ0WkRfcGlEUnlWTnFGem9TUktQT2VEWEQ1T2hmeXlWeXJ1Zmg4M3Z2amdzUVkw0gHMAUFVX3lxTE5faG5XWmdpZ1R1R1B4TlU0d2xzNG1ZTUIyLUJxSWY5RU84eVFFcjJCMFl3WFR5RGFNZjNhd1dLS1lwcVlwY29QN0t1ZVpTT3VvbGVWM3I5TDlmMGxYYmdFZ1F6bFkxbUNYNnIyOGVWNlA5cEJyZElwUVBhelZJYTR4M3pzTWlOVmFNVnB5a2cwZk1SVXJMVEl5YmYycWU2UXBfM1FoaERJVW8zSU15c29DU2plU0phak1xSmVZUGtNNnZNTkNjTmlqZFNDSQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Stock and 2 AI Infrastructure Plays for the Next Data Center Buildout</a>
+          <div class="headline-meta">simplywall.st &middot; 2026-08-31 12:17 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMizwFBVV95cUxPSzQzUHo1QjF5QktqWDB4dWJVLXhIYldVYlQ5TW14ai12WG0yQlhGcjUxSW5ZMHBtZExmNkMzVXBqd3E1Wk1vcjBsQlhDelBZQXNLQWtfTDhIZUdGVjRKYXNjZUw5RlFlMmpsNUE3Y3AxWGJIYnlVcUs3Ym1JX21CSTZfT1FkSEdHR0FjTW1MSXkyYWNicXV1Zm1nZ1VUNm1ydHMwbVl3TExqaVpjQTl3QzBaZV8tTVRtN3RmX3dGSWVTdjl6NmQtN0NNNGNwV0E?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Stock Forecast: Is Spending $190 Billion on AI Infrastructure in 2026 — Is MSFT a Buy at $452?</a>
+          <div class="headline-meta">TradingKey &middot; 2026-08-30 19:48 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMingFBVV95cUxOUXRIMktwQVh5RGtJbFFlTUFpNXA5bkhXWEFEemNpaUgtd2dhUHRURFZta19UdTc3eC1uaVVnOFVZZVZhcnlNSzNVd1RmV0JWM2E4V25Ec19DOG9IYnYyYVY0UVlsbm5BTF9rLXdGZXI3MjdreWdpLTZqVjBjcnVhNkh4cjBMSV9xUDdXTDVtblBVaWQ4RlIxY0JldnliZw?oc=5" rel="noopener noreferrer nofollow" target="_blank">After Earnings, Is Microsoft Stock a Buy, a Sell, or Fairly Valued?</a>
+          <div class="headline-meta">Morningstar &middot; 2026-08-06 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiogFBVV95cUxPLVZxdFB6T3puRFZaZk9GcXhWZlM1ZXJaeVJjeVI2bGRmZWZobE15UDVLVDBUWlIxaVRFQ1ktcGtjNnFubkd6Si01M1phVm1rX05pTHN0MmJLVklQS1FIZXBVc0h5S0hieFQ2ejJqeHB3RXlzeWtzQW5uRjJ6WWYyeUZVeUZKRTU0cGhxWTFib1hldnRLUkNFbnZua20zN2dxSWc?oc=5" rel="noopener noreferrer nofollow" target="_blank">$MSFT stock rose 6% this week. Here&#39;s what we see in our data.</a>
+          <div class="headline-meta">Quiver Quantitative &middot; 2026-08-29 16:37 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMi0wFBVV95cUxOV3M0aGlrTnNBM19zSTlfbnNXOFFZNTJnTUd2WWlmM0FwbnRUM0p1d1U0bkswNlVNUk9GMC1UUzdoUW43WEtlTWd5SzBBWFVkb3g1bXJaR2YwZV9KYXEzdFpPMGU1X0I3dk5UM05ESmxfdlBoV0NFRmhtNnBHdUNKUklSRmYzREs2S1BCSzJRdUdGUVZwVVdIdWtJanp0V2N3SkJBSk4yQjFSQnJGbjRJc04wejdGSXdqN0dCRW9ERDF4RjdVMlBVcDFhS3BiMXI2Q1Rn?oc=5" rel="noopener noreferrer nofollow" target="_blank">Can MSFT Stock Hold Gains Above $500 as Microsoft Outlook Outage and AI Spending Raise Concerns</a>
+          <div class="headline-meta">FXLeaders &middot; 2026-08-31 21:10 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiqAFBVV95cUxQRWJ6VmVPUE1ORnhGVlhPQlktT1o4QktmZEFnNm1pa25RY1RvNUluTWhxRVZaaTFzcllzM3hoUTZ0dENHSzRGN1NTQURjY1pLODN1ZDRwSTVTeTFqQ2lVX1ozNm03c29PMTZoS3JveUo3VTFOTFNuY2ZwcUNkNDZaYVoxNVdDZDFteTJaRVBpYkpPcVA3NGVqMkJuTDJZQndUZElhWUlzd20?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Stock: 6 Straight Green Days, Up 6.7%</a>
+          <div class="headline-meta">Trefis &middot; 2026-08-31 09:30 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMinwFBVV95cUxOaXVINEFsNW1GUUNqZjV5aXNxcHY0LVpZVEJvNE9xNVNCSDlPTWxSZkh5aEVTMkZSenpSSXB0U1ZPLTJjQk5adWVzRzBaRmJNVXkybDJQOS1aRS1HTTVmQ3RXMjZ3bEJKcHVnT3BQTWtBOXM5d3B4MkZValYxeG5iR29DVnp0ZG05WnA1OC1WMWl5NnpPVXJwS0dJNkVFSW8?oc=5" rel="noopener noreferrer nofollow" target="_blank">Why Microsoft Stock Dropped Today</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-08-17 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMihAJBVV95cUxOeTROX09JMmNjWjFydFdOODRWZG1NNnEzVWxvdE1FTnFWeU9QUE1VWGZremhsaUNEVXpJWGpSeXMxWm9sVzRGbVBCYTlEREVvV2NFRGhwaW95Q3psZnJmRUhuVThJS19EejVoYzdEaHhFb0NlR181bzN3TVpZSWRJUWZLR0xZeFhMUEgxMElnczVTQnU4bklwVTZyZFl1UXZheXh1Q3pZc25iZnBZUmg5eFhVdGNoSGZUWnphYXY5OE1XWXhBTXQ3TTBlWmdlUUdVMDlYSUZXVFp3T0pYSFd5dlFaNGZIOU9NTkx0aWFCOGNMUXZkM25JRUx1cUxFQUFIaDI4bQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Stock Enters Bear Market After 21% Drop From Peak: Retail Cautious But Analysts Stay Overwhelmingly Bullish</a>
+          <div class="headline-meta">Stocktwits &middot; 2026-08-30 20:54 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMisAFBVV95cUxOQnlfRGhWcTduUEI2OGJJQXR2U2luNWlzb3F0NUsybmhxY2RaRGZTSVExYWM5WmgxdW9oTlY4ZzBGclc5dGZaQXoxaG8wMFYtbDRvX1p3dHFiRVFNRVFUUTd1ZkNBXzNYUTNfckxRYWNUVkNBMlNGZWtablAtS2JkSl91NXVVWGswYnZ0S18xTV9xcVlvMDFQSkM5MkJlZ250bjUtQW1iMnMzWFRLWEU5YQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Stock (MSFT) Opinions on Strong Cloud Growth and Market Recovery</a>
+          <div class="headline-meta">Quiver Quantitative &middot; 2026-08-27 14:05 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMivgFBVV95cUxOT3ZMc3JqbnRla0FJLXNWR1lxVUJ5eEE2NXdtRkZaRTAzdGRyb2MxaWNUZmRGMHpaclNzSzhtRTFETkROQlRCa2JZTFFzaWxLZ05oSkVXYUdqZ2FFZ3NXcHB5a2E2Zk1QSEprVEVmSU5UZ2hCS3U2NGlEbExneWpyTm1mMWZTNjlxcmRkMWZsU01Ecm5lMGFLMVdSaGdGZGh5V0JQUE9ubnZwNjh0bGFWUHQtaXZJUlNUaVdpYXlB?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Stock Breaks $513 as Azure and Copilot Growth Support MSFT</a>
+          <div class="headline-meta">TradingKey &middot; 2026-08-31 15:02 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMi6gFBVV95cUxQWWZWTmZ2MUtUeUU3VDJVTkRTejNUcWNEb0Fvc3ZXWUk1OHM5QnN6Q1dUNzdYUlFnU0tueHYyblZvZnVMMFhpVVZBa1NSOXdzNmRtU2FiYVRzWmhzUUluejVsZFo1dkhKbzQwMFdTQVNBeXhQdHhmUGdydXRkLVY5QWVGcElRVVFwS1RSak5ScmVxeUpyc3hKSXFYWmd0THp1eW1EQVVFbV9kWVQwZFJ0RExtT2FRdnpXUGRLMEQ3TkYtdkZ3eXNGc3p3ZS05R3Z0VnJOaU45R0U0Z0R5OW5aSWRuWC1nZl9sc3c?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Stock Holds Up Amid US-Iran Geopolitical Jitters: Retail Calls It ‘Safest Earnings Play’</a>
+          <div class="headline-meta">Stocktwits &middot; 2026-08-30 13:39 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiuwFBVV95cUxNSVU4eEMyS3pWYU1SSnNwRzdYdjlQLU5QdUpteG9NdlBKRVpaay1mVEFzRGFuQ1BxVmYwRDhlNS1mazlZUU9mMmJZd3hUbm9TcU1fUFRiSFRzV0cxaV9WZ0VBc0MtNnpkbXJHaXNGRHZZTnNWNGVlLTBsS3V0SnFocHUwMS1yWjF5V0luLXN6bndLcU1KUkFXN251dUlubzVVQ1NhUjZucl9SYTRvUzJMZDVHaVpSelFBdXJr?oc=5" rel="noopener noreferrer nofollow" target="_blank">Why this analyst sees another 30% rip in Microsoft stock</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-08-13 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiywFBVV95cUxQZEw4S3hVeDJ3WDNfME96RWNyaFltN1VTR3djVjFtNWFJNG10UHA1M2FKaWtEV2xZMFRudV92MzJpcEFuNzkwWDZjNnN2TmtBQTZ4VF80d0NJYlRCMzRPeXd1TFI5ZGFTNVgyOXhHSXhVQ1dieGNqY3lCMUlpVE9zcmh3X3BkMzBjSS1zTHhwa2JualpwRXNxSnVkUWUtaTE0T2dJTWVEQ3llM0FvRFVmeU55aEEzVXphd3VaNm1ZNzlsNlpuaWc0S1BLdw?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Stock Slides 4.5% — Microsoft Price Target Revision By Stifel And Xbox Pricing Changes In Focus</a>
+          <div class="headline-meta">Stocktwits &middot; 2026-08-28 22:37 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMinAFBVV95cUxQWk1WOUFIUnZSV1J0dGdwMFdrczI3T3dRNlJyNEhfSXVMbHhobVh5OElnbmxaZThOLUVFRDNWMktyaUZWSTBXcHNURlU3TzRySzBPMlUxOEE2Z1VPeVk0NUpOXzJvZzU3dVU4SVF5dFE2VGJ2Z0FqUDRNb080MjMxX3NfZFZzblJ5b0ZmNEczLUhfeVZDU0xFOHdxSF8?oc=5" rel="noopener noreferrer nofollow" target="_blank">OKTA&#39;s AI Security Push Gains Momentum Against CRWD &amp; MSFT</a>
+          <div class="headline-meta">Zacks Investment Research &middot; 2026-08-31 15:05 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiWEFVX3lxTE81R1NreC1SMEI4SUYzeHZLTkVsVEVUOTRuNWl3MUFzdENJMWl0ZzhiUXQ2UjNGQnhSQWRvbVo4RkI0ZW82MFRqQUYwMGVUY29KVUx4LWc2OVY?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Stock Alert: Moonshot Could Give Microsoft Another AI Revenue Stream</a>
+          <div class="headline-meta">webull.com &middot; 2026-08-29 11:20 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMixwFBVV95cUxORERlRk9mWnVucWctTnA2bDNmcDVzX1R6SVN4T3pMZ3Aya1B4MDlfelVjNzF0c0REVHZFbTF3ZmdVcUNBeXl3Zmw0X2pSRE95S1d5RG02MEY2SWVKbDBWbk4weFpiLXJUdVZEcWZsek9fMFNZaVdSWk5LQjlYTUh1YjFsaU9nYUEyeXlFZ3pSZVY3aTBUd0xBcml5bldoajNjSmFxWW9jaDZsemhCdGNjbktXN25HLS1tWXZpU1diR3lwQ1E4UHNV0gHMAUFVX3lxTE9yU0FpNFU1aGZ5N0VXVVE1ZWZLeVR6TXZrWEZyU2FfNG1URkViU2ZMVjlPbkxQcTJqeVBPMEJjYktraVIwMEp3Z3dFZzMxRUhaSk4xLUwyRjJWUGRaVDluekxYcWhidWVZaDltWlZpTzRaOUQzUWY4dEZSRDdSX0c4UzRfSHE0VkVyTDc3R04zeVhpX1YxaGdEMlRPVERLY0NJd3RzX3FXSEhpd0RZb3JxMG5CU05ackV0WENMS283N2MxTl8xTk02aDU2dw?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT) Lands $1 Billion AI Chip Deal And Arabic AI Partnership</a>
+          <div class="headline-meta">simplywall.st &middot; 2026-08-31 08:31 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiqwFBVV95cUxQVmRRN2dBU0h4YkJ6MFdQNmJWOHBUUERPa0UyUGFQdFlSRURhTkpyaVBRcGRFcElxdGpWX2lzSllOaXhtbTZ4VkZqOUNuOFRHbzRqSDVNV2RrS281YWNlY3ZMbktBdk1Zd1dSUjVIOGtHV2VkQ2E2RjFKcEdvVTRId3F6eFh5VmJPQlhSV1h2SUpaUXJuanBOWVNuNjg2cDhtVVF5eHZiRS1KNm8?oc=5" rel="noopener noreferrer nofollow" target="_blank">Has Microsoft Stock Run Ahead Of Its AI Payoff?</a>
+          <div class="headline-meta">Trefis &middot; 2026-08-28 22:10 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMingFBVV95cUxNblhSdlEzeWxqV0RfeVZkdzlCdjdRblAtVXVlMHBYcDV5Y210RVk2VXRFSTRHaWtJNm1mcTU0N2pkQ2N3eWFibDhXclhRUlZucUtjeDhvTks0NXByRzBKdzZ5dnJ5YU9mQnRlNDZYRjg3UnNiYjl1d2VTNC1qX3dWeGlQRGRrT2xvYVhYZDNkRkt1bnBnTEh3dXRxNV9JUQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT) Stock Trades Near Fair Value Following Its 66% Run</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-08-24 16:10 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMi9wJBVV95cUxPeEZWOUZkYXJZVGVqWmZ3SXlqTmwwcThuNmJkYnpVcmF0OWQwYU5IZVFkcG9NQ1FyNnpNeWtkWmdKbUlRR05uOVM1Tnhia1FtaHJlaF9YeFAxLURqaEpIY0xyWmIxYXNzTGZabk5vWUxNYUhuSFNBem1meF9aejNvVXN6clV2YnpRZDIyNVR4c010X2lUX1pMcmF0dzhKcGg1bHJDWEw1SVRqS2ZPWHItRkc4eUplc3pqdlFVcmE5U1E3X3lHTVlsSF9kaWsyRjEydmgzTGRpUjNnV2E2WWJqN0pjUGxsdVZpNUZOanZmODFhYlR1TzJRaTBWOGRLd1ZaRWo0UVY4ckNKZk9FMXhlVzJkdzdqbmFMTGpycFBmaldzRldtNFpfZUxSV0hUd1BjelRjd0tLbVR1by1tSkNSUU1XYmpyM19ObWpzcFpkdjRQUi1MSWpmMUgyWWxtdjdmVENuM0hiQzg5MUZmay11S0FBMjN0ZGc?oc=5" rel="noopener noreferrer nofollow" target="_blank">Jensen Huang Told Investors in June to &#39;Buy at a Discount&#39; During Nvidia&#39;s Sell-Off. Nearly Three Months Later, Nvidia Is Up 4%, and a Broader AI Basket Gained 8%. Did His Call Pay Off?</a>
+          <div class="headline-meta">The Globe and Mail &middot; 2026-08-31 23:44 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMingFBVV95cUxOTFJNNDJJLVNWM3p5OW5Gb0VRSWdSazFBeEhMWXdsTDlsOEVMZ0stZFVVc0M4MmlsX0JXOU9EX1ZsLWVLSm9uTFNWaFJaMEhnX09CNnMyV3piOFBlRmEtc1B1eGM1cy1mQWp5c2dLajNYd0Y1SHd5TnlXcklaanZoRk1MMEF2U2JfaFJZbkxpMmZWYWs2Zy01Z2tGQWpLQQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT) Stock Looks Fully Valued Despite Strong AI Optimism</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-08-10 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMimAFBVV95cUxQZloxOFRVMnBnQVBWUVJNcHJtbzVXSEJYaFJ4Q0FvR3lYTnZkZFZDTTlmR1BOMUMxUHRpdHpvMk1WWm53eXlnbnMzYUhYaVR4SVpDb0pXRlhKTXUxbGViLWtMVU5VNEFELVFSb21xV19fVGFZM1U2S1AyWlYxWVNvbV9Qam5CRTJ1aEJ5dTdGWG5tTF9CNV9mWg?oc=5" rel="noopener noreferrer nofollow" target="_blank">Should You Buy Microsoft Stock Now or Wait for a Dip?</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-08-17 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiwAFBVV95cUxQZzEtZ2Y1dXBXM0Fkd3pVVzZ6dWdYbzRmSk9SNzBLZzRKeDBmdERDLWVOQjlvMUo0S1k5ZENQTnJkN2ZLd3VwV0RSOU5DUmtGZDMwN2dldTU5UTE4d1M4akQ3ZDFMVldRaFdjRVJLc2NWc3RJNjF2NjlmUkdIcTFBbXNGbW4zODZuLVdCeEdsemxXYUhsUm1CSUFLcnZiVkl1WkxMUmJjaEpTYXBlZjRlLTZ5dUpVTzZISWlFNV9ibHo?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Stock Surges 6.7%, With A 6-Day Winning Spree</a>
+          <div class="headline-meta">Trefis &middot; 2026-08-31 13:35 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMixwFBVV95cUxOb1BfQkVudHdmUUdlWTgyUGl0ZzctRmZIbjdVZDhZakwzejg3ckcxM2MyckI4dklpT3ZEOUlHTWQ5Zm9tOWZybW1QZ0NrWmNfc1ZZbnk2S2kxRXFBc184SUlaMVRNZ2dxSmZZR2dvRzlsb0xHNWRiVGxscFlSUEx5VDhCYU5xSllXUXNNekd5Z0c0OG5wVXl5VU9yc2MxMDFHQWtIVUxtX1I0SFU4RWlYandwZEk1d2NJajRISFRlbVAzNWMtQlcw0gHMAUFVX3lxTE1qSUwyQkVYSURlRmZORk1xdkVsVmtXeEtlYWNsUU93NkpSWEJoYTdfaWtENG0zSzc3a3BTRFQ3M3hjeW92SjZBRW9ZSlpxcGRXUlJ5WWRJdzlNQjhGV0xLbm9saTE5VjBZclZnQlE2TWpLRTI3ZklfVnpOb0RHVUpUU2dkaEVLdGhjcTlvZHBFOC1CeEZDNTdJVVE3NWhwQ2VTYWRrVkprXzVnaTdZZ093VWdUVmYyUFBGUXZXTS1xQm53WTJ4cXB1NlQtNA?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT) Is Up 6.3% After AI-fueled Cloud Strength Lifts Q4 Results - What&#39;s Changed</a>
+          <div class="headline-meta">simplywall.st &middot; 2026-08-29 19:29 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMijAJBVV95cUxNa3luVGlOd0l5RmZwWWIwX3hRblJ3TXhQVTktUGI5d2NicmRlYTM4RGJBZldfZ1lwZlZQaDRiaC1CdU40M0dtZDFDYl9LVFpxODBPYmJFb3RvZ05tZGZRMVRjeFd1WTk5TTNrR0trS1NQbUEwUzhCdnljWkcyNVhGd3FubU82cE1TVnVQN21yc0VxakU3QmJneTBMLWcySi1KRjRRSlpEV1g5MVpQUHZJc29lTXZNUUJSa0lrSTNMVTdfbmM1aTdocUZCTkUyalpSSHZhYklxZG14OERIcjJmaWhIVHo2YVB6aVpSNVZjaWVuQmNxUlRWd0JBSmlzM1ZkWmNydUZ0cTNNV3JW?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Stock Drop: Microsoft Copilot Functionality Issues Lead to 10% Stock Drop and Securities Fraud Class Action for Investors</a>
+          <div class="headline-meta">PR Newswire &middot; 2026-08-04 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMingFBVV95cUxPZEQ0eHhzYnpwX0RHRXdyajhKdjVVZ0FoeHBqcG8yQ0xjakFrbkY2Tm1HRnVlMWhydnlySUhGWkpxZ3hrTjRHOFF2b0huWUdsb1c2LTJjRFY1NWx3ZElLSWVwQmVQamk4ajNEeENqNEk5LTlSQjd2WnpxdE13MnFCODlJZWxaX1dwQVZTTjBmY1ZUQ2lOWG1McVFpcnM5Zw?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft stock set for a 7.7% rally, eyeing ne...</a>
+          <div class="headline-meta">Pluang &middot; 2026-08-31 18:07 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMimAFBVV95cUxQd1lQbGU0c282cjFCRk01WFd5M1MtUkoxRjVNMi1BOW1MZWVfTUhldUlTNkdVZFFHSmduVTlVb3FiSEpGNmt6RUNwRm1PZXh0UmJWS3gyUGF5TXoydWF2RDFTazA1clRkWDRtR2ZDdEdVUUNFREpmRXNXcWNJd0QwdGZyTDZRTE5QQ0JDaXhNQXZ1eU90RDVOUw?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Stock Soars After Results: CFO Dismisses AI Overcapacity Narrative, Says Can Rein In Spending If Demand Changes</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-07-29 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMilAFBVV95cUxQNi1WcURETFRGNnhWemttTDVPTUt4aC1wTEVWa2pOYVZHa1gwMmtsODVmbHdJMUZ0VFhxcW5lU3E1a1F3RXhmbzhGekZOSXRBR0RQdHBZYV9UaVZWVWRtWDZqUHZsY2I1RjEzeDBCOXhsWTJZMGJQbW1SV2RHMGxSZ3JEYWdacTJ1aEhuVTBHTTdOYXh5?oc=5" rel="noopener noreferrer nofollow" target="_blank">I&#39;ve Been Wrong About Microsoft Stock for Years. Here&#39;s Why I&#39;m Finally Changing My Mind.</a>
+          <div class="headline-meta">The Motley Fool &middot; 2026-08-12 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiggFBVV95cUxPX1dnSnJDOEhJclpPbXZOVUZ5M3BxdGF2UVVMaDdDeTJZaVFHOEEyT3VNSlRoX3o5dk1ubFQ0VTNUSHZMY2cwM01vaERsMkFLWDF0S0FnWW1QV3BMcjVHdDUyajRxZERGczVBZm5zTi1vR05wdGZhY1c5ZTF2WWNVOFNR?oc=5" rel="noopener noreferrer nofollow" target="_blank">Why Microsoft Stock Dropped Today</a>
+          <div class="headline-meta">The Motley Fool &middot; 2026-08-17 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMixAFBVV95cUxNdzFueHV2QVY3UElhS3pObUN2VUJ5aTRVSnpaZFoyREQ1QVBYcW9ad2gycEhtNUZzRmtyU0RweWlaRkh3OURjOWRBbVRmYmxWQlR5MWxBSl9IalJESXIxUTgtMkFjM0o2dXJSeTdMV19BSU9Za09pM1ZNU2VLa1k1MnU4N1Fzc2tNQnJPdnlVdldoQmQ5V2Rqem9aQ0ZBZDBnOXJ3em5SLV9VODNJR1NfWXQyd0F5VHdXS1FLTXVYVFQ5TUR6?oc=5" rel="noopener noreferrer nofollow" target="_blank">Is Microsoft (MSFT) Stock Reasonable If AI Spending Pays Off?</a>
+          <div class="headline-meta">simplywall.st &middot; 2026-08-22 19:36 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMilgFBVV95cUxQaW9FOW9RTTc3Q3VsT0dDb0h4eUI5dGVKeWNNbnB6azVpckRFUUhvLVBkSWktU3BMMTJ1aW1JQ2ZnMWhwSUQ1azRtUEV6M1ktcEtPbGxtQUpIM1VqUHctRzhUZU1VSERRM2hjQ1doOXhoaXlJZ0pfOFJnQ1hfS0ZzQlllenYtVnJqa2dTV0NCdFd4YWx2Y0E?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Stock (MSFT) Opinions on Azure and AI Growth</a>
+          <div class="headline-meta">Quiver Quantitative &middot; 2026-08-20 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMilwFBVV95cUxOTjMtZ3JncnNVR0FsMzMwUXVGcWF3NW01aXlRMTNZYkExVFZUT0hjVFQyNHFhYnBhVVQ5cl9sRHdrTVhDR3FpWjVYSEdXZVlCTmJ0Sk9MdjVuQ2VzMk5temFPb01YUFh1VGFKMU9RXzA5NTlNcXlHVXlfMUU0S2lBN0ZnNW1uN2xRb0NsY2Q1OHNKdUxiYWFR?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Stock Heads For Best Month Since 2007 As Q4 Cloud Strength Revives Microsoft Bull Case</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-07-31 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMipwFBVV95cUxQQ0xwaDktZXZ5RDJYWDgyTjJPdHpUZmZjU1VfdWFfc3ZLYnl5ZVhhVGxUcFNBeGx1cXBaZFRCMG5tcV9oaUMwLTE1bmRqTTNSVzVEekRBM3lubE5CcWJ1dV82M1NYb0huU0hjdXdhd0dYUXFmMHF4X2oxanowNTM4S1pyOWFISTlsY25MekN5blU5YzVuc3BQVXdwbFFtTzlORzUzeXBjbw?oc=5" rel="noopener noreferrer nofollow" target="_blank">Tech workers may be better off selling their company stock</a>
+          <div class="headline-meta">Business Insider &middot; 2026-08-15 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMi0gFBVV95cUxQY1d4clZGd29SUlVkemdZNzFwbm5nVUM2WFhjVXQwZWNqb25tMzVnQ0dvcXhYek92M3ZxODE1R2NjNjJrQXBCRzdVMjNOWkV3Sk9oX3RUTmtDbVdPV2tKMGd4TUFFcGFzYTBkYlA4ZVlrN3hneUx5LUY4SWRfRUhLaXZHMEFJcFJBUkJmNGZid0xLdkFCMkhxVUFPRDhHUmpwaktCNVRhWnlGZ0d4b3lHVU1WMVNicFFUNTZ1cXR3MFhKZnpYcEZEaWpjTGUxYWpRTVE?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft&#39;s stock rockets more than 15% for largest single-day jump in history</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-07-30 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMingFBVV95cUxOSlZOZnR1T1lYejZSZkZmZlJsNDBsMDhzbUZUZUtrZ0toMC0zZm83eTZQOXR0R3VzVWFFVGZRaU9vVU5SOURTMTFLRVNRbi1QVG94VUpxY0liSzY3alFkMUo5dUNJOGpTd241RHZEVEctOEVNdG85bk12cHVFTl9pOHk5cG8wSEEtWVdnUkRnQVlWcFhJWVg0MXV4QWhYUQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT) Stock Looks Cheap On Earnings While Cash Flow Drives Debate</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-07-10 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMipAFBVV95cUxQV2c5cF9jQXJQbjdWbUgtYlB6NWwtaHdBREpnb1Q3SXFCb3ZfYnZIOWVUQ3NiZF9ibmVINl9SZ3p2YkZLUlRfM0dMUVNTVmFaYXZ5dS1hcUQ4ejZldEtEbzdIVGpEemxOSTVuTWpHSWNmcTNWdjZyMlBxRjFaVmVKZjBNc2FkUDc1N1VRaGVSb21VdXFKLVNqYXNsTjBaVmpnby14MQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">Should You Buy Microsoft Corporation (MSFT)’s Shares?</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-07-12 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiswFBVV95cUxPOFpqTG5pM3cwM3gxbEFTd0RYRjFoYVBIMjNzTy1KTGxyNG1VNW1WcDJXS2k4WFNMMTZuU0xUOXk1SC1FRlNMTmRlcGdUMDB0OElzR1dWSFFrVmR0NnY0UDNJZ2dfLWg5VVNwTWRTMUtBdXF1bWh4eW15bEN2dVk5OHl0QmhEOGlQb1ZKa2dINlJuaGxOQk1Rbl9ONjVUc2RwQ3BSanI5ME1EMnNhWktiSEVnVQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Vs Its Peers: The Return Does Not Match The Rank</a>
+          <div class="headline-meta">Trefis &middot; 2026-08-11 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMi3AFBVV95cUxQUXZhVEQ1X3N3R3U1a3NwbTFuRWcyMDJRRlNVMnAzMlYwUHVLcGR5NUxXNG5DQWlhZm9tdFhadk4xSnRZdnVkTmM2akNyX0kxczhBem9sd0JVWmFudkVLTGpOTnU0bEtadjVHUVF3QUhjWUctOTdSeHgzWWZEQTZObThLQm5nMTFEc3AtUXZ3ZURoSlV1SkNNbkZIbXl4b0lwam5FVktIaUFKZG41NnptalhfSG1BNTFNc3dMTlh4NXYwOVItWTNQQ3ZCRlRuWk96dmVQWkI0MFJqQ0dx?oc=5" rel="noopener noreferrer nofollow" target="_blank">Which Magnificent Seven Stock Looks Best for Next Week? GOOGL Leads NVDA and MSFT</a>
+          <div class="headline-meta">TradingKey &middot; 2026-08-30 13:01 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMilwFBVV95cUxNcDRWU25rbTZTd0xNby1FY2NVaVdJVEhBSkxhMDVTMGtfdi11S0FXUTNseUUzdktHdUVzdEctaEY4NmkzVVRObmdKbGtOTjMxdW9EdVJ4NVpncUVMa3RHalQ0aloyV09KdzNIakYtcnJxN0dseGI2SHowNW1KcWR3Tm5yUUYyaEQ3WFZLbEhrdWhTUDYwT3Jr?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT) Stock May Be 43% Undervalued After Fresh AI Deal News</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-07-24 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiiwFBVV95cUxPN1pNS2ktUFZKTU5yNm9oUXlTWjBPUVhFT0ZnSWhERTFMclRjY09wWVp0dUpCR25QU3oyUzFRaXI3YkotMWQzZmZIR0hjNE1pS2YwQXBFRFotalNvTnF6U3ZURkprUU5Zamh3SS13TWpkdklqSV9jVm44SXp1b2RZUnFkVFZYN09FYXFB?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Corp Stock (MSFT) Moved Down by 3.17% on Aug 17: What Signal Does It Send?</a>
+          <div class="headline-meta">TradingKey &middot; 2026-08-17 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMirwFBVV95cUxQUzNBTkhXakNuQnR3aHhOd3NWbWhRZnlkVEcwc2lEQm0ybFJ4U0NQaS1wMG9JODBtbi1XdEw4T0VlRF9oTEcwYzJIMlBCTW0zV0FMdTQwQWVXbTF6QzJQS043UXNTWTVzTm5sejA4S2dZTnBQNnVKOVNSOFBHZUl5REhwMWZIWm1CR0RfTFEyZ3U2Vlh4ZTdEcWtaaHAxSTVEbExpZnJxMkJzTWNyZml3?oc=5" rel="noopener noreferrer nofollow" target="_blank">Going Into Earnings, Is Microsoft Stock a Buy, a Sell, or Fairly Valued?</a>
+          <div class="headline-meta">Morningstar &middot; 2026-07-22 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMinwFBVV95cUxQRlBVUWF4dWQ0bDEySGdISzdPNGhnMmxSbGFIMHNnUWpmWlE0RkRGeHQzNzVuTHhYOXgwMkJDYi05YzBzV2lXUnJvcUJ4cTREX1FkZ3hBS0dNSWJjVXB6aVlRVWg5RDVKdXVsajZVcVdBVWZJOFZUSlpZOG5MYjRhZDMwd21BdU1zV21qdGlFdDVDbWhyVUlDOG1vcUF6QU0?oc=5" rel="noopener noreferrer nofollow" target="_blank">Can Microsoft (MSFT) Stock Rebound in 2026?</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-06-12 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMinAFBVV95cUxOTVl3U3FCWWpaVUx2MlZyalU3bzFhTE5lbDI0c2ZQUU5SbVRCdkxpUTJyb0R3dkd6SDZnWkZmVExrLVRMamVCX0JNR3Q1el8ySTNWelBDSHdpUXAwSWZERkZNOTh3VGFUTXNiOGtqZDZROGZtMzh1QlRNUGl5bVJzaWNJMlJVV2RDb0hBYm5QQTVsVWdjZFNnX20yWEE?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT) Stock Falls Amid Market Uptick: What Investors Need to Know</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-06-11 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMitAFBVV95cUxQd0txRFVxQXRjaW1UZVJSbFJ2QXJWQUFfYnVKYi0zaEE0VHlYMldSbDFkRHNnNmYyRjBNN2xwYWRUdDJ6VHZ0N2R5VlQ1cWVhMW13cmFrVkptMHRSREpzLU1aMzJuRWpMY2Jjc0ZJemp5NERURGxwbVBfYl9hb1c0WGpKR0N6ODRESmFISXRubjJjdHBSd3dPOVE0Z1kydTNjQWZEVmhyTDlmM2lyUW9ScWw2bXnSAboBQVVfeXFMT0JYMTZuMFJfTzRDeGRwRjNSakdpMTdvUkZMVmFKeVBVT3NrRUJSRjJ1RE8zNVE1SGdqVExTVmJHaVFtd1NUQW5yU19QTFd1Z1Y1YWRtTkFRZ1Y5aTFmRGVSWEJheG14TDB5MDB0NjdyVGxQYnJtZEp4SmpxSE9fQ0dNazVKTXF6WHhmd3poZ1pfUXdiQmpSOXZUTGhMU1BpYVRfVVp0V1ZsUUVNTHh4ZTFiRnY0dlp6eTVB?oc=5" rel="noopener noreferrer nofollow" target="_blank">Have Insiders Sold Microsoft Shares Recently?</a>
+          <div class="headline-meta">simplywall.st &middot; 2026-08-12 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMie0FVX3lxTFBVdGEwenNmRldhNnhnMGh3TWhmWTNzRFN2V0VIMk9TUEg0aE9lRFpKVDFCclpVc0xYWVdyTEo2Mmd3YjN6SXpHMEx5RGRDQlo0VFNUeXFhbmpDZHVUSVdpQUlSSl9SLXBjdDhVd2h4R1FaSkdpeE5YTm5sSdIBgAFBVV95cUxQamJQNXRoWVFiNm4wTTZld0NLMXNLYTZYQmtEM3dpVEtzQWFxaXA4TkljWEhLRXlfdFVENTk2d3IzWXNYa0VSZVBicXVEc0JvOEhwSFE0N3JiUS1za1lFazBvOGMxT2lrakdTUzdBWWd6MjRSaXpfRDVmWm42U0dKZw?oc=5" rel="noopener noreferrer nofollow" target="_blank">Why is Microsoft stock soaring?</a>
+          <div class="headline-meta">ABC News - Breaking News, Latest News and Videos &middot; 2026-07-31 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMinwFBVV95cUxQUUliV0EwZWpiRkREcV8tQ1h6RE9YN1M5TGJVRWpMQXhfZFJTekFUMjVKYWpXQWd2bGZGT2FmOHYzUVdudlc2clZIb3RyajdINEkxZzByemdtLU5uU0dqVnhEdmtoX1RoLWE1QmdSRnlPZENUT1hlSE5qQUxxcFp2d3V1ZG50bmNxZWcxNHpoQ0xMdmV5Zk9yUjFCRWdqOW8?oc=5" rel="noopener noreferrer nofollow" target="_blank">JPMorgan set a serious Microsoft stock price target for 2027</a>
+          <div class="headline-meta">thestreet.com &middot; 2026-08-14 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMimAFBVV95cUxORndtRVk1X0Z0OWtHMDdYc2JLU1duMXo3ck5GN0lVQjNtN1lRVU5FanUySTFEYUlYOVloWnBtaERLRUlnaW5wM0RqVERfa3ZPTGMyS1BSOEdyanpRSldUTkFhMV96SnNCTWFtaGJYQWx3bDJiQjRwNG5TQXU4MHAtQ05lTHZKd1VqVjNqbUxiVERMM0Zybkd1dQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT) Stock After 17% Year-To-Date Slide Is The Market Overreacting</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-06-12 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMikgFBVV95cUxNWk90U1dBd0RTZlFTWlhpX3NITmI0Z2IyNGo2aXA4cjFncjdaQTBsejYxZ1J3UjZITkZCd1VQTzNBMGxDbDRBc3RuRi1QVk1NWEpSZHVzam1FbHdIeXN0OUprTUxCZzlOdXFpZW5hQ1dUT2R6WWJOTk1ERVlyRmNSTG9fa1pnN0pzR1ZVZ1lsdVlOdw?oc=5" rel="noopener noreferrer nofollow" target="_blank">Why Is Everyone Talking About Microsoft Stock?</a>
+          <div class="headline-meta">The Motley Fool &middot; 2026-08-12 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMimAFBVV95cUxOd1pPR1hZMDZxd0ljOGdHYVAwN2RWQjhXY05KcWFUQzIyaUtXVlV4dV9PeEVra2RycnNpeWtCOFB4ZEdRSlh2TU42bVlueG5mcmtiV2NlVmhZdzhueG1mQVFrNTZRQk16YTUxU1RlaEctT01CRXpUSDRMMGN6aDBpaFpqQ25fZDFGN0k1cHR0VEtYZXpiNU15cQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">No Hangover: Revisiting Microsoft One Week After Earnings</a>
+          <div class="headline-meta">MarketBeat &middot; 2026-08-07 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMinAFBVV95cUxPMDI4LTNNZUs0TWNrZXJ0SEM1T05VMnp2TF9VN0tvRXdZalRIUVRoVHR3S3BUS1ZOaVFZM3NqMk1sUlBiemF5dzJETEh1OEJxVy1wM2ljemxBeFBzYVM3MmlkUUxIMjJUazF0b2xjcUduNzd3dXRub1ZYRUpNZXNPUUZQZ3JzTkQ1WnlwTDV3dFJZaXB0SUpBZFJpcUM?oc=5" rel="noopener noreferrer nofollow" target="_blank">Wells Fargo Raises PT on Microsoft (MSFT) Stock</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-06-06 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMimwFBVV95cUxQTGt3amstcEswZU8tenE4cVNnVmJGbEZoUmZBOUp3dUYxeGtGdFlreGtfaGszYkFXU0VZTzdYeGJPdURoS3laTmkwOU5YTGFVcFlUVVlsZV9Kcmk2U0xUVDNmUmtFeWdBQ0F2NjFfSzRmM28wUkZlb1NwdnRubWx3Ri1CYWNtMzNVakZXMnF5TlVkWkdyUjd1Zk0wUQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Stock Extends Gains After-Hours, Up 8% — Unchanged 2026 Capex Outlook, Strong Azure Sales Boost Sentiment</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-07-29 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMioAFBVV95cUxOZEF6MHU5SXN5cFhUaWV1MzY2b1ZsVld6TlBrcWJLTzRDaXNBSm1IWnVrdHRQWEN4WFpEQ3dIR0gybWlyakw4STVPMnRHTkh4Y0pjREZqZUpWYlBwVzFaZEQwdjhQVUJVUzl3OFgzb0tZUFhTS1p6NVNRR0NnNGs5em1wa0NwQnF0MWxDNjRfOG1Ha1JVdnJzWlllb2hxX3dz?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT) Stock Valuation Gap After Recent Pullback Raises Fresh Questions</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-06-12 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiogFBVV95cUxNaWJXUkJBWFI4S3ZDT0cxNkZ0bTFDSTRuRVlnRF83MUxSWjM3ZXJkSnh0YWdWdWhBclIzd1JTMkJPa0VWOEtLMzlpWC0xbEYycjdOQVVHUWoydGZLMTNFZzNTcFBab29MZVBYYlpnOUJFOFhBXzNCcGJwTFJWR09pM21xbWpJR2EzSEdwZU5zVHdxaUVxRm96T18xWnhxSnVYZkE?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT) Stock Declines While Market Improves: Some Information for Investors</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-07-14 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMimwFBVV95cUxNMWFKTWxDM0szRW1NZHlielZhTkxqYk96MEJHbGhUSVNUU0N4ZkNjRk5GNU1yYzlxUHRzTmNRcUxiSkZ2X2cwRUMyYWFFb0RHWnlQY1lUWVYwRU95Mkx5cU5UcWNEZEd5TzUxTERKYUo2dTlHa2lfY09lZmtLNG91TEN5ZGRnOE5zNHZYd3VfMjcwcndxTWNpcVdyYw?oc=5" rel="noopener noreferrer nofollow" target="_blank">Is Microsoft (MSFT) The Best NASDAQ 100 Stock to Buy Other Than SpaceX?</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-07-09 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMikwFBVV95cUxQRXEtT084RzhSbWlLdHdYQVJZc3B5NUpqd0tSTi1FTE9MeHdBcjF1NnBnV0p1c3FPWnoxZ200NkxSNWVBam82T1ZCUmJUZk8tbkVjNmZJM2syTzhwQWVRcURPcTZOWGM3YnZsSTY0WExCTFR0VlUtZ1FQd1lHZXhYMG5jYVFMX3VEd0VlQ0JpTktzLTA?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Stock Jumps 3% After-Hours — Lower-Than-Expected Q4 Capex, Strong Azure Sales Boost Sentiment</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-07-29 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMikgFBVV95cUxOcHkyUHdZLVBrcjBsMThaU1U5c3BxMUJGYnQ0NHJVcVhKUGxVRUVCLUhtakhTbGp1djNsci1vZ2lIZ2dSaWFRUHJBbVpnTFI5MUpBSDcwWUNVMEZuYUhpdldLVkRGSTNFelUtVmM5cS1NWWZ4ZXZYenlqY2hDVlNnc0lLMkVqTXd4TW8wbS1vaEs4dw?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft: What We Think of the Stock After Earnings</a>
+          <div class="headline-meta">Morningstar &middot; 2026-07-30 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMinwFBVV95cUxNbUdaSnB3QjhNQ0dKMFJHWFdtNmVrajl1a2ppamtvM2NGZlVaUTB0aEdMSXhwd3VjX1hnUHlzdW53Y01UVU5JczQta2wxc2IwRjRCbF84YXZzMm5XTF9JRlRubllEM3RicmJVVGt5S2MyNG9yX0lJQXl3azFBQXREc29LMm1Cci1wb0JjN2ZMT0FvaGhRSkhIMlRXYWl2Z2c?oc=5" rel="noopener noreferrer nofollow" target="_blank">What&#39;s Going On With Microsoft Stock?</a>
+          <div class="headline-meta">Benzinga &middot; 2026-08-27 18:17 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMitgFBVV95cUxOT2d4ZlJOci1mYmN6c0xkak1naWJxanBwOHU5cW10M3FScExmQ3lpM2U2a0VEMXVYM1Z2RDBjOTU3b2x3dWFyS0N6MzM1RWlmcF9Qd0F1N2MxeDFmUlNvMWlyaHNobm5ObkVNZmV2SXhXQnY2V19oa2RvX3R0YVEydTBJQVNrdTJUNHlZQVJNblY1Nl8zZndxNDlpTlZvWU9NbkZwNF9KOVN4UzdKUmJrb0VPZ0pvdw?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Stock Has Bounced From This Price Before. Now What?</a>
+          <div class="headline-meta">Trefis &middot; 2026-07-13 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMingFBVV95cUxNMWR6UndlZ0hmRGlxbHBqdzIwcEJxVHBZSHRRRURqOVI2cEJBeWh1UW5CM0dyQmo3ZFRucmpOaDV4aERDRURIakFoRXd1SmNZZS1YWEV1OWJmMFlaWjJDZ2k4MlFZZUI3dWlScW1kSFJvblpYclQ1ZkFVZDBnV1ZTNVNXNEpHaXJuUGFGZXRFSGdYQnp0UnZyclk1TXMtdw?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Stock Breaks Out Into Buy Zone. Here’s Why.</a>
+          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-03 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMipwFBVV95cUxQbHlwRXJnUzQtWTVpOXJoTXpDVXpmeTlzaVZKMWJEVTlEcTRGTnp1TmppdTBfR1QtSml2WGZ2NkF5dmdqZVBOcGJ2QXVibVg2dHFxOEVraWV6d1dzc21zUFNqN1JNRVlQMk9DdUZpQ3dldUtqSFFoN1BHWUQ5b1RGN28yQzdwaGZjNkRpSWJMYXRzWWNxS1BxcnljZnhad0pJdU1RLWpBVQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Stock (MSFT) Opinions on Strong Earnings and Azure Growth</a>
+          <div class="headline-meta">Quiver Quantitative &middot; 2026-08-06 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMimAFBVV95cUxPVjg1U1ZWbVk4cklZVlA0aTZyTUtyRkE2MFNQcC1sZ3N0R2xBYi1iWnpRWWhqcVdUX1pNaHVhNjBqS21fWmxRSXB0Smc2aVlDc2U2NVVjYldFXzIzTm82cDFqdmhQYWNDeUtZc2FaaXlEZlp6dzJibjEyc0p6ZUpkVGdJV3FTREJ0Ykh5M3NhTTJHZjV0LXRUdQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">Should You Buy Microsoft Stock Now or Wait for a Dip?</a>
+          <div class="headline-meta">The Motley Fool &middot; 2026-08-17 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMinAFBVV95cUxOamFwWTZwaF84SkFVYjlrNW5ITEU2dTZtc3hmTWI3LWkzNGNGcWVILUJITUIybkF2RUVkcGQzMTlVTUh5N2RyRWdLbFhTa3o2NG5lYmpzR2huU2cyMUVubFljNkE2LWhiV21abnhxT3B5RFVfQzVXbW5pOFFPNXlwdHFPRFNUMFBseFN0YWF2bWxCdzd0WDNrRWlTZGY?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT) Stock Falls Amid Market Uptick: What Investors Need to Know</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-06-29 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiqwFBVV95cUxNSE95VmxUcUQzVGZJYURrODR2bFh5cUVfYmN0cTFHT3lyS0dPVWprM2Q5ZWpiNDlTcFBESGFnNl9uR1lGRmhINkJsVVJWR0lBdFI3ZFhVOUI1V3VoMHNaazcxS01LUkUtUzRjNkk3TVFyWjdja09XY2hLTEJza3VIdzZ1Tl9ZMlpvUER5Smx1UXVhZTBVZHgySk5EaHdUMlpYdkVDbnVSSzVvc1E?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft (NASDAQ:MSFT) Extends AI Strategy Across Its Ecosystem</a>
+          <div class="headline-meta">Kalkine Media &middot; 2026-09-01 00:28 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMimAFBVV95cUxNRjZVdXJ6cFJfNW1XNFJEUGJreGZhVnNSS3duR1pXMU1oaDF4RUU1cWt2amt4U0tNSzJnR2VHbEYwb0VHRFZUWWZKakhvT2IxNnZ3Zl9JZXVxRUIwaTB1RlA0SktvQkRRbm9iYXo1djkxbjVYTFRHeGlGd3EzS1JBY24tTERRS3cwZ1VJMFRrZndPeUhOcFFGMA?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Stock Gains After Microsoft Opens Its Biggest India Data Center Yet, Deepening The Cloud Fight With Google And Amazon</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-08-06 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMi2AFBVV95cUxQdE9IbEFXQ0RYT2hKYmM0bG96cmpIQ2wwUUFDRkJITzAxdHZxUE84Mi1Kc0xOc29vdmJ2YWVabzR1dV96Qk9mVXBSZEFaQ3lORVJSZTlwUlNndE9rR0dSYnVmaW1VbUdtdXFvYnNfNGV2VEI2Q1JOaUtwUXZzUmJobG4ycnp5MVVjdVl0QU8tcE1YbGh1TFFCZVkzUHhNbjNkeWNHS3pPdUJDckZEQjBXc0lfRHpuVEg2YnYyWGM1TUx5MVhmb2tqZW1oeG9JdHN2dnJBV0pBZmM?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Stock Gains After Microsoft Grows India Cloud Footprint In Battle With Google Cloud, AWS</a>
+          <div class="headline-meta">Stocktwits &middot; 2026-08-06 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMihgFBVV95cUxOVXdLQXNiZ2NtSGVlV202ZXItdGpvVDBldEYycUpFT0gxSWJGNzVSV1lza1BFeXBBaFpEZG1Lc1Z2S0twTXRDM0lpSHpCeExhdXpqMWFmRjBLNFdjLW9meXUzRXRfWXEwa3ZpamdaTmxHVHROZ3V0VjZvSFFhbl84MXYxY0g2dw?oc=5" rel="noopener noreferrer nofollow" target="_blank">Why Microsoft Stock Surged 24.6% in July While the Market Was Flat</a>
+          <div class="headline-meta">The Motley Fool &middot; 2026-08-04 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiqgFBVV95cUxNRnZrRHFHZmRBQVRQNURWNUcyUDJudnpWQS15VUlzejVnU1M0bkY5MW0zV2d0LTFoS3YxUmJ6UWFGaEVyZ3RCQ1lUV0JWYWtvazdDRW1NM3dOQmxLb2NBVzVUM1h2d2wxN2JlQjlfbGtjQTl1UFJnUDQ0blYycFpob1RDS1BjeFU0QW1VQlg1N2RWWjZFdDhUY2tkZE9qZGFqcDBzcVhyR3lKQQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT) Stock Trades Up, Here Is Why</a>
+          <div class="headline-meta">StockStory &middot; 2026-05-28 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiowFBVV95cUxPSTFkMDBIcjliSWVrcko3bEVGTHBocVp1NG5GTnl2c2RLWDZXX1VKN3EzOHF3WklFZ0RkaG5jRzJZU01tN213Zkhvam80bk1UaFNJQ0tOSHpDZUw1VzBIbTU4RmxnUUdKbnNyMUZhQ0lOZUE4WVVDei1SYlRYc3lLeHZJaUsxUlBVdHpYemJyRzhZelFyX3YyR3liWEpoUEVRZjlV?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Stock Rises Despite Shareholder Lawsuit Over AI Spending, Cloud Slowdown</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-06-15 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMipAFBVV95cUxNc0Y2Q2pkaklIX3FuaUhQaHRaakxjQTkxRnJBT3ZvUHQwb3paMXdBQW5iVmVZM1dOV1VTSWpxRnlqYVRyaF8xWmhQOHBmOUVqMGxZYUVYREVBZ3plYjBrVzhIcENZUW1XNE1fVnBuTlJKQ2sweDJTSy1fNzYwbmY2Q3lRZWdnRHpqNHQzYjdKS0s0N29kajlIUEJMNlZhMXlCSDRWcA?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Stock Technical Outlook: Is $550 the Next Target?</a>
+          <div class="headline-meta">equiti.com &middot; 2026-08-31 14:40 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiowFBVV95cUxNZURkQUhjN25WMWFPelI4Tk9CY2Z2VHQwSngydXdFRUdsRzJHV2ZxMHlmVHAtNDdOVVBDQWF5d25xbmVhdjZLS2VlM3JUOWRqckxkd3l3M2RLRDJLQTJPenp5UXducHhfMzhDOGswVlg2b1VoRjZJM1h1TVBGcldMSXBPcmZtbEhFd3NsZmlXV0Foc0MzX3Y1OW9IUzV1QjBjM05z?oc=5" rel="noopener noreferrer nofollow" target="_blank">Going Into Earnings, Is Microsoft Stock a Buy, a Sell, or Fairly Valued?</a>
+          <div class="headline-meta">Morningstar &middot; 2026-07-21 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiowFBVV95cUxOamhhME9IMVd2dWRYZlhvbnN5Rmc4YWFJODNjWnJCMm5JZnItbDlqenpqakp5dFpSM3ZEX0hueXJPUVRLTkd1bVZweF9IMTdfUGh2eFBfV0JBaS1ScFlabS1ZQTNjYTJxd0QxZWxiam9XcExvS1RERkY4aVhBaHVjRkZMWlNNSklaUkQyNlNjbld2V0ZQQzZxd096Ql9GeGpxei1B?oc=5" rel="noopener noreferrer nofollow" target="_blank">$MSFT stock rose 7% this week. Here&#39;s what we see in our data.</a>
+          <div class="headline-meta">Quiver Quantitative &middot; 2026-08-08 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMimgFBVV95cUxQaE1TeUx2ckU0WU5ocDloUFdIVXlzb2dBX0tOTFZjeGk2eEZRRXEzeHJuMjE0T3drQk44ZHRtc1JkdHpXRWxOcTkxVmJiR2Q1eWdkVW9uWUFpVkVqRVNuRkVkRnU5bU5WR2FDUk1ZYzFZSVRZTFNtQnJrN0EzQmx2b2xkWXVJb1FtWmpDb0x2TEZoX3VSM2ttVXBR?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT): The Top Strong Buy Stock to Invest In</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-06-13 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMioAFBVV95cUxQSzJWclFTOVdNWEtJOVl3UFprZ3JRT29zdDdNVl9oa0U1T3J2eHhWZXVGOC1iSjI5SV9MendQUFltWmZMbnZSMFFGSG03U1BmM3hIdGpJckNjWlZnWkxubDJobVFqQUh4a1k0RE5pYVlOS0M5R2hoY2FCN2p0dHVQZjNnaU1kX29mdmgwcGxab2N4U0gxMG5MNjl6NkRLOFhx?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Corporation: A Buy And Hold Forever Type Of Stock (NASDAQ:MSFT)</a>
+          <div class="headline-meta">Seeking Alpha &middot; 2026-08-08 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiyAFBVV95cUxOVkpBakhLcWROZy1wUWpNMWQ0b09EdkVTVmZ0MWp6bVZWN29xSGJHSUdaNldhZVRrNmNiQ1ZtRi05bUNHdTZmeEhxb3E1d3l5R1k5bC14QmcwLTZ0anhEeTQtZWIxR05SWGRldFkxSng3dTJBczJnT2hyQ01SSG83UFJuZVI4SUtCdWEzQU9tRFNJbDRxV09wRFF3dU43Rm5zbWRtNm0yeTlRbDI1TlR4SjBxM1lmYjJEUzQ2ckxLUy0xdGN2MjdTdA?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Stock Runs One Of The Market’s Biggest Cash-Return Machines</a>
+          <div class="headline-meta">Trefis &middot; 2026-08-10 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMinwFBVV95cUxNT2NqUmFMY2F5aUJJR2w5WGxhWU9kcElUcUhBaWZmSGN6MzVPNVpBMFptV0hWVmVUOUZtNmZmcVpacExSNGtXVkRwWFNobkFYbXNhMDFmTVVTTzRDVFNzcHhPbEJESjdydk9zenlJNHZBN19yUzE3bXp4VklQN3d3a09FRHJfbUVkNVktUEVGODdVd1g5YmNPTC00emY0NzA?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Stock Layoffs: What to Know as Microsoft Cuts Jobs in Xbox Unit</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-07-06 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMijgFBVV95cUxQbVlMa0JFSTM4bEM3YVR5TkNUdTJOZWI2VW9hMlZjbFhYMzJpdWx4MEFMQzJTR2pkc19qRXpnb1JkWDU1UzF1dmRQNlJ6TlMxTkVSUlIzRVY4MVJBdmhxRmJkSVlzaU5CMHB3bHg1VUJ2VkoyMGRsWjZlOWhlV1gtTXFqTHdRaWdqSWRYZkNn?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Extends Winning Streak Amid Earnings Surge; Is The Stock A Buy Now?</a>
+          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-05 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMigwFBVV95cUxQMnRlVVN5QmRzQ182cHBPamY0c0Z1aTJCdjFPN0lRVHdSRDRNOVBCajhtbE42eml3ekZDQU1laDlQZXlEbmFna2dJUHNzZ0hReHhQWVlmTjJNQWNvT0pZLVl3WENBaXBCVUxiTm1admlaaXRBTXYwZEZFQXlIbE8waGlGYw?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft: The Rally Has Gone Too Far (NASDAQ:MSFT)</a>
+          <div class="headline-meta">Seeking Alpha &middot; 2026-08-04 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMisAFBVV95cUxOZFpBZ0tFN0JCSll1ZzlsMG55eHNtQjVid2tCeFZEWFpqUHpTZ3l5VGR0OUttbFNrenBCWko0SHB4MHhqNDFqdGwxNE5GdlFFZUg2WmduUlM1LW53bmJDWDNJckg3VVNvSDZfdEZjLUhpbVNIbk4xNEVPNXc4S3FSdjQ1SGJDSTRaS205Q21IWW1oQTFRNVRhdGI1Q3dOWUVNLUduNGdoaFdmRWY1Rm04V9IBtgFBVV95cUxNd3pkNGFPblBZUG1KMkpxNkh1Mlk2RU1tRnY5TExnR0VtaDd4QnZWd0tiaUQ0dTh1RHd3WDVOQV9CSTlRenFzYm9rUDIxOEhlbkZMeVk5cU44Xy13ZEZuaC1TSjdFbjR5Wnh0R0Q3ZlNUS29rOVRXZUlyaEZXUmp0VkVtWjVLM09QY2Jhb2Q4dEdUWm82WncwRDliaWRsS20yZmo2Wm9lV3hkbEVIV1hPeGhSUlFtdw?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft shares are surging. Here’s how to still make money, says Mike Khouw</a>
+          <div class="headline-meta">CNBC &middot; 2026-07-31 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiqgFBVV95cUxNbTQ5MF9aVFRSbk1BS2hhdE5vZ0ZkN3lOVmNCYWRHV2VFdDdNdi1aUGtfZlh3X0xkZUQzaUZzY2oyWkZ6MjhERldCNDBwVEw1Zi13MTIxUmhXMlZGRF8wUDM3WFRLRFN0dkJNaEx1Q2FsZmtrdWhjZ0VINmZybVc0a1M5emlXQm9MMWNkYUJUdVhyMVU3N2RVeXlVSllsYW5YbmJ2MktFWDdyUQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Corporation (MSFT) Is a Trending Stock: Facts to Know Before Betting on It</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-06-22 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMingFBVV95cUxObHdoZHhIUTdhVnJUVGZfdXVJcWg1ajJ5Vkg4d05HYkxjTTROZGNKZmRZamEzSEVmMzY3V1ppVVJKenVMY0pGR3NVeVREa2JsdVdXZWw5UEJrOEEtLU1mLUJ2MDNXX2hpYnMyOVVhTDFGeUU0MTY5Vk9GU0hRTWJCQjNZVmE2NkZQMDRMZ3dKQUVzMnVaeE52Nk5Sdm5Mdw?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT) Stock Sees Modest Fair Value Lift As AI Debate Drives Price Target Split</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-06-17 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiqgFBVV95cUxNQnIyN2ZLc3JTdnk2R3REbm9QOGswelhoQ2JvRjFYblIwMy1xa1I0VzhqWnhaWC1sc2t1VzIwZEh5TW9wLTJBR2dBdzlJa0FUajVYa3RReENCSnJ4VHdkY0NrNE95S2k5QlFQdWplS29fdzZNdERZTTJwRU1Xc0dRbU1FQTNaUVROQl9DR09aTkd1cFpaOEs2ZzhjWEpCemtnU1FBNkJvQUNuUQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">Is Microsoft Corporation (MSFT) Stock Impacted by Reported Xbox Restructuring and Gaming Division Changes?</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-07-02 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMingFBVV95cUxPaWM2NkRhd3BCUEFvekJEWGhWLWFVZ1Rqa0EzdGFUTmZjeU9RT25YcTc1cHY1bUNnTzZ3d3hXOEMxSFh2em9FX2JOaktNcEVkYjhuT0F5MnVYR1Y0eU1aM0NqMUY0Wi1aeUhsWkVOamlOb0NGTENyN2s4cDYzQk8wOXNiMU93T3NOMlc2YXFyczBDMWk5OEV6bFFXSlhhdw?oc=5" rel="noopener noreferrer nofollow" target="_blank">Why Microsoft (MSFT) Stock Is Trading Up Today</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-05-19 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMi0wFBVV95cUxQLU5TbW04RUFQZVRWNW5jMXl4d2g1S0dkZ1ItTzdVWE1FRlZPbmRKem91dkJKVHM5ZWsxWmFZc0pDTFZDdDRWTlZRTERXTGlTNWI1NUZJSG14ZEotNVJsRExOSzZQdUVLb1lnUjNxX0EyNU51aS1CWnBtSEU2NUxjX2tjZHc5eEJmN2NZM2dfanY2V3kyOEp3Rjk5WFlDcVczMjdkczNheV9QU0lEb2FEcFRkclNGd3dmeFJmXzRuSkVhdThYdFJ2c25qNmpfWWlDR0JN?oc=5" rel="noopener noreferrer nofollow" target="_blank">Investors Pile Into Long-Dated Microsoft Call Options in Unusual Volume - Bullish on MSFT Stock</a>
+          <div class="headline-meta">Barchart.com &middot; 2026-08-03 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMirwFBVV95cUxQMVVfYklrOVk5eGJtT0gtVC00RFJ2aF9RYXhkdVJrUUdpY1VnMGlxNHVGcmVadXotYlpZOWhfZDhremNIWm1yekg5Y1cwdlZhTjZUM2N6SkFSM0lBNFN1MTNpUHZSRUJkbnB2MDhSX2NISGZIMldSNThZUkJVUDZTb0xma1VPbElhbC1XSFVVMFZDN0NTazhHajZDNkVhdi1yOUlVX1FpQV9UVXdfX1k0?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Stock (MSFT) Opinions on AI-Driven Growth and Analyst Sentiment</a>
+          <div class="headline-meta">Quiver Quantitative &middot; 2026-08-14 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMioAFBVV95cUxNQWE1Y1pDT18tSk9NSXR6S0MtNkdkeWxkUjRlZVh2M1lmbnpvR3hsZmQtUWgxb2dDekFtUEg4Uno1WXFJSmJLSS1CWXZtNVl4d1JHLWRfdzl2bEpJT0pZSURiM0FEeEh2WlBIdnkxaU9LeUdmeWdiRF9EV0RCOEh1ZG1NYUl3SmxRamtMckpvRzlkVWV4U1kyeFpKbUgtMmRW?oc=5" rel="noopener noreferrer nofollow" target="_blank">What to Do With Microsoft is a Very Simple Question Now</a>
+          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-11 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMilgFBVV95cUxONXU5Z2l3aDR0Vkx0MkNnMlZTNWg5NXFELUVzLXR3V2FyajZOWFptMThjaXAyLWJEMzRZQ3Zkb01CaHp1RG9UbzdUcjZIVkYxNXdHaHpWSXkxRF9tc0JCTEYwVlRWUDJ0S2xHZFBMS3dpNGU4RDB6ZVpzczFMQXFuSHRvT3R5N3VZV0FjbklMWEJHbF9OeFE?oc=5" rel="noopener noreferrer nofollow" target="_blank">MSFT Stock Alert: What to Know as Bill Ackman Adds Microsoft Position</a>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-05-18 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiZ0FVX3lxTE4zMDlxTTVQMEpZUDhKNDl4Z21KMkVYMkRCNmk4bDhIdnp6S2xFc2lraVA4dzNJaGo1NThkeGIyR0JTbkxyN0djejc0emRBZVBhRzQ1UTcxdThwNEpGWUdqalhJb2kyaDg?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft (MSFT) Share CFD Trading</a>
+          <div class="headline-meta">ThinkMarkets &middot; 2026-08-19 02:23 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiuwFBVV95cUxQaFl6a0hMUDNfOXRqTC1ZTTdJclNoSGY4clo5QkZDZXlnMXNlaHBZS1hqcDV3TVAzQmVCc0VyRl9MaEZIckZ3VzJPMW83cWJnSklzTmV4ZVpHT2tibHY3d2JQOUdfZEtaZzRYbXRORGxyVnI3NmJEV1FSVWNsdnVUMTdNc3RLUk1vb0lFVVpmdUxFdnFNV3pvM0IzWE5iTEtzc21iTDBTR2xlb1RadV9uTDkyVGxFOXQyaTB3?oc=5" rel="noopener noreferrer nofollow" target="_blank">Fund Update: New $89.0M $MSFT stock position opened by J.W. COLE ADVISORS, INC.</a>
+          <div class="headline-meta">Quiver Quantitative &middot; 2026-07-21 07:00 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://news.google.com/rss/articles/CBMiZ0FVX3lxTFBKTC1wUGxuWV90UG41WjMyX0dmMkx6OW05RUVqeVZkYkZWUm11RXQ4TlluOEFQaFVxRG9fU0syenVXZlFrdVZIOUQ4UEVfQ0R2SGt2a2N6QmxOSll4SGhQVXJ3REZLczQ?oc=5" rel="noopener noreferrer nofollow" target="_blank">Microsoft Stock Runs Into Resistance With Earnings Next; Is Microsoft A Sell Now?</a>
+          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-07-28 07:00 UTC</div>
         </li>
         
       </ul>
@@ -523,57 +1061,57 @@
         
         <li>
           <a href="https://finance.yahoo.com/markets/article/here-comes-the-ai-capex-shocker-goldman-sachs-says-171026577.html" rel="noopener noreferrer nofollow" target="_blank">Here comes the AI capex shocker, Goldman Sachs says</a>
-          <div class="headline-meta">Yahoo Finance &middot; 2026-08-31 17:26 UTC</div>
-        </li>
-        
-        <li>
-          <a href="https://finance.yahoo.com/markets/stocks/articles/why-tesla-tsla-stock-today-214840004.html" rel="noopener noreferrer nofollow" target="_blank">Why Tesla (TSLA) Stock Is Up Today</a>
-          <div class="headline-meta">StockStory &middot; 2026-08-31 22:26 UTC</div>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-08-31 17:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/m/e094dafb-4fb9-3a61-892b-0d14bebedee4/dow-jones-futures-trump-s.html" rel="noopener noreferrer nofollow" target="_blank">Dow Jones Futures: Trump&#39;s Iran Warning Sparks Stock Market Losses; Elon Musk-Led SpaceX, Tesla Rally</a>
-          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-31 22:26 UTC</div>
+          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-09-01 00:38 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/why-tesla-tsla-stock-today-214840004.html" rel="noopener noreferrer nofollow" target="_blank">Why Tesla (TSLA) Stock Is Up Today</a>
+          <div class="headline-meta">StockStory &middot; 2026-08-31 22:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/markets/stocks/articles/stock-market-today-aug-31-210747182.html" rel="noopener noreferrer nofollow" target="_blank">Stock Market Today, Aug. 31: Tesla Stock Surges on Cybercab Event Anticipation</a>
-          <div class="headline-meta">Motley Fool &middot; 2026-08-31 21:26 UTC</div>
+          <div class="headline-meta">Motley Fool &middot; 2026-08-31 21:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/markets/stocks/articles/elon-musk-spending-119-billion-224014170.html" rel="noopener noreferrer nofollow" target="_blank">Elon Musk Is Spending $119 Billion on A Single Building Outside Houston. Here’s Who Actually Profits.</a>
-          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 22:40 UTC</div>
+          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 23:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/markets/stocks/articles/elon-musk-spacex-blade-plan-211604495.html" rel="noopener noreferrer nofollow" target="_blank">Elon Musk’s SpaceX Blade Plan Knocks Howmet As HWM Suffers Steepest Slide In 16 Months</a>
-          <div class="headline-meta">Stocktwits &middot; 2026-08-31 21:26 UTC</div>
+          <div class="headline-meta">Stocktwits &middot; 2026-08-31 21:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/m/c57f0554-71e8-33dd-9dcc-a2cad75076ba/stock-market-today-dow-skids.html" rel="noopener noreferrer nofollow" target="_blank">Stock Market Today: Dow Skids As Trump Gives This AI Warning; Tesla Pops Ahead Of Key Event</a>
-          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-31 21:26 UTC</div>
+          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-31 21:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/markets/stocks/articles/tslw-pays-tesla-investors-every-203729868.html" rel="noopener noreferrer nofollow" target="_blank">TSLW Pays Tesla Investors Every Week. Its Share Price Is Down 29% This Year.</a>
-          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 21:26 UTC</div>
+          <div class="headline-meta">24/7 Wall St. &middot; 2026-08-31 20:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/quote/TSLA/news" rel="noopener noreferrer nofollow" target="_blank">Tesla Tops S&amp;P 500. Was It Cybercab Buzz, Or Elon Musk&#39;s New FSD Tease?</a>
-          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-31 21:26 UTC</div>
+          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-31 20:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/m/43c4ec24-02e3-3bfb-8532-7169df4b3da5/next-up-for-tesla-s.html" rel="noopener noreferrer nofollow" target="_blank">Next Up for Tesla’s Self-Driving Tech: Potholes</a>
-          <div class="headline-meta">Barrons.com &middot; 2026-08-31 21:26 UTC</div>
+          <div class="headline-meta">Barrons.com &middot; 2026-08-31 20:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/markets/stocks/articles/tesla-stock-hot-streak-ahead-201059821.html" rel="noopener noreferrer nofollow" target="_blank">Tesla Stock Has Been on a Hot Streak Ahead of Big Event This Week</a>
-          <div class="headline-meta">Investopedia &middot; 2026-08-31 20:26 UTC</div>
+          <div class="headline-meta">Investopedia &middot; 2026-08-31 20:38 UTC</div>
         </li>
         
       </ul>
@@ -587,62 +1125,62 @@
         
         <li>
           <a href="https://finance.yahoo.com/markets/article/here-comes-the-ai-capex-shocker-goldman-sachs-says-171026577.html" rel="noopener noreferrer nofollow" target="_blank">Here comes the AI capex shocker, Goldman Sachs says</a>
-          <div class="headline-meta">Yahoo Finance &middot; 2026-08-31 17:26 UTC</div>
+          <div class="headline-meta">Yahoo Finance &middot; 2026-08-31 17:38 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/media-advertising/articles/ftc-lawsuit-puts-amazon-amzn-235057590.html" rel="noopener noreferrer nofollow" target="_blank">FTC Lawsuit Puts Amazon’s (AMZN) High-Margin Advertising Business in Focus</a>
+          <div class="headline-meta">Insider Monkey &middot; 2026-09-01 00:38 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/msft-stock-compound-way-higher-005337692.html" rel="noopener noreferrer nofollow" target="_blank">Can MSFT Stock Compound Its Way Higher?</a>
+          <div class="headline-meta">Trefis &middot; 2026-09-01 00:54 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/googl-stock-delivers-leader-priced-004125038.html" rel="noopener noreferrer nofollow" target="_blank">GOOGL Stock Delivers Like The Leader, Priced Like The Laggard</a>
+          <div class="headline-meta">Trefis &middot; 2026-09-01 00:41 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/media-advertising/articles/us-regulator-22-states-accuse-230624178.html" rel="noopener noreferrer nofollow" target="_blank">US regulator, 22 states accuse Amazon of &#39;manipulating&#39; ad auctions: lawsuit</a>
-          <div class="headline-meta">AFP &middot; 2026-08-31 23:06 UTC</div>
+          <div class="headline-meta">AFP &middot; 2026-08-31 23:38 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/quote/AMZN/news" rel="noopener noreferrer nofollow" target="_blank">Amazon Ads Launches &#34;First Day Ready,&#34; a Multi-Brand Campaign Connecting Brands to Gen Z at College&#39;s Biggest Moment</a>
+          <div class="headline-meta">Business Wire &middot; 2026-09-01 00:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/media-advertising/articles/ftc-22-states-sue-amazon-211727463.html" rel="noopener noreferrer nofollow" target="_blank">FTC, 22 states sue Amazon over deceptive advertising practices</a>
-          <div class="headline-meta">Axios Media &middot; 2026-08-31 22:30 UTC</div>
+          <div class="headline-meta">Axios Media &middot; 2026-08-31 22:38 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/media-advertising/articles/ftc-22-states-file-suit-222948496.html" rel="noopener noreferrer nofollow" target="_blank">FTC, 22 States File Suit Against Amazon Alleging It Secretly Upcharged Companies for Ads</a>
+          <div class="headline-meta">Sourcing Journal &middot; 2026-08-31 22:38 UTC</div>
+        </li>
+        
+        <li>
+          <a href="https://finance.yahoo.com/markets/stocks/articles/jensen-huang-told-investors-june-233500155.html" rel="noopener noreferrer nofollow" target="_blank">Jensen Huang Told Investors in June to &#39;Buy at a Discount&#39; During Nvidia&#39;s Sell-Off. Nearly Three Months Later, Nvidia Is Up 4%, and a Broader AI Basket Gained 8%. Did His Call Pay Off?</a>
+          <div class="headline-meta">Motley Fool &middot; 2026-08-31 23:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/small-business/articles/ups-reorganization-prioritizes-global-logistics-223004459.html" rel="noopener noreferrer nofollow" target="_blank">UPS reorganization prioritizes global logistics over parcel delivery</a>
-          <div class="headline-meta">FreightWaves &middot; 2026-08-31 22:29 UTC</div>
+          <div class="headline-meta">FreightWaves &middot; 2026-08-31 22:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/media-advertising/articles/ftc-sues-amazon-manipulating-ad-210300336.html" rel="noopener noreferrer nofollow" target="_blank">FTC sues Amazon for manipulating ad auction prices</a>
-          <div class="headline-meta">Quartz &middot; 2026-08-31 21:26 UTC</div>
+          <div class="headline-meta">Quartz &middot; 2026-08-31 21:38 UTC</div>
         </li>
         
         <li>
           <a href="https://finance.yahoo.com/media-advertising/articles/ftc-sues-amazon-allegedly-overcharging-200421072.html" rel="noopener noreferrer nofollow" target="_blank">FTC sues Amazon, alleging it overcharged advertisers</a>
-          <div class="headline-meta">CNN Business &middot; 2026-08-31 21:26 UTC</div>
-        </li>
-        
-        <li>
-          <a href="https://finance.yahoo.com/m/c57f0554-71e8-33dd-9dcc-a2cad75076ba/stock-market-today-dow-skids.html" rel="noopener noreferrer nofollow" target="_blank">Stock Market Today: Dow Skids As Trump Gives This AI Warning; Tesla Pops Ahead Of Key Event</a>
-          <div class="headline-meta">Investor&#39;s Business Daily &middot; 2026-08-31 21:26 UTC</div>
-        </li>
-        
-        <li>
-          <a href="https://finance.yahoo.com/media-advertising/articles/ftc-accuses-amazon-running-secret-202025049.html" rel="noopener noreferrer nofollow" target="_blank">FTC accuses Amazon of running a ‘secret ad surcharge scheme’ in new lawsuit</a>
-          <div class="headline-meta">TechCrunch &middot; 2026-08-31 20:26 UTC</div>
-        </li>
-        
-        <li>
-          <a href="https://finance.yahoo.com/media-advertising/articles/ftc-22-states-sue-amazon-192212268.html" rel="noopener noreferrer nofollow" target="_blank">FTC and 22 states sue Amazon over alleged secret ad surcharge scheme</a>
-          <div class="headline-meta">CBS News &middot; 2026-08-31 20:26 UTC</div>
-        </li>
-        
-        <li>
-          <a href="https://finance.yahoo.com/media-advertising/articles/federal-trade-commission-22-states-214057554.html" rel="noopener noreferrer nofollow" target="_blank">Federal Trade Commission and 22 states sue Amazon over inflated advertising prices</a>
-          <div class="headline-meta">Associated Press &middot; 2026-08-31 22:26 UTC</div>
-        </li>
-        
-        <li>
-          <a href="https://finance.yahoo.com/markets/stocks/articles/kohls-names-ryan-m-waymire-211500307.html" rel="noopener noreferrer nofollow" target="_blank">Kohl&#39;s Names Ryan M. Waymire Chief Merchandising Officer</a>
-          <div class="headline-meta">Business Wire &middot; 2026-08-31 21:26 UTC</div>
-        </li>
-        
-        <li>
-          <a href="https://finance.yahoo.com/economy/policy/articles/us-trade-regulator-22-states-194152421.html" rel="noopener noreferrer nofollow" target="_blank">US trade regulator and 22 states accuse Amazon of taking $20bn with secret surcharges</a>
-          <div class="headline-meta">The Guardian &middot; 2026-08-31 20:26 UTC</div>
+          <div class="headline-meta">CNN Business &middot; 2026-08-31 21:38 UTC</div>
         </li>
         
       </ul>
@@ -657,14 +1195,14 @@
 <footer class="provenance" id="provenance">
   <div class="wrap">
     <div class="disclaimer">Research only — not investment advice.</div>
-    <div class="prov-claim">Provenance: 15 recorded browser sessions back the scraped data (all of them replayable via solari.sessions.download_replay) — full ids in the run&#39;s scraped_data.json.</div>
+    <div class="prov-claim">Provenance: 13 recorded browser sessions back the scraped data (all of them replayable via solari.sessions.download_replay) — full ids in the run&#39;s scraped_data.json.</div>
     
     <details class="prov-detail">
-      <summary>session ids, last 8 chars (15)</summary>
-      <div class="prov-ids"><code>&hellip;_YXHiDeg</code>, <code>&hellip;p3xCtWYg</code>, <code>&hellip;Y3a1nQwg</code>, <code>&hellip;2IQOt5rA</code>, <code>&hellip;ZCu3OKng</code>, <code>&hellip;Qplnst2g</code>, <code>&hellip;M69aO1KA</code>, <code>&hellip;kYmvVrfQ</code>, <code>&hellip;LryGUVfg</code>, <code>&hellip;NTXjFyww</code>, <code>&hellip;T1qCrMJw</code>, <code>&hellip;gvwfMafQ</code>, <code>&hellip;UvmdwkFA</code>, <code>&hellip;uokVn-lg</code>, <code>&hellip;_g08kWHw</code></div>
+      <summary>session ids, last 8 chars (13)</summary>
+      <div class="prov-ids"><code>&hellip;uEnwEHoA</code>, <code>&hellip;Ph62RBgQ</code>, <code>&hellip;cHQRuaeA</code>, <code>&hellip;v9b6sBag</code>, <code>&hellip;iZLyRZbw</code>, <code>&hellip;McK-0Qww</code>, <code>&hellip;AVAwxBWw</code>, <code>&hellip;idjZ2fsQ</code>, <code>&hellip;SWTw49JA</code>, <code>&hellip;uYljJ45w</code>, <code>&hellip;cul-He4g</code>, <code>&hellip;Oe0JNaKQ</code>, <code>&hellip;G8_6RgnQ</code></div>
     </details>
     
-    <div>Rendered 2026-09-01 01:30 UTC &middot; desk/brief.py (hermetic, no external requests)</div>
+    <div>Rendered 2026-09-01 01:39 UTC &middot; desk/brief.py (hermetic, no external requests)</div>
   </div>
 </footer>
 

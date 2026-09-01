@@ -34,6 +34,27 @@ SANDBOX_BASE_URL = "https://api.getsolari.com"
 BROWSER_RATE_PER_HOUR = 0.15
 SANDBOX_RATE_PER_HOUR = 0.10
 
+# GRE-3464: live verification runs surfaced frequent `BrowserType.connect:
+# WebSocket error: ... 428 Precondition Required` failures ("server
+# version: v1.62, client version: v1.59" — the gateway is ahead of the
+# published solari-browser==0.1.2 SDK, and no newer SDK version exists on
+# PyPI to pin instead) hitting browser fetches across every source, not
+# just Nasdaq — measured live at a ~80-90% single-attempt failure rate
+# during verification (a bare `solari.launch()` with no page load at all),
+# and worsening minute-to-minute, consistent with a rolling gateway
+# version deploy rather than anything scraper-specific. `Solari.launch()`'s
+# own `_TRANSIENT_CONNECT` regex (solari_browser/client.py) already
+# matches "WebSocket" and relaunches on a fresh session when `retries>0` —
+# exactly this failure mode — so `open_browser_page` opts into it rather
+# than leaving every fetch exposed to a single unlucky connect. A failed
+# attempt is released almost immediately (sub-second), so the added spend
+# per retry is negligible; 4 is high enough to survive the incident-time
+# failure rate observed above (independent per-source fallback already in
+# `desk/scraper.py`'s EARNINGS/HEADLINE/QUOTE_SOURCES compounds with this,
+# so effective reliability is considerably higher still) while staying
+# cheap and fast in the common case where the platform is healthy.
+BROWSER_LAUNCH_RETRIES = 4
+
 
 def _api_key() -> str:
     load_dotenv()
@@ -72,10 +93,14 @@ async def open_browser_page(url: str, *, recording: bool = False) -> PageResult:
     README gotcha: it is per-session, not account-level, and the replay
     upload happens async after release — poll ~30s before concluding there
     is no replay).
+
+    Launches with `retries=BROWSER_LAUNCH_RETRIES` (GRE-3464) so a transient
+    WebSocket connect failure relaunches on a fresh session instead of
+    failing the whole fetch outright.
     """
     solari = Solari(api_key=_api_key())
     started = time.monotonic()
-    browser = await solari.launch(recording=recording)
+    browser = await solari.launch(recording=recording, retries=BROWSER_LAUNCH_RETRIES)
     try:
         page = await browser.new_page()
         await page.goto(url)

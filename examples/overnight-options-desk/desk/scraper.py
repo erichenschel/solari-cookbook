@@ -24,10 +24,6 @@ Per-source failures (network error, unparseable page, or an injected
 in `tests/test_scraper_fallback.py`.
 
 Build-time source verification (see the generator report for detail):
-  - Nasdaq's earnings page (ticket's named primary) returned
-    `net::ERR_HTTP2_PROTOCOL_ERROR` from the vanilla cloud browser on every
-    attempt — kept as the coded primary per the ticket, but expect it to
-    always fall through to the Yahoo/StockAnalysis fallbacks live.
   - Stooq's `/q/l/` CSV endpoint 404s outright (site restructure), and even
     if it resolved, that field-set has no previous-close column, so it can
     never alone satisfy the quotes contract. Kept as the coded fallback
@@ -36,6 +32,51 @@ Build-time source verification (see the generator report for detail):
     StockAnalysis.com (earnings), Google News RSS, MarketWatch RSS, and CBOE
     delayed quotes (JSON) all verified working against a vanilla browser /
     plain HTTP at build time.
+
+GRE-3464 earnings-chain fix: Nasdaq's HTML earnings page
+(`nasdaq.com/market-activity/stocks/{sym}/earnings`) was the original coded
+PRIMARY earnings source, but failed with `net::ERR_HTTP2_PROTOCOL_ERROR`
+from Solari's cloud browser for every symbol, on every run — a primary that
+fails 100% of the time live is misconfiguration, not resilience. Three
+things were tried, in order, before touching the chain (see the ticket
+report for full transcripts):
+
+  1. Nasdaq's JSON API as a plain-HTTP replacement (`_http_fetch`, no
+     browser). `api.nasdaq.com/api/analyst/{SYM}/earnings-date` and
+     `api.nasdaq.com/api/calendar/earnings?date=YYYY-MM-DD` both return
+     real `200 application/json` with a browser-ish User-Agent (no auth,
+     no stealth) — so the underlying HTTP/2 error is specific to Nasdaq's
+     www-app edge rejecting Solari's cloud-browser egress, not a blanket
+     Nasdaq block. BUT `analyst/{SYM}/earnings-date` returned "Our vendor,
+     Zacks Investment Research, hasn't provided us with the upcoming
+     earnings report date" for all 5 target symbols (AAPL, NVDA, MSFT,
+     TSLA, AMZN) plus CRM/WMT/TGT — it reliably has *no* forward date for
+     names that reported within roughly the last month (all five target
+     symbols reported in late Jul/Aug 2026); it works fine for names
+     further out in their cycle (PANW, ORCL, COST, JPM all returned a real
+     date). And `calendar/earnings?date=` only returns rows for symbols
+     reporting on that *specific* date, so finding one target symbol's
+     next date means scanning up to ~180 daily calendar pages — not a
+     viable "primary" shape. Not implemented: no JSON endpoint gives a
+     reliable date for this ticket's actual test cohort.
+  2. Stealth mode on the existing Nasdaq browser source, now that the
+     account is nominally Starter tier. `solari.launch(stealth=True)`
+     against the real gateway returned `402 {"error":"Stealth mode
+     requires a paid plan","code":"FeatureRequiresPlan","plan":"free"}` —
+     the gateway still sees this account as free tier, so the promo-code
+     upgrade hadn't propagated at verification time. Per the ticket's own
+     step 2 ("if it renders, add stealth as an option"), no plumbing was
+     added since it never rendered — there is nothing live to wire an
+     opt-in flag around yet. `solari_client.open_browser_page` still takes
+     no `stealth` kwarg; re-run this probe once the plan shows non-free
+     before adding one.
+  3. Reorder: since neither replacement panned out, `yahoo_earnings_calendar`
+     (proven reliable, live and in the existing fallback chain) is promoted
+     to primary; `stockanalysis_earnings` stays second; `nasdaq_earnings` is
+     demoted to last (kept per NG-3 — the chain still tries it, and its
+     parser is unchanged so it starts working for free the day either (a)
+     Nasdaq's edge stops HTTP/2-rejecting Solari's browser egress or (b)
+     stealth propagates on this account).
 """
 
 from __future__ import annotations
@@ -129,7 +170,10 @@ def _parse_month_day_year(value: str) -> datetime:
 def parse_nasdaq_earnings(fetch: FetchResult, symbol: str, now: datetime) -> list[dict]:
     """Best-effort parser for Nasdaq's earnings page. Unverified live — the
     page could not be reached at all from the vanilla cloud browser at build
-    time (`net::ERR_HTTP2_PROTOCOL_ERROR`, see module docstring)."""
+    time or under GRE-3464's stealth retest (`net::ERR_HTTP2_PROTOCOL_ERROR`
+    / stealth `402 FeatureRequiresPlan`, see module docstring). Demoted to
+    last fallback in `EARNINGS_SOURCES` as of GRE-3464 — kept, not removed
+    (NG-3), so it starts working for free if either blocker lifts."""
     m = re.search(r"Earnings Date[:\s]+([A-Za-z]+\.?\s+\d{1,2},\s+\d{4})", fetch.text)
     if not m:
         raise ValueError(f"no earnings date found for {symbol} on nasdaq page")
@@ -345,12 +389,10 @@ class Source:
 
 
 EARNINGS_SOURCES: list[Source] = [
-    Source(
-        "nasdaq_earnings",
-        "browser",
-        lambda s: f"https://www.nasdaq.com/market-activity/stocks/{s.lower()}/earnings",
-        parse_nasdaq_earnings,
-    ),
+    # GRE-3464: yahoo_earnings_calendar promoted to primary — it's the
+    # source that actually works live. nasdaq_earnings demoted to last
+    # (NG-3: still tried, never removed); see module docstring for the
+    # JSON-API and stealth experiments that preceded this reorder.
     Source(
         "yahoo_earnings_calendar",
         "browser",
@@ -362,6 +404,12 @@ EARNINGS_SOURCES: list[Source] = [
         "browser",
         lambda s: f"https://stockanalysis.com/stocks/{s.lower()}/",
         parse_stockanalysis_earnings,
+    ),
+    Source(
+        "nasdaq_earnings",
+        "browser",
+        lambda s: f"https://www.nasdaq.com/market-activity/stocks/{s.lower()}/earnings",
+        parse_nasdaq_earnings,
     ),
 ]
 

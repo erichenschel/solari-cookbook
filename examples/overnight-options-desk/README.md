@@ -114,14 +114,18 @@ integration ticket's real end-to-end demo:
 
 - Prior lanes (GRE-3459 spike + GRE-3460 scraper + GRE-3461 models AC live
   testing): **≈$0.02**
-- This ticket's real `run_overnight` demo run below
-  (`AAPL,NVDA,MSFT,TSLA,AMZN`, `runs/2026-08-31/budget.json`): **$0.0309**
-  (scraper $0.0048, models $0.0011, brief $0.0000, serve $0.0250 —
-  the serve figure is an *estimated* charge for the requested 900s preview
-  hold, not a measured actual; see "Orchestrator ↔ serve reconciliation"
-  below for why).
-- **Cumulative project spend: ≈$0.0509** — against a $2.00 ticket budget
-  and a $0.60 live-work budget for this ticket alone. Not rounded up.
+- The GRE-3464 integration demo run (`AAPL,NVDA,MSFT,TSLA,AMZN`,
+  `runs/2026-08-31/budget.json`, since superseded by the earnings-chain-fix
+  run below): **$0.0309** (scraper $0.0048, models $0.0011, brief $0.0000,
+  serve $0.0250 — the serve figure is an *estimated* charge for the
+  requested 900s preview hold, not a measured actual; see "Orchestrator ↔
+  serve reconciliation" below for why).
+- The GRE-3464 earnings-chain-fix verification (this document's "Real
+  end-to-end run" below, plus the discarded runs and health probes that
+  diagnosed the browser-gateway incident described there): **≈$0.031**.
+- **Cumulative project spend: ≈$0.082** — against a $2.00 ticket budget
+  and a $1.00 live-work budget for the earnings-chain-fix ticket alone
+  (used ≈$0.031 of it). Not rounded up.
 
 Nothing here needs a paid plan — every primitive above (recording,
 port preview, the sandbox `base` template) was confirmed working on the
@@ -130,47 +134,96 @@ free tier during the GRE-3459 spike (see "Spike findings").
 ## Real end-to-end run (GRE-3464 demo)
 
 ```
-python -m desk.run_overnight --symbols AAPL,NVDA,MSFT,TSLA,AMZN --serve-hold-seconds 900
+python -m desk.run_overnight --symbols AAPL,NVDA,MSFT,TSLA,AMZN --serve-hold-seconds 60
 ```
 
 ```
-=== overnight desk run 2026-08-31 — status: full ===
-  scraper  ok       attempts=1 duration=42.00s spend=$0.0048
-  models   ok       attempts=1 duration=41.96s spend=$0.0011
+=== overnight desk run 2026-09-01 — status: full ===
+  scraper  ok       attempts=1 duration=60.02s spend=$0.0050
+  models   ok       attempts=1 duration=20.21s spend=$0.0005
   brief    ok       attempts=1 duration=0.10s  spend=$0.0000
-  serve    ok       attempts=1 duration=0.97s  spend=$0.0250
-  budget total: $0.0309
-  preview: https://bf81fd6689b42fa152c3-8000.preview.getsolari.com
-  (?pt_token=... stripped — see NG-3; curled 200 while the preview was alive)
+  serve    ok       attempts=1 duration=1.13s  spend=$0.0017
+  budget total: $0.0072
+  preview: https://d64faeb46e11aba6986b-8000.preview.getsolari.com (dead by
+  the time you read this — ~1hr free-tier cap, see "Limitations")
   brief: docs/latest/index.html
-  run dir: runs/2026-08-31
+  run dir: runs/2026-09-01
 ```
 
 - **Every stage ran real** — no stubs, no `--dry-run`. `scraper` hit the
-  live free-tier API for 5 symbols (15 recorded browser sessions; Nasdaq's
-  earnings page failed with `net::ERR_HTTP2_PROTOCOL_ERROR` on every symbol
-  exactly as documented in "Limitations" and fell through to the Yahoo
-  earnings calendar fallback every time — see `runs/2026-08-31/scraped_data.json`'s
-  `warnings[]`).
+  live API for 5 symbols with the GRE-3464 reordered chain
+  (`yahoo_earnings_calendar` primary): **earnings came back from the
+  primary source, zero fallback needed, for 4 of 5 symbols (AAPL, NVDA,
+  MSFT, TSLA)** — see `runs/2026-09-01/scraped_data.json`'s `earnings[]`.
+  The 5th, AMZN, hit all 3 earnings sources failing in the same run (one of
+  the three being the already-documented, expected `nasdaq_earnings`
+  `net::ERR_HTTP2_PROTOCOL_ERROR`) — `runs/2026-09-01/scraped_data.json`'s
+  `warnings[]` has the detail. This run landed right at the *start* of a
+  separate, unrelated incident (below) that got much worse a few minutes
+  later; AMZN's miss lines up with that onset far better than with
+  anything about the chain order itself, but it's reported here rather
+  than smoothed over.
   `models` hit the sandbox-clock-skew TLS workaround live too (every
-  symbol's `notes[]` carries a `tls-clock-skew-workaround` entry) and still
+  symbol's `notes[]` carries a `tls-clock-skew-workaround` entry) and
   produced valid GARCH/OU/momentum fits for all 5 symbols via the Yahoo
   chart price fallback (Stooq returned 0 usable closes this run).
 - **Verdicts** (real market data, not fixture): 4 of 5 symbols came back
   `avoid` / `mean-reversion-watch` (stretched OU z-scores, elevated
   annualized vol forecasts — MSFT z=+6.48, NVDA z=+4.78, AMZN z=+3.71, TSLA
   z=−3.45), AAPL came back `neutral` / `no-strong-signal`. See
-  `runs/2026-08-31/signals.json` for the full per-symbol output including
+  `runs/2026-09-01/signals.json` for the full per-symbol output including
   `label`.
-- **Artifacts**: `runs/2026-08-31/{scraped_data.json, signals.json,
+- **Artifacts**: `runs/2026-09-01/{scraped_data.json, signals.json,
   brief.html, run.log, budget.json, state.json}` — all present, all
   schema-valid, `state.json.status == "full"`.
 - **Published brief**: `docs/latest/index.html` is a byte-for-byte copy of
-  `runs/2026-08-31/brief.html` (verified via checksum) — real universe,
+  `runs/2026-09-01/brief.html` (verified via checksum) — real universe,
   real quotes, real labels, not the fixture data used by the hermetic
   tests.
-- **Screenshot**: `docs/latest/brief-screenshot.jpg`, captured from the
-  live preview URL while it was up.
+
+#### What blocked a fully clean (zero-warning) demo, and the evidence (GRE-3464)
+
+Minutes after the run above, live verification hit a Solari browser-gateway
+incident — `BrowserType.connect: WebSocket error: ... 428 Precondition
+Required` ("server version: v1.62, client version: v1.59") — that is
+unrelated to this fix and hits every browser-backed source uniformly, not
+just earnings. It was measured three independent ways in the same session:
+
+1. A dedicated 5-minute health monitor (bare `solari.launch()`, no page
+   load, every 20s) recorded **0% success across all 14 checks** — the
+   incident did not clear during the entire observation window.
+2. Two ad-hoc 10-launch probes bracketing that monitor measured the
+   single-attempt failure rate climbing from **~20% → ~80-90% → 100%**
+   over roughly 15-20 minutes — consistent with a rolling gateway deploy,
+   not a random blip.
+3. A second full `run_overnight` attempt, run immediately after the
+   monitor's 5-minute window closed, came back with **0 earnings, 0
+   headlines, and 0 browser sessions of any kind** — every single browser
+   fetch failed even with the launch-retry resilience below; only the
+   plain-HTTP CBOE quote fallback (no browser involved) still worked. That
+   run's artifacts were not kept as the "real end-to-end run" above
+   precisely because it demonstrates the outage, not the fix.
+
+In response, `open_browser_page` (`desk/solari_client.py`) now launches
+with `retries=BROWSER_LAUNCH_RETRIES` (4) — `Solari.launch()`'s own
+`_TRANSIENT_CONNECT` regex already matches `"WebSocket"` and relaunches on
+a fresh session for exactly this failure signature. It's a real,
+permanent reliability improvement (a failed attempt releases in
+well under a second, so the added spend is negligible), but no client-side
+retry count survives a sustained 100% failure rate — that needs Solari's
+gateway to stabilize, or a newer `solari-browser` SDK release compatible
+with server v1.62 (none exists on PyPI as of this writing; latest
+published is `0.1.2`, pinned to `patchright<1.60`). If you see a burst of
+`428 Precondition Required` warnings spanning sources that share nothing
+but "used a browser," it's this incident, not a scraper defect — re-run
+later.
+- **Total live spend across this ticket's verification (all attempts,
+  including the ones above and the runs discarded for the reasons above)**:
+  **≈$0.031** — five `run_overnight` invocations ($0.0072 + $0.0072 +
+  $0.0050 + $0.0081 + $0.0022) plus a handful of cheap health-check probes
+  (stealth-mode probe, two 10-launch rate probes, the 14-check monitor) —
+  all sessions closed in `finally`, nothing left running (`ps aux | grep
+  desk.serve` clean after each). Well inside the ticket's $1.00 live budget.
 
 ## Quickstart
 
@@ -205,13 +258,47 @@ end-to-end run" for what a real run of it produced.
   run — and the one linked from this README — goes dead after that; the
   durable artifact is `docs/latest/index.html` / `runs/<date>/brief.html`,
   not the URL.
-- **No stealth mode, so Nasdaq's earnings page is blocked.** A vanilla
-  cloud browser gets `net::ERR_HTTP2_PROTOCOL_ERROR` from
-  `nasdaq.com/market-activity/...` every time (confirmed at build time and
-  live) — the scraper always falls through to the Yahoo/StockAnalysis
-  fallbacks. A deployment that specifically needs Nasdaq would want
-  Solari's stealth + residential-proxy browser mode (see
-  [browser-stealth-proxy-ts](../browser-stealth-proxy-ts)) instead.
+- **Nasdaq's earnings page is still blocked, and stealth doesn't (yet) fix
+  it — `yahoo_earnings_calendar` is the primary earnings source instead
+  (GRE-3464).** A vanilla cloud browser gets `net::ERR_HTTP2_PROTOCOL_ERROR`
+  from `nasdaq.com/market-activity/...` every time (confirmed at build time
+  and live). Two replacements were tried before touching the chain: (1)
+  Nasdaq's own JSON API (`api.nasdaq.com/api/analyst/{SYM}/earnings-date`,
+  `.../api/calendar/earnings?date=`) does return real `200 application/json`
+  over plain HTTP with no auth or stealth — so the block is specific to
+  Solari's cloud-browser egress hitting Nasdaq's HTML edge, not a blanket
+  Nasdaq ban — but that API has no forward-looking date for a company that
+  reported within roughly the last month (true for all 5 of this repo's
+  demo symbols right now), so it can't serve as a reliable primary; (2)
+  `solari.launch(stealth=True)` against this (nominally Starter-tier)
+  account returned `402 {"code":"FeatureRequiresPlan","plan":"free"}` — the
+  gateway still saw the account as free tier when tested, so the promo-code
+  upgrade hadn't propagated. Given both replacements failed, the fix was
+  the chain order: `EARNINGS_SOURCES` now tries `yahoo_earnings_calendar`
+  first, `stockanalysis_earnings` second, and `nasdaq_earnings` last
+  (kept, not removed, per NG-3) — see `desk/scraper.py`'s module docstring
+  for the full experiment writeup. A deployment that specifically needs
+  Nasdaq, or wants stealth once it actually activates on the account,
+  would still look at Solari's stealth + residential-proxy browser mode
+  (see [browser-stealth-proxy-ts](../browser-stealth-proxy-ts)).
+- **Solari's browser gateway had an active, verified version-skew
+  incident during GRE-3464 verification** — `BrowserType.connect:
+  WebSocket error: ... 428 Precondition Required` reporting "server
+  version: v1.62, client version: v1.59" (the published `solari-browser`
+  package, `0.1.2`, is pinned to `patchright<1.60`, and no newer SDK
+  version exists on PyPI to pick up a compatible client). This hits every
+  browser source, not just earnings, and isn't caused by anything in this
+  repo — a live probe (bare `solari.launch()`, no page load) measured the
+  single-attempt failure rate climbing from ~20% to 100% over about 20
+  minutes of testing, consistent with a rolling gateway deploy landing
+  mid-session. `open_browser_page` now launches with
+  `retries=BROWSER_LAUNCH_RETRIES` (4) so a transient connect failure
+  relaunches on a fresh session instead of failing the fetch outright —
+  real, permanent resilience — but it cannot fully paper over a total
+  gateway-side outage. If a run shows a burst of `428 Precondition
+  Required` warnings across sources that have nothing in common but
+  "browser", that's this — not a scraper bug — and retrying the run later
+  is the correct response.
 - **Sandbox VM clock can be stuck in the past** (observed ~4 weeks behind
   real time), which makes legitimately valid HTTPS certs look "not yet
   valid." Worked around in `fetch.py`'s `_urlopen_tolerant` with one
@@ -250,7 +337,10 @@ fixtures/
   scraper/             # real page/RSS/JSON snapshots for hermetic parser tests
 runs/                  # per-day run artifacts (gitignored; .gitkeep only)
 docs/latest/           # published output: index.html (real brief, GitHub Pages
-                        # source) + brief-screenshot.jpg from the GRE-3464 demo run
+                        # source) + brief-screenshot.jpg from an earlier
+                        # GRE-3464 demo run (not re-captured by the
+                        # earnings-chain-fix verification — see "Real
+                        # end-to-end run")
 tests/
   test_contracts.py    # hermetic: fixtures round-trip, invalid samples rejected
   test_scraper_*.py    # hermetic: parsers vs saved fixtures, fallback chains
