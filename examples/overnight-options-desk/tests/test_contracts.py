@@ -1,7 +1,6 @@
 """Hermetic contract tests — no network. Fixtures round-trip through the
 dataclasses + JSON Schema, and mutated/invalid samples are rejected."""
 
-import copy
 import json
 
 import jsonschema

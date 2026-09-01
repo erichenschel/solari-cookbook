@@ -11,7 +11,7 @@ import json
 from dataclasses import asdict, dataclass, field
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import jsonschema
 
@@ -21,11 +21,6 @@ SCHEMA_DIR = Path(__file__).parent / "schemas"
 @lru_cache(maxsize=None)
 def _schema(name: str) -> dict:
     return json.loads((SCHEMA_DIR / name).read_text())
-
-
-# --------------------------------------------------------------------------
-# scraped_data
-# --------------------------------------------------------------------------
 
 
 @dataclass
@@ -122,11 +117,6 @@ def load_scraped(path: str) -> ScrapedData:
     data = json.loads(Path(path).read_text())
     validate_scraped(data)
     return ScrapedData.from_dict(data)
-
-
-# --------------------------------------------------------------------------
-# signals
-# --------------------------------------------------------------------------
 
 
 @dataclass

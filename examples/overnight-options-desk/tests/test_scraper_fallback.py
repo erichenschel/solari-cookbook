@@ -6,7 +6,7 @@ injectable the `--symbols` CLI honors through DESK_SCRAPER_FORCE_UNREACHABLE)
 must still produce schema-valid output, with the failure recorded in
 `warnings[]` and the fallback source's data present."""
 
-import json
+import asyncio
 
 import pytest
 
@@ -156,6 +156,4 @@ async def test_scrape_never_raises_when_every_source_for_every_type_fails(patche
 
 def test_scrape_rejects_more_than_five_symbols():
     with pytest.raises(ValueError):
-        import asyncio
-
         asyncio.run(scraper.scrape(["A", "B", "C", "D", "E", "F"]))

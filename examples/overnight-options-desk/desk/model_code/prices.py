@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import csv
 import io
-from typing import Optional
 
 
 def parse_stooq_csv(text: str) -> list[float]:

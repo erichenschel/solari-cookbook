@@ -29,11 +29,6 @@ from desk.models import (
 AS_OF = "2026-03-01T06:00:00Z"
 
 
-# --------------------------------------------------------------------------
-# prices.py
-# --------------------------------------------------------------------------
-
-
 def test_parse_stooq_csv_basic():
     text = "Date,Open,High,Low,Close,Volume\n2026-01-02,10,11,9,10.5,1000\n2026-01-03,10.5,11,10,10.8,1200\n"
     closes = parse_stooq_csv(text)
@@ -54,11 +49,6 @@ def test_price_fixtures_parse_to_expected_length(fixtures_dir, name, expected_le
     closes = closes_from_csv_file(str(fixtures_dir / "prices" / f"{name}.csv"))
     assert len(closes) == expected_len
     assert all(c > 0 for c in closes)
-
-
-# --------------------------------------------------------------------------
-# signals.py — rule table, golden verdicts from seeded fixtures
-# --------------------------------------------------------------------------
 
 
 def _signal_for(fixtures_dir, name, earnings=None):
@@ -123,11 +113,6 @@ def test_earnings_outside_window_does_not_force_avoid(fixtures_dir):
     assert not any("event-risk" in n for n in sig["notes"])
 
 
-# --------------------------------------------------------------------------
-# NG-5: numerical edge cases never crash the run
-# --------------------------------------------------------------------------
-
-
 def test_constant_price_series_does_not_crash(fixtures_dir):
     """A flat 80-day price series is a genuine pathological input: zero
     variance trips GARCH into non-convergence and the AR(1) OLS design
@@ -159,11 +144,6 @@ def test_all_fixture_verdicts_together_are_schema_valid(fixtures_dir):
     # the ticket's research vocabulary onto them — see notes[])
     for sig in per_symbol.values():
         assert sig["verdict"] in signals.VERDICT_VALUES
-
-
-# --------------------------------------------------------------------------
-# desk/models.py — local orchestration helpers (no sandbox call)
-# --------------------------------------------------------------------------
 
 
 def test_load_model_code_files_returns_all_expected_files():

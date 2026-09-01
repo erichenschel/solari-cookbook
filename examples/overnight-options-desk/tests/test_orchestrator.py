@@ -7,7 +7,6 @@ partial-failure degrade, and budget accounting. No network, no key needed.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
@@ -33,11 +32,6 @@ def _run(tmp_path, **extra_env):
     run_dirs = list(out_root.glob("*"))
     assert len(run_dirs) == 1, f"expected exactly one run dir, found {run_dirs}"
     return code, run_dirs[0], docs_out
-
-
-# --------------------------------------------------------------------------
-# AC-1: dry-run completes offline, writes all artifacts, hermetic
-# --------------------------------------------------------------------------
 
 
 def test_dry_run_writes_all_artifacts_and_is_hermetic(tmp_path, monkeypatch):
@@ -74,11 +68,6 @@ def test_dry_run_sequencing_order_in_log(tmp_path):
     order = [name for name in ("scraper", "models", "brief", "serve") if f"stage={name}" in log]
     idx = {name: log.index(f"stage={name}") for name in order}
     assert idx["scraper"] < idx["models"] < idx["brief"] < idx["serve"]
-
-
-# --------------------------------------------------------------------------
-# AC-2: injected stage failure -> retry -> degrade -> partial run
-# --------------------------------------------------------------------------
 
 
 def test_injected_models_failure_degrades_to_partial(tmp_path, monkeypatch):
@@ -146,11 +135,6 @@ def test_injected_brief_failure_yields_failed_run_and_skips_serve(tmp_path, monk
     assert not docs_out.exists()
 
 
-# --------------------------------------------------------------------------
-# AC-3: budget.json structure
-# --------------------------------------------------------------------------
-
-
 def test_budget_json_structure(tmp_path):
     _, run_dir, _ = _run(tmp_path)
     budget = json.loads((run_dir / "budget.json").read_text())
@@ -160,11 +144,6 @@ def test_budget_json_structure(tmp_path):
     assert budget["total_usd"] == pytest.approx(sum(budget["stages"].values()))
     # dry-run makes zero real API calls -> zero spend
     assert budget["total_usd"] == 0.0
-
-
-# --------------------------------------------------------------------------
-# --resume: skip stages whose valid artifacts already exist
-# --------------------------------------------------------------------------
 
 
 def test_resume_skips_completed_stages(tmp_path, monkeypatch):

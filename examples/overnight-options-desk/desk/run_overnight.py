@@ -102,11 +102,6 @@ class StageOutcome:
         }
 
 
-# --------------------------------------------------------------------------
-# argument parsing
-# --------------------------------------------------------------------------
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="python -m desk.run_overnight",
@@ -180,11 +175,6 @@ def _split_symbols(raw: Optional[str]) -> list[str]:
     return [s.strip().upper() for s in raw.split(",") if s.strip()]
 
 
-# --------------------------------------------------------------------------
-# spend parsing
-# --------------------------------------------------------------------------
-
-
 def _parse_spend_from_output(output: str) -> float:
     """Parse solari_client's `[spend] resource: Ns ~= $X` log lines, summed
     across every resource the stage opened. Falls back to a trailing
@@ -232,11 +222,6 @@ def _run_subprocess_stage(cmd: list[str], cwd: Path, timeout: int = 600) -> tupl
             f"`{' '.join(cmd)}` exited {proc.returncode}: {proc.stderr.strip()[:2000]}"
         )
     return proc.stdout, _parse_spend_from_output(proc.stdout)
-
-
-# --------------------------------------------------------------------------
-# stage bodies
-# --------------------------------------------------------------------------
 
 
 def _check_injected_failure(name: str) -> None:
@@ -396,11 +381,6 @@ def _do_serve(
     return url, est_spend
 
 
-# --------------------------------------------------------------------------
-# retry / degrade wrapper
-# --------------------------------------------------------------------------
-
-
 def _run_with_retry(name: str, func, retries: int) -> StageOutcome:
     attempts = 0
     last_err: Optional[str] = None
@@ -433,11 +413,6 @@ def _run_with_retry(name: str, func, retries: int) -> StageOutcome:
         last_err,
     )
     return StageOutcome(name=name, status="failed", attempts=attempts, duration_s=duration, error=last_err)
-
-
-# --------------------------------------------------------------------------
-# resume / checkpoint helpers
-# --------------------------------------------------------------------------
 
 
 def _load_state(run_dir: Path) -> dict:
@@ -484,11 +459,6 @@ def _resumed_outcome(name: str, prev: dict) -> StageOutcome:
     )
 
 
-# --------------------------------------------------------------------------
-# logging setup
-# --------------------------------------------------------------------------
-
-
 def _configure_logging(run_dir: Path) -> logging.FileHandler:
     logger.handlers.clear()
     logger.setLevel(logging.INFO)
@@ -502,11 +472,6 @@ def _configure_logging(run_dir: Path) -> logging.FileHandler:
     stream_handler.setFormatter(logging.Formatter("%(message)s"))
     logger.addHandler(stream_handler)
     return file_handler
-
-
-# --------------------------------------------------------------------------
-# main
-# --------------------------------------------------------------------------
 
 
 def main(argv: Optional[list[str]] = None) -> int:
@@ -548,7 +513,6 @@ def _run(args: argparse.Namespace, run_dir: Path, run_date: str, use_stubs: bool
 
     outcomes: dict[str, StageOutcome] = {}
 
-    # ---- scraper -----------------------------------------------------
     prev = prev_stages.get("scraper")
     if prev and prev.get("status") == "ok" and _artifact_valid("scraper", scraped_path):
         logger.info("stage=scraper status=skipped reason=resumed-valid-artifact")
@@ -564,7 +528,6 @@ def _run(args: argparse.Namespace, run_dir: Path, run_date: str, use_stubs: bool
                 "scraper", lambda: _do_scraper(symbols, scraped_path, use_stubs), args.retries
             )
 
-    # ---- models --------------------------------------------------------
     prev = prev_stages.get("models")
     if prev and prev.get("status") == "ok" and _artifact_valid("models", signals_path):
         logger.info("stage=models status=skipped reason=resumed-valid-artifact")
@@ -577,7 +540,6 @@ def _run(args: argparse.Namespace, run_dir: Path, run_date: str, use_stubs: bool
             "models", lambda: _do_models(scraped_path, signals_path, use_stubs), args.retries
         )
 
-    # ---- brief -----------------------------------------------------------
     prev = prev_stages.get("brief")
     if prev and prev.get("status") == "ok" and _artifact_valid("brief", brief_path):
         logger.info("stage=brief status=skipped reason=resumed-valid-artifact")
@@ -589,7 +551,6 @@ def _run(args: argparse.Namespace, run_dir: Path, run_date: str, use_stubs: bool
             "brief", lambda: _do_brief(scraped_path, signals_path, brief_path, use_stubs), args.retries
         )
 
-    # ---- serve -------------------------------------------------------------
     prev = prev_stages.get("serve")
     preview_url: Optional[str] = None
     if prev and prev.get("status") == "ok" and prev.get("preview_url"):
@@ -626,7 +587,6 @@ def _run(args: argparse.Namespace, run_dir: Path, run_date: str, use_stubs: bool
         if outcome.status == "ok" and "_result" in outcome.extra:
             outcome.spend_usd = outcome.extra.pop("_result") or 0.0
 
-    # ---- status -------------------------------------------------------------
     brief_ok = brief_path.exists() and brief_path.stat().st_size > 0
     if not brief_ok:
         status = "failed"
@@ -635,7 +595,6 @@ def _run(args: argparse.Namespace, run_dir: Path, run_date: str, use_stubs: bool
     else:
         status = "partial"
 
-    # ---- budget ---------------------------------------------------------
     budget = {
         "run_date": run_date,
         "stages": {name: round(outcomes[name].spend_usd, 6) for name in STAGE_NAMES},
@@ -651,14 +610,12 @@ def _run(args: argparse.Namespace, run_dir: Path, run_date: str, use_stubs: bool
 
     _write_state(run_dir, outcomes, status)
 
-    # ---- publish ---------------------------------------------------------
     docs_out = Path(args.docs_out) if args.docs_out else PACKAGE_ROOT / "docs" / "latest" / "index.html"
     if brief_ok:
         docs_out.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(brief_path, docs_out)
         logger.info("published brief.html -> %s", docs_out)
 
-    # ---- summary ---------------------------------------------------------
     logger.info("run status=%s", status)
     print(f"\n=== overnight desk run {run_date} — status: {status} ===")
     for name in STAGE_NAMES:

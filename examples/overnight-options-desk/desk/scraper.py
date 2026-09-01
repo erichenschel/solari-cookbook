@@ -93,11 +93,6 @@ async def _http_fetch(url: str) -> FetchResult:
         return FetchResult(text=resp.text)
 
 
-# ---------------------------------------------------------------------------
-# shared parsing helpers
-# ---------------------------------------------------------------------------
-
-
 def _infer_session(hour_24: Optional[int]) -> str:
     """4pm-ish -> after market close; before 9am -> before market open."""
     if hour_24 is None:
@@ -129,11 +124,6 @@ def _parse_month_day_year(value: str) -> datetime:
         except ValueError:
             continue
     raise ValueError(f"unrecognized date format: {value!r}")
-
-
-# ---------------------------------------------------------------------------
-# earnings parsers
-# ---------------------------------------------------------------------------
 
 
 def parse_nasdaq_earnings(fetch: FetchResult, symbol: str, now: datetime) -> list[dict]:
@@ -190,10 +180,6 @@ def parse_stockanalysis_earnings(fetch: FetchResult, symbol: str, now: datetime)
     dt = _parse_month_day_year(m.group(1))
     return [{"symbol": symbol, "date": dt.strftime("%Y-%m-%d"), "session": "unknown"}]
 
-
-# ---------------------------------------------------------------------------
-# headline parsers
-# ---------------------------------------------------------------------------
 
 _YAHOO_NEWS_ITEM_RE = re.compile(
     r"^(?P<title>[^\n]+)\n(?:(?:LIVE|PREMIUM)\n)?(?P<source>[^\n•]+)\n•\n"
@@ -309,11 +295,6 @@ def parse_marketwatch_rss(fetch: FetchResult, symbol: str, now: datetime) -> lis
     return out
 
 
-# ---------------------------------------------------------------------------
-# quote parsers
-# ---------------------------------------------------------------------------
-
-
 def parse_yahoo_quote(fetch: FetchResult, symbol: str, now: datetime) -> dict:
     last_m = re.search(re.escape(f"({symbol})") + r"\n([\d,]+\.\d+)", fetch.text)
     prev_m = re.search(r"Previous Close\n([\d,]+\.\d+)", fetch.text)
@@ -351,10 +332,6 @@ def parse_cboe_quote(fetch: FetchResult, symbol: str, now: datetime) -> dict:
         raise ValueError(f"cboe delayed-quote response missing last/prev_close for {symbol}")
     return {"last": float(last), "prev_close": float(prev)}
 
-
-# ---------------------------------------------------------------------------
-# source registry
-# ---------------------------------------------------------------------------
 
 ParseFn = Callable[[FetchResult, str, datetime], Any]
 
@@ -429,11 +406,6 @@ QUOTE_SOURCES: list[Source] = [
         parse_cboe_quote,
     ),
 ]
-
-
-# ---------------------------------------------------------------------------
-# orchestration
-# ---------------------------------------------------------------------------
 
 
 async def _try_source(
@@ -582,11 +554,6 @@ async def scrape(
         provenance=Provenance(sessions=sessions, replays=replays),
         warnings=warnings,
     )
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:

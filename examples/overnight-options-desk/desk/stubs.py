@@ -65,11 +65,6 @@ def _try_load_json(path: Optional[Path]) -> Optional[dict]:
         return None
 
 
-# --------------------------------------------------------------------------
-# scraper stub
-# --------------------------------------------------------------------------
-
-
 def stub_scrape(
     symbols: Iterable[str], out_path: Path, fixtures_dir: Path = FIXTURES_DIR
 ) -> float:
@@ -96,11 +91,6 @@ def stub_scrape(
     return 0.0
 
 
-# --------------------------------------------------------------------------
-# models stub
-# --------------------------------------------------------------------------
-
-
 def stub_models(scraped_path: Path, out_path: Path, fixtures_dir: Path = FIXTURES_DIR) -> float:
     """Derive a signals.json for the universe found in `scraped_path` from
     the spike fixture. Returns the (zero) estimated spend."""
@@ -117,11 +107,6 @@ def stub_models(scraped_path: Path, out_path: Path, fixtures_dir: Path = FIXTURE
     contracts.validate_signals(data)
     _atomic_write_json(Path(out_path), data)
     return 0.0
-
-
-# --------------------------------------------------------------------------
-# brief stub
-# --------------------------------------------------------------------------
 
 
 def stub_brief(
@@ -183,11 +168,6 @@ def stub_brief(
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(html)
     return 0.0
-
-
-# --------------------------------------------------------------------------
-# serve stub
-# --------------------------------------------------------------------------
 
 
 def stub_serve(file_path: Path) -> tuple[str, float]:

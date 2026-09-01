@@ -32,11 +32,6 @@ _ZSCORE_SCALE = 3.0
 _VOL_FLOOR = 0.10  # keep the vol bar legible even if every symbol is calm
 
 
-# --------------------------------------------------------------------------
-# small pure helpers
-# --------------------------------------------------------------------------
-
-
 def _fmt_dt(iso: str) -> str:
     """'2026-08-31T06:00:00Z' -> '2026-08-31 06:00 UTC'. Falls back to the
     raw string if it doesn't parse — never raise on display formatting."""
@@ -120,11 +115,6 @@ def _momentum_arrow(m: float) -> str:
     if m < 0:
         return f'<span class="mom mom-down">&#9660; {_pct(m)}</span>'
     return f'<span class="mom mom-flat">&#8212; {_pct(m)}</span>'
-
-
-# --------------------------------------------------------------------------
-# context assembly
-# --------------------------------------------------------------------------
 
 
 def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
@@ -227,10 +217,6 @@ def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
     }
 
-
-# --------------------------------------------------------------------------
-# template
-# --------------------------------------------------------------------------
 
 _TEMPLATE = r"""<!doctype html>
 <html lang="en">
@@ -491,11 +477,6 @@ def render_brief(scraped: ScrapedData, signals: Signals) -> str:
     env = Environment(autoescape=True)
     template = env.from_string(_TEMPLATE)
     return template.render(**_build_context(scraped, signals))
-
-
-# --------------------------------------------------------------------------
-# CLI
-# --------------------------------------------------------------------------
 
 
 def main(argv: Optional[list] = None) -> int:

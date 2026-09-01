@@ -28,11 +28,6 @@ def _load(fixtures_dir, name: str) -> str:
     return (fixtures_dir / "scraper" / name).read_text()
 
 
-# --------------------------------------------------------------------------
-# earnings
-# --------------------------------------------------------------------------
-
-
 def test_parse_yahoo_earnings_calendar(fixtures_dir):
     fetch = FetchResult(text=_load(fixtures_dir, "earnings_yahoo_calendar.txt"))
     rows = parse_yahoo_earnings_calendar(fetch, "AAPL", NOW)
@@ -58,11 +53,6 @@ def test_parse_stockanalysis_earnings(fixtures_dir):
     assert rows[0]["symbol"] == "AAPL"
     assert rows[0]["date"] == "2026-07-30"
     assert rows[0]["session"] == "unknown"
-
-
-# --------------------------------------------------------------------------
-# headlines
-# --------------------------------------------------------------------------
 
 
 def test_parse_yahoo_news(fixtures_dir):
@@ -113,11 +103,6 @@ def test_parse_marketwatch_rss_filters_to_symbol(fixtures_dir):
     assert headlines
     assert all("amazon" in h["title"].lower() for h in headlines)
     assert all(h["source"] == "MarketWatch" for h in headlines)
-
-
-# --------------------------------------------------------------------------
-# quotes
-# --------------------------------------------------------------------------
 
 
 def test_parse_yahoo_quote(fixtures_dir):

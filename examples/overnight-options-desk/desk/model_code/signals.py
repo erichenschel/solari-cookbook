@@ -34,10 +34,6 @@ from typing import Optional
 
 import numpy as np
 
-# --------------------------------------------------------------------------
-# Rule-table constants — see README "Model rule table" for the prose version.
-# --------------------------------------------------------------------------
-
 MIN_TRADING_DAYS = 60           # below this, GARCH/OU fits are unreliable
 MIN_RETURNS_FOR_GARCH = 20      # arch_model needs a reasonable sample
 MIN_PRICES_FOR_OU = 10          # AR(1) needs a reasonable sample
@@ -84,11 +80,6 @@ def _signal_dict(
         "label": label,
         "notes": list(notes),
     }
-
-
-# --------------------------------------------------------------------------
-# GARCH(1,1) — next-day vol forecast
-# --------------------------------------------------------------------------
 
 
 def _fit_garch(pct_returns: np.ndarray) -> tuple[float, float, list[str]]:
@@ -151,11 +142,6 @@ def _sample_vol_1d(pct_returns: np.ndarray) -> float:
     return float(np.std(pct_returns, ddof=1)) / 100.0
 
 
-# --------------------------------------------------------------------------
-# Ornstein-Uhlenbeck via AR(1) fit on log price
-# --------------------------------------------------------------------------
-
-
 def _fit_ou(closes: np.ndarray) -> tuple[float, float, list[str]]:
     """Fit AR(1) on log(price): log(P_t) = c + phi*log(P_t-1) + e_t, the
     standard discretization of an OU process. Returns (zscore, half_life_d,
@@ -211,22 +197,12 @@ def compute_ou_stats(closes: np.ndarray) -> tuple[float, float, list[str]]:
         return 0.0, 0.0, [f"ou-fit-failed: {exc}; z-score/half-life set to 0"]
 
 
-# --------------------------------------------------------------------------
-# Momentum
-# --------------------------------------------------------------------------
-
-
 def compute_momentum_5d(closes: np.ndarray) -> float:
     """5-trading-day percent change. 0.0 if there isn't a 6th price to
     compare against."""
     if len(closes) < 6:
         return 0.0
     return float(closes[-1] / closes[-6] - 1.0)
-
-
-# --------------------------------------------------------------------------
-# Earnings-window check
-# --------------------------------------------------------------------------
 
 
 def has_earnings_soon(
@@ -254,11 +230,6 @@ def has_earnings_soon(
         if 0 <= delta <= window_days:
             return True, row
     return False, None
-
-
-# --------------------------------------------------------------------------
-# Verdict rule table
-# --------------------------------------------------------------------------
 
 
 def decide_verdict(
@@ -317,11 +288,6 @@ def decide_verdict(
         "no-strong-signal: vol forecast, OU z-score, and momentum are all "
         "inside normal ranges"
     )
-
-
-# --------------------------------------------------------------------------
-# Orchestration — one symbol, start to finish
-# --------------------------------------------------------------------------
 
 
 def compute_symbol_signal(

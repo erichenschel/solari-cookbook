@@ -35,11 +35,6 @@ def rendered(scraped, signals) -> str:
     return render_brief(scraped, signals)
 
 
-# --------------------------------------------------------------------------
-# AC-1: all five sections present
-# --------------------------------------------------------------------------
-
-
 def test_renders_valid_html_shell(rendered):
     assert rendered.strip().startswith("<!doctype html>")
     assert "<html" in rendered and "</html>" in rendered
@@ -109,11 +104,6 @@ def test_section_5_provenance_footer_present(rendered):
     assert "sess_9b21e04d" in footer
 
 
-# --------------------------------------------------------------------------
-# AC-1: hostile headline text is escaped, not injected
-# --------------------------------------------------------------------------
-
-
 def test_hostile_headline_title_is_escaped(scraped, signals):
     hostile = copy.deepcopy(scraped)
     hostile.headlines = list(hostile.headlines)
@@ -150,19 +140,9 @@ def test_hostile_source_and_symbol_text_is_escaped(scraped, signals):
     assert "&lt;img" in out
 
 
-# --------------------------------------------------------------------------
-# AC-4: disclaimer present (belt-and-suspenders on top of section 5 test)
-# --------------------------------------------------------------------------
-
-
 def test_disclaimer_present(rendered):
     assert "Research only" in rendered
     assert "not investment advice" in rendered
-
-
-# --------------------------------------------------------------------------
-# AC-3: no JS, plain tables + inline SVG only
-# --------------------------------------------------------------------------
 
 
 def test_no_script_tags_and_uses_plain_tables_and_svg(rendered):
@@ -172,24 +152,9 @@ def test_no_script_tags_and_uses_plain_tables_and_svg(rendered):
     assert "<svg" in rendered
 
 
-# --------------------------------------------------------------------------
-# NG-1: zero external requests from the rendered page
-# --------------------------------------------------------------------------
-
-
 def test_no_external_resource_references(rendered):
     for needle in ["http://fonts", "https://fonts", "cdn.", "googleapis", "<link "]:
         assert needle not in rendered
-    # the only http(s) references allowed are headline source links inside <a href=...>
-    import re
-
-    for m in re.finditer(r'(?<!href=")https?://[^\s"<]+', rendered):
-        pass  # links inside href="..." are fine; this loop is a sanity smoke check
-
-
-# --------------------------------------------------------------------------
-# AC-1: whole-file CLI, exactly as specified in the ticket
-# --------------------------------------------------------------------------
 
 
 def test_cli_module_entrypoint_produces_valid_html(tmp_path, fixtures_dir):
