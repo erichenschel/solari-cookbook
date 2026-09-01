@@ -34,14 +34,14 @@
     border-bottom: 1px solid var(--border);
     background: var(--panel);
     padding: 1.25rem 0 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
   }
   header.brief-header .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .5rem 1.5rem; }
   h1 { font-size: 1.1rem; letter-spacing: .04em; text-transform: uppercase; margin: 0; color: #e6edf3; }
   .as-of { color: var(--dim); font-size: .85rem; }
   .universe { color: var(--dim); font-size: .85rem; }
   .universe strong { color: var(--text); }
-  section { margin: 0 0 2rem; }
+  section { margin: 0 0 3rem; }
   section > h2 {
     font-size: .8rem;
     letter-spacing: .08em;
@@ -49,24 +49,27 @@
     color: var(--dim);
     border-bottom: 1px solid var(--border);
     padding-bottom: .35rem;
-    margin: 0 0 .75rem;
+    margin: 0 0 1rem;
   }
   table { width: 100%; border-collapse: collapse; }
   th, td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
   th { font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
   tbody tr:hover { background: rgba(255,255,255,0.02); }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
-  .bar { display: block; width: 90px; height: 14px; }
+  .cell-metric { display: flex; align-items: center; gap: .5rem; }
+  .bar { display: block; width: 90px; height: 14px; flex: 0 0 auto; }
+  .metric-text { font-variant-numeric: tabular-nums; }
   .mom-up { color: var(--green); }
   .mom-down { color: var(--red); }
   .mom-flat { color: var(--dim); }
+  .zscore-num { font-variant-numeric: tabular-nums; }
+  .zscore-num.stretched { color: var(--amber); }
   .badge {
     display: inline-block;
     padding: .1rem .5rem;
     border-radius: 3px;
     font-size: .72rem;
-    letter-spacing: .04em;
-    text-transform: uppercase;
+    letter-spacing: .02em;
     font-weight: 700;
     border: 1px solid transparent;
   }
@@ -75,22 +78,44 @@
   .v-avoid   { color: var(--red); border-color: var(--red); background: rgba(248,81,73,.15); }
   .v-neutral { color: var(--gray); border-color: var(--gray); background: rgba(139,148,158,.08); }
   .verdict-label { display: block; color: var(--dim); font-size: .68rem; margin-top: .25rem; letter-spacing: .02em; }
-  .uncovered-note { color: var(--dim); font-size: .8rem; margin-top: .5rem; }
+  .uncovered-note { color: var(--dim); font-size: .8rem; margin-top: .75rem; }
   .callouts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .75rem; }
   .callout { border: 1px solid var(--border); background: var(--panel); border-radius: 6px; padding: .75rem .9rem; }
   .callout .sym { font-weight: 700; color: #e6edf3; font-size: .95rem; }
   .callout .date { color: var(--dim); font-size: .8rem; margin-top: .15rem; }
   .callout .badge { margin-top: .5rem; }
-  .headline-group { margin-bottom: 1rem; }
+  .headline-group { margin-bottom: 1.25rem; }
   .headline-group h3 { font-size: .85rem; color: #e6edf3; margin: 0 0 .35rem; }
   .headline-group ul { list-style: none; margin: 0; padding: 0; }
   .headline-group li { padding: .35rem 0; border-bottom: 1px dotted var(--border); }
   .headline-group li:last-child { border-bottom: none; }
   .headline-meta { color: var(--dim); font-size: .78rem; }
   .empty { color: var(--dim); font-style: italic; font-size: .85rem; }
+  .warnings { margin-top: .75rem; display: flex; flex-direction: column; gap: .4rem; }
+  .warn-row {
+    border: 1px solid rgba(210,153,34,.35);
+    background: rgba(210,153,34,.07);
+    border-radius: 4px;
+    padding: .45rem .65rem;
+    font-size: .8rem;
+    color: var(--amber);
+  }
+  .warn-row .warn-headline { display: flex; gap: .5rem; align-items: baseline; }
+  .warn-row .warn-icon { flex: 0 0 auto; }
+  .warn-row details { margin-top: .35rem; }
+  .warn-row summary { cursor: pointer; color: var(--dim); font-size: .72rem; }
+  .warn-row .warn-raw {
+    margin: .4rem 0 0;
+    padding-left: 1.1rem;
+    color: var(--dim);
+    font-size: .74rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .warn-row .warn-raw li { margin-bottom: .4rem; }
   footer.provenance {
     border-top: 1px solid var(--border);
-    margin-top: 2rem;
+    margin-top: 2.5rem;
     padding-top: 1rem;
     color: var(--dim);
     font-size: .78rem;
@@ -103,8 +128,11 @@
     font-size: .75rem;
     margin-bottom: .5rem;
   }
-  footer.provenance .sessions code { color: var(--text); }
-  .warnings { color: var(--amber); font-size: .8rem; margin-top: .5rem; }
+  footer.provenance .prov-claim { margin-bottom: .35rem; }
+  footer.provenance details.prov-detail { margin-bottom: .5rem; }
+  footer.provenance details.prov-detail summary { cursor: pointer; color: var(--dim); }
+  footer.provenance .prov-ids { margin-top: .3rem; }
+  footer.provenance .prov-ids code { color: var(--text); }
 
   @media (max-width: 640px) {
     table.responsive thead { display: none; }
@@ -129,7 +157,7 @@
 <header class="brief-header" id="header">
   <div class="wrap">
     <h1>Overnight Options Desk &mdash; Morning Brief</h1>
-    <div class="as-of">As of <strong>2026-08-31 23:26 UTC</strong> &middot; signals as of 2026-08-03 08:22 UTC</div>
+    <div class="as-of">As of <strong>2026-08-31 23:26 UTC</strong> &middot; signals as of 2026-08-31 23:28 UTC</div>
     <div class="universe">Universe: <strong>AAPL</strong>, <strong>NVDA</strong>, <strong>MSFT</strong>, <strong>TSLA</strong>, <strong>AMZN</strong></div>
   </div>
 </header>
@@ -154,8 +182,8 @@
           <td data-label="Symbol"><strong>MSFT</strong></td>
           <td data-label="Last" class="num">507.29</td>
           <td data-label="Chg" class="num"><span class="mom-down">-1.22%</span></td>
-          <td data-label="Vol 1d/ann"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 41.9%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="75.1" height="10" fill="#d29922" rx="1"/></svg> 2.64% / 41.9%</td>
-          <td data-label="OU z-score"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +6.48"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#3fb950" rx="1"/></svg> +6.48</td>
+          <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 41.9%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="69.9" height="10" fill="#d29922" rx="1"/></svg><span class="metric-text">1d 2.64% &middot; ann 41.9%</span></span></td>
+          <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +6.48 (beyond +/-3.0 scale)"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#d29922" rx="1"/><text x="97" y="11" font-size="9" fill="#d29922" text-anchor="end">&#9656;</text></svg><span class="zscore-num stretched">+6.48</span></span></td>
           <td data-label="Half-life" class="num">46.8</td>
           <td data-label="Momentum 5d"><span class="mom mom-up">&#9650; +4.10%</span></td>
           <td data-label="Verdict"><span class="badge v-avoid">avoid</span><span class="verdict-label">mean-reversion-watch</span></td>
@@ -166,8 +194,8 @@
           <td data-label="Symbol"><strong>NVDA</strong></td>
           <td data-label="Last" class="num">220.78</td>
           <td data-label="Chg" class="num"><span class="mom-up">+1.48%</span></td>
-          <td data-label="Vol 1d/ann"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 39.9%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="71.5" height="10" fill="#d29922" rx="1"/></svg> 2.52% / 39.9%</td>
-          <td data-label="OU z-score"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +4.78"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#3fb950" rx="1"/></svg> +4.78</td>
+          <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 39.9%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="66.5" height="10" fill="#d29922" rx="1"/></svg><span class="metric-text">1d 2.52% &middot; ann 39.9%</span></span></td>
+          <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +4.78 (beyond +/-3.0 scale)"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#d29922" rx="1"/><text x="97" y="11" font-size="9" fill="#d29922" text-anchor="end">&#9656;</text></svg><span class="zscore-num stretched">+4.78</span></span></td>
           <td data-label="Half-life" class="num">14.6</td>
           <td data-label="Momentum 5d"><span class="mom mom-up">&#9650; +5.90%</span></td>
           <td data-label="Verdict"><span class="badge v-avoid">avoid</span><span class="verdict-label">mean-reversion-watch</span></td>
@@ -178,8 +206,8 @@
           <td data-label="Symbol"><strong>AAPL</strong></td>
           <td data-label="Last" class="num">316.85</td>
           <td data-label="Chg" class="num"><span class="mom-down">-0.89%</span></td>
-          <td data-label="Vol 1d/ann"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 24.6%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="44.0" height="10" fill="#d29922" rx="1"/></svg> 1.55% / 24.6%</td>
-          <td data-label="OU z-score"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +4.72"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#3fb950" rx="1"/></svg> +4.72</td>
+          <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 24.6%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="40.9" height="10" fill="#d29922" rx="1"/></svg><span class="metric-text">1d 1.55% &middot; ann 24.6%</span></span></td>
+          <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +4.72 (beyond +/-3.0 scale)"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#d29922" rx="1"/><text x="97" y="11" font-size="9" fill="#d29922" text-anchor="end">&#9656;</text></svg><span class="zscore-num stretched">+4.72</span></span></td>
           <td data-label="Half-life" class="num">34.7</td>
           <td data-label="Momentum 5d"><span class="mom mom-up">&#9650; +2.10%</span></td>
           <td data-label="Verdict"><span class="badge v-neutral">neutral</span><span class="verdict-label">no-strong-signal</span></td>
@@ -190,8 +218,8 @@
           <td data-label="Symbol"><strong>AMZN</strong></td>
           <td data-label="Last" class="num">259.77</td>
           <td data-label="Chg" class="num"><span class="mom-down">-2.50%</span></td>
-          <td data-label="Vol 1d/ann"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 38.3%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="68.6" height="10" fill="#d29922" rx="1"/></svg> 2.41% / 38.3%</td>
-          <td data-label="OU z-score"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +3.71"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#3fb950" rx="1"/></svg> +3.71</td>
+          <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 38.3%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="63.9" height="10" fill="#d29922" rx="1"/></svg><span class="metric-text">1d 2.41% &middot; ann 38.3%</span></span></td>
+          <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score +3.71 (beyond +/-3.0 scale)"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="50.0" y="2" width="50.0" height="10" fill="#d29922" rx="1"/><text x="97" y="11" font-size="9" fill="#d29922" text-anchor="end">&#9656;</text></svg><span class="zscore-num stretched">+3.71</span></span></td>
           <td data-label="Half-life" class="num">21.6</td>
           <td data-label="Momentum 5d"><span class="mom mom-down">&#9660; -0.88%</span></td>
           <td data-label="Verdict"><span class="badge v-avoid">avoid</span><span class="verdict-label">mean-reversion-watch</span></td>
@@ -202,8 +230,8 @@
           <td data-label="Symbol"><strong>TSLA</strong></td>
           <td data-label="Last" class="num">367.95</td>
           <td data-label="Chg" class="num"><span class="mom-up">+5.51%</span></td>
-          <td data-label="Vol 1d/ann"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 48.6%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="87.0" height="10" fill="#d29922" rx="1"/></svg> 3.06% / 48.6%</td>
-          <td data-label="OU z-score"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score -3.45"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="0.0" y="2" width="50.0" height="10" fill="#f85149" rx="1"/></svg> -3.45</td>
+          <td data-label="Vol 1d/ann"><span class="cell-metric"><svg class="bar volbar" viewBox="0 0 100 14" role="img" aria-label="annualized vol forecast 48.6%"><rect x="0" y="2" width="100" height="10" fill="#21262d" rx="1"/><rect x="0" y="2" width="80.9" height="10" fill="#d29922" rx="1"/></svg><span class="metric-text">1d 3.06% &middot; ann 48.6%</span></span></td>
+          <td data-label="OU z-score"><span class="cell-metric"><svg class="bar zbar" viewBox="0 0 100 14" role="img" aria-label="z-score -3.45 (beyond +/-3.0 scale)"><line x1="50" y1="0" x2="50" y2="14" stroke="#484f58" stroke-width="1"/><rect x="0.0" y="2" width="50.0" height="10" fill="#d29922" rx="1"/><text x="3" y="11" font-size="9" fill="#d29922" text-anchor="start">&#9666;</text></svg><span class="zscore-num stretched">-3.45</span></span></td>
           <td data-label="Half-life" class="num">14.3</td>
           <td data-label="Momentum 5d"><span class="mom mom-up">&#9650; +5.44%</span></td>
           <td data-label="Verdict"><span class="badge v-avoid">avoid</span><span class="verdict-label">mean-reversion-watch</span></td>
@@ -214,22 +242,36 @@
     </div>
     
     
-    <div class="warnings">&#9888; nasdaq_earnings failed for AAPL: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/aapl/earnings
+    <div class="warnings">
+      
+      <div class="warn-row">
+        <div class="warn-headline"><span class="warn-icon">&#9888;</span><span>nasdaq_earnings blocked for all 5 symbols (net::ERR_HTTP2_PROTOCOL_ERROR) — recovered via fallback</span></div>
+        
+        <details>
+          <summary>raw warnings (5)</summary>
+          <ul class="warn-raw">
+            <li>nasdaq_earnings failed for AAPL: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/aapl/earnings
 Call log:
   - navigating to &#34;https://www.nasdaq.com/market-activity/stocks/aapl/earnings&#34;, waiting until &#34;load&#34;
-; nasdaq_earnings failed for NVDA: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/nvda/earnings
+</li><li>nasdaq_earnings failed for NVDA: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/nvda/earnings
 Call log:
   - navigating to &#34;https://www.nasdaq.com/market-activity/stocks/nvda/earnings&#34;, waiting until &#34;load&#34;
-; nasdaq_earnings failed for MSFT: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/msft/earnings
+</li><li>nasdaq_earnings failed for MSFT: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/msft/earnings
 Call log:
   - navigating to &#34;https://www.nasdaq.com/market-activity/stocks/msft/earnings&#34;, waiting until &#34;load&#34;
-; nasdaq_earnings failed for TSLA: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/tsla/earnings
+</li><li>nasdaq_earnings failed for TSLA: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/tsla/earnings
 Call log:
   - navigating to &#34;https://www.nasdaq.com/market-activity/stocks/tsla/earnings&#34;, waiting until &#34;load&#34;
-; nasdaq_earnings failed for AMZN: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/amzn/earnings
+</li><li>nasdaq_earnings failed for AMZN: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.nasdaq.com/market-activity/stocks/amzn/earnings
 Call log:
   - navigating to &#34;https://www.nasdaq.com/market-activity/stocks/amzn/earnings&#34;, waiting until &#34;load&#34;
-</div>
+</li>
+          </ul>
+        </details>
+        
+      </div>
+      
+    </div>
     
   </section>
 
@@ -631,17 +673,14 @@ Call log:
 <footer class="provenance" id="provenance">
   <div class="wrap">
     <div class="disclaimer">Research only — not investment advice.</div>
-    <div class="sessions">Solari session ids:
-      
-        <code>ip-10-0-10-195:76993b4d-e0cc-4944-8fa9-a4243d2d4a4d:cmthpl0y700g7nu01qibgju5y:1788218806253.S1LBTubGnQ_1wG_YXHiDeg</code>, <code>ip-10-0-10-195:7ee884e6-e238-4c6f-8ff0-7502f245d2a4:cmthpl0y700g7nu01qibgju5y:1788218808368.Y1M5wcUCClhe3Np3xCtWYg</code>, <code>ip-10-0-10-195:21ee5085-414d-43c9-abf9-e69addc4fcaa:cmthpl0y700g7nu01qibgju5y:1788218805952.BeheGkYW-XF3HGY3a1nQwg</code>, <code>ip-10-0-11-172:4788cfa9-5e15-4d5d-a138-754f4d59a995:cmthpl0y700g7nu01qibgju5y:1788218817060.VI8vW9OcqYk-Dh2IQOt5rA</code>, <code>ip-10-0-11-172:dd2a8834-8b3d-46ab-9d3a-4cc49ace8e41:cmthpl0y700g7nu01qibgju5y:1788218814565.05Tmrb0AInfIsjZCu3OKng</code>, <code>ip-10-0-10-195:54f07f0f-86db-4cff-9114-bc1be6fed513:cmthpl0y700g7nu01qibgju5y:1788218817326.TcdQPsOd4Mc0xrQplnst2g</code>, <code>ip-10-0-10-195:b255b12e-cb6f-4e3c-90e1-ffda4dff0985:cmthpl0y700g7nu01qibgju5y:1788218823134.d-h5I-vu2eWGeTM69aO1KA</code>, <code>ip-10-0-10-195:e5af15d6-b462-4518-bdae-285dbbe49368:cmthpl0y700g7nu01qibgju5y:1788218825060.WiD6f5oRbaMOimkYmvVrfQ</code>, <code>ip-10-0-10-195:f59a829a-ffac-424e-8f11-8a6b5e1d3e96:cmthpl0y700g7nu01qibgju5y:1788218823677.7FcxcbS04h91B7LryGUVfg</code>, <code>ip-10-0-11-172:7dbee148-0150-4cb0-9c51-974e930b1238:cmthpl0y700g7nu01qibgju5y:1788218831162.xLEcvJDJQX-3ojNTXjFyww</code>, <code>ip-10-0-10-195:2a2fb646-9bcf-4b31-b6d5-56e1c592b399:cmthpl0y700g7nu01qibgju5y:1788218832444.R9ZbYp6BdJkccqT1qCrMJw</code>, <code>ip-10-0-10-195:cf67559f-d6b0-4064-b709-6c59a2da05b0:cmthpl0y700g7nu01qibgju5y:1788218833198.Ik8WT46fufqBzYgvwfMafQ</code>, <code>ip-10-0-11-172:46789c1e-5f61-4e32-a7f1-4018b13dcd4a:cmthpl0y700g7nu01qibgju5y:1788218836265.B40lTbECFn2pFmUvmdwkFA</code>, <code>ip-10-0-10-195:bd04832e-f4d9-42aa-96fe-22793df11339:cmthpl0y700g7nu01qibgju5y:1788218840368.MWesE2oMLJDiAruokVn-lg</code>, <code>ip-10-0-10-195:2966f4c6-cd4a-40b3-b1fc-e3e495d32c75:cmthpl0y700g7nu01qibgju5y:1788218840517.Ooc9al4KeeRXcV_g08kWHw</code>
-      
-    </div>
+    <div class="prov-claim">Provenance: 15 recorded browser sessions back the scraped data (all of them replayable via solari.sessions.download_replay) — full ids in the run&#39;s scraped_data.json.</div>
     
-    <div class="replays">Replay ids (recorded, downloadable via solari.sessions.download_replay):
-      <code>ip-10-0-10-195:76993b4d-e0cc-4944-8fa9-a4243d2d4a4d:cmthpl0y700g7nu01qibgju5y:1788218806253.S1LBTubGnQ_1wG_YXHiDeg</code>, <code>ip-10-0-10-195:7ee884e6-e238-4c6f-8ff0-7502f245d2a4:cmthpl0y700g7nu01qibgju5y:1788218808368.Y1M5wcUCClhe3Np3xCtWYg</code>, <code>ip-10-0-10-195:21ee5085-414d-43c9-abf9-e69addc4fcaa:cmthpl0y700g7nu01qibgju5y:1788218805952.BeheGkYW-XF3HGY3a1nQwg</code>, <code>ip-10-0-11-172:4788cfa9-5e15-4d5d-a138-754f4d59a995:cmthpl0y700g7nu01qibgju5y:1788218817060.VI8vW9OcqYk-Dh2IQOt5rA</code>, <code>ip-10-0-11-172:dd2a8834-8b3d-46ab-9d3a-4cc49ace8e41:cmthpl0y700g7nu01qibgju5y:1788218814565.05Tmrb0AInfIsjZCu3OKng</code>, <code>ip-10-0-10-195:54f07f0f-86db-4cff-9114-bc1be6fed513:cmthpl0y700g7nu01qibgju5y:1788218817326.TcdQPsOd4Mc0xrQplnst2g</code>, <code>ip-10-0-10-195:b255b12e-cb6f-4e3c-90e1-ffda4dff0985:cmthpl0y700g7nu01qibgju5y:1788218823134.d-h5I-vu2eWGeTM69aO1KA</code>, <code>ip-10-0-10-195:e5af15d6-b462-4518-bdae-285dbbe49368:cmthpl0y700g7nu01qibgju5y:1788218825060.WiD6f5oRbaMOimkYmvVrfQ</code>, <code>ip-10-0-10-195:f59a829a-ffac-424e-8f11-8a6b5e1d3e96:cmthpl0y700g7nu01qibgju5y:1788218823677.7FcxcbS04h91B7LryGUVfg</code>, <code>ip-10-0-11-172:7dbee148-0150-4cb0-9c51-974e930b1238:cmthpl0y700g7nu01qibgju5y:1788218831162.xLEcvJDJQX-3ojNTXjFyww</code>, <code>ip-10-0-10-195:2a2fb646-9bcf-4b31-b6d5-56e1c592b399:cmthpl0y700g7nu01qibgju5y:1788218832444.R9ZbYp6BdJkccqT1qCrMJw</code>, <code>ip-10-0-10-195:cf67559f-d6b0-4064-b709-6c59a2da05b0:cmthpl0y700g7nu01qibgju5y:1788218833198.Ik8WT46fufqBzYgvwfMafQ</code>, <code>ip-10-0-11-172:46789c1e-5f61-4e32-a7f1-4018b13dcd4a:cmthpl0y700g7nu01qibgju5y:1788218836265.B40lTbECFn2pFmUvmdwkFA</code>, <code>ip-10-0-10-195:bd04832e-f4d9-42aa-96fe-22793df11339:cmthpl0y700g7nu01qibgju5y:1788218840368.MWesE2oMLJDiAruokVn-lg</code>, <code>ip-10-0-10-195:2966f4c6-cd4a-40b3-b1fc-e3e495d32c75:cmthpl0y700g7nu01qibgju5y:1788218840517.Ooc9al4KeeRXcV_g08kWHw</code>
-    </div>
+    <details class="prov-detail">
+      <summary>session ids, last 8 chars (15)</summary>
+      <div class="prov-ids"><code>&hellip;_YXHiDeg</code>, <code>&hellip;p3xCtWYg</code>, <code>&hellip;Y3a1nQwg</code>, <code>&hellip;2IQOt5rA</code>, <code>&hellip;ZCu3OKng</code>, <code>&hellip;Qplnst2g</code>, <code>&hellip;M69aO1KA</code>, <code>&hellip;kYmvVrfQ</code>, <code>&hellip;LryGUVfg</code>, <code>&hellip;NTXjFyww</code>, <code>&hellip;T1qCrMJw</code>, <code>&hellip;gvwfMafQ</code>, <code>&hellip;UvmdwkFA</code>, <code>&hellip;uokVn-lg</code>, <code>&hellip;_g08kWHw</code></div>
+    </details>
     
-    <div>Rendered 2026-08-31 23:28 UTC &middot; desk/brief.py (hermetic, no external requests)</div>
+    <div>Rendered 2026-09-01 01:05 UTC &middot; desk/brief.py (hermetic, no external requests)</div>
   </div>
 </footer>
 

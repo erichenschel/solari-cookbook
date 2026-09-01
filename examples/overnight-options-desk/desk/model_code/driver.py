@@ -40,4 +40,9 @@ def build_signals(scraped_data: dict) -> dict:
 
 
 def _now_iso() -> str:
+    # GRE-3464: this reads the SANDBOX VM's clock, which live testing found
+    # can be stuck weeks in the past (see fetch.py's TLS clock-skew note) —
+    # so the top-level `as_of` this produces is a best-effort placeholder
+    # only. desk/models.py (host-side, trustworthy clock) overwrites it
+    # before signals.json is written; don't rely on this value elsewhere.
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")

@@ -6,8 +6,10 @@ end-to-end via the literal `python -m desk.brief` CLI) and AC-4 (disclaimer
 
 import copy
 import json
+import re
 import subprocess
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -100,8 +102,29 @@ def test_section_4_headlines_with_source_links_present(rendered):
 def test_section_5_provenance_footer_present(rendered):
     assert 'id="provenance"' in rendered
     footer = rendered.split('id="provenance"')[1]
-    assert "sess_7f3a9c21" in footer
-    assert "sess_9b21e04d" in footer
+    assert "Provenance: 2 recorded browser sessions" in footer
+    assert "full ids in the run" in footer and "scraped_data.json" in footer
+    # GRE-3464: full raw session ids (they can embed internal hostnames)
+    # must never appear in the brief — only the last-8-chars short form,
+    # and only once (not duplicated as a second "replay ids" list).
+    assert "sess_7f3a9c21" not in footer
+    assert "sess_9b21e04d" not in footer
+    assert footer.count("7f3a9c21") == 1
+    assert footer.count("9b21e04d") == 1
+
+
+def test_provenance_footer_omits_replay_mention_when_none_recorded(rendered):
+    # the bundled fixture has no `provenance.replays` — the claim line must
+    # not invent a replay mention it can't back up.
+    footer = rendered.split('id="provenance"')[1]
+    assert "download_replay" not in footer
+
+
+def test_provenance_footer_reports_no_sessions_when_none_recorded(scraped, signals):
+    empty_prov = replace(scraped, provenance=replace(scraped.provenance, sessions=[], replays=[]))
+    out = render_brief(empty_prov, signals)
+    footer = out.split('id="provenance"')[1]
+    assert "No browser sessions were recorded" in footer
 
 
 def test_hostile_headline_title_is_escaped(scraped, signals):
@@ -155,6 +178,63 @@ def test_no_script_tags_and_uses_plain_tables_and_svg(rendered):
 def test_no_external_resource_references(rendered):
     for needle in ["http://fonts", "https://fonts", "cdn.", "googleapis", "<link "]:
         assert needle not in rendered
+
+
+def test_repeated_warnings_collapse_into_one_summary_row(scraped, signals):
+    """GRE-3464: five near-identical per-symbol failures (same source, same
+    error) must render as ONE compact amber row with a dedup'd headline —
+    not five stacked raw stack traces — with the raw text still available,
+    just collapsed inside <details>."""
+    symbols = ["AAPL", "NVDA", "MSFT", "TSLA", "AMZN"]
+    repeated = replace(
+        scraped,
+        universe=symbols,
+        warnings=[
+            f"nasdaq_earnings failed for {sym}: Page.goto: net::ERR_HTTP2_PROTOCOL_ERROR "
+            f"at https://www.nasdaq.com/market-activity/stocks/{sym.lower()}/earnings\n"
+            'Call log:\n  - navigating to "...", waiting until "load"\n'
+            for sym in symbols
+        ],
+    )
+    out = render_brief(repeated, signals)
+    signals_section = out.split('id="signals"')[1].split("</section>")[0]
+
+    assert signals_section.count('class="warn-row"') == 1
+    assert "blocked for all 5 symbols" in signals_section
+    assert "net::ERR_HTTP2_PROTOCOL_ERROR" in signals_section
+    assert "<details>" in signals_section
+    assert "<summary>" in signals_section
+    # the raw per-symbol lines are still present, just inside the disclosure
+    assert signals_section.count("net::ERR_HTTP2_PROTOCOL_ERROR") == 6  # 1 summary + 5 raw
+
+
+def test_zscore_bar_never_uses_direction_color_only_amber_or_grey(rendered):
+    """GRE-3464: z-score is a magnitude reading, not a buy/sell call —
+    green/red would read as directional advice."""
+    signals_section = rendered.split('id="signals"')[1].split("</section>")[0]
+    zbar_svgs = re.findall(r'<svg class="bar zbar".*?</svg>', signals_section, re.DOTALL)
+    assert len(zbar_svgs) == 3  # AAPL, NVDA, TSLA are signal-covered; MSFT isn't
+    for svg in zbar_svgs:
+        assert "#3fb950" not in svg  # green
+        assert "#f85149" not in svg  # red
+    # fixture: NVDA |z|=1.92 >= 1.5 stretch threshold -> amber; TSLA |z|=1.15 -> muted grey
+    nvda_row = signals_section.split('<strong>NVDA')[1].split("</tr>")[0]
+    tsla_row = signals_section.split('<strong>TSLA')[1].split("</tr>")[0]
+    assert "#d29922" in nvda_row
+    assert "#6e7681" in tsla_row
+
+
+def test_vol_cell_shows_1d_and_annualized_labels(rendered):
+    signals_section = rendered.split('id="signals"')[1].split("</section>")[0]
+    # fixture: AAPL garch_vol_forecast_1d=0.0118, garch_vol_forecast_ann=0.187
+    assert "1d 1.18% &middot; ann 18.7%" in signals_section
+
+
+def test_verdict_badge_is_not_forced_uppercase(rendered):
+    """GRE-3464: only section headers and the masthead stay all-caps —
+    table data cells (the verdict badge included) render as-is."""
+    badge_css = rendered.split(".badge {")[1].split("}")[0]
+    assert "text-transform" not in badge_css
 
 
 def test_cli_module_entrypoint_produces_valid_html(tmp_path, fixtures_dir):

@@ -19,6 +19,7 @@ import asyncio
 import json
 import logging
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from desk.contracts import validate_signals, load_scraped
@@ -155,6 +156,17 @@ async def run_models(scraped_path: str) -> dict:
         raise RuntimeError(f"sandbox kernel error running model code: {result.error}\nstderr: {result.stderr}")
 
     signals_dict = _extract_signals_json(result.stdout)
+
+    # GRE-3464: stamp `as_of` with the HOST's clock, overwriting whatever
+    # driver.py captured inside the sandbox. Live testing found the sandbox
+    # VM's system clock can be stuck weeks in the past (same finding as
+    # model_code/fetch.py's TLS clock-skew workaround) — a real run once
+    # published a brief headed "signals as of 2026-08-03" from a run that
+    # executed on 2026-08-31, because driver.py's own `datetime.now()` was
+    # reading that stale in-sandbox clock. This process (models.py) never
+    # enters the sandbox, so its clock is trustworthy.
+    signals_dict["as_of"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
     validate_signals(signals_dict)  # raises jsonschema.ValidationError if bad
 
     missing = set(scraped_dict["universe"]) - set(signals_dict["per_symbol"])

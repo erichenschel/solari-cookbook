@@ -11,9 +11,11 @@ from __future__ import annotations
 
 import ast
 import json
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
+import desk.models as models
 from desk.contracts import validate_signals
 from desk.model_code import signals
 from desk.model_code.prices import closes_from_csv_file, parse_stooq_csv
@@ -24,7 +26,9 @@ from desk.models import (
     _bootstrap_code,
     _extract_signals_json,
     _load_model_code_files,
+    run_models,
 )
+from desk.solari_client import ExecResult
 
 AS_OF = "2026-03-01T06:00:00Z"
 
@@ -177,3 +181,41 @@ def test_extract_signals_json_pulls_payload_from_noisy_stdout():
 def test_extract_signals_json_raises_when_markers_missing():
     with pytest.raises(RuntimeError):
         _extract_signals_json("no markers here")
+
+
+async def test_run_models_stamps_as_of_from_host_clock_not_sandbox(fixtures_dir, monkeypatch):
+    """GRE-3464 regression: the sandbox VM's own clock can be stuck weeks in
+    the past (model_code/fetch.py's TLS clock-skew note) — a real run once
+    published a brief headed with a month-old `as_of` because driver.py
+    stamped it using that stale in-sandbox clock. `run_models` must
+    overwrite it with the host's own (trustworthy) clock before validating
+    and returning."""
+    scraped = json.loads((fixtures_dir / "scraped_data.json").read_text())
+    stale_as_of = "2020-01-01T00:00:00Z"  # simulates the stuck sandbox clock
+    sandbox_signals = {
+        "as_of": stale_as_of,
+        "per_symbol": {
+            sym: {
+                "garch_vol_forecast_1d": 0.01,
+                "garch_vol_forecast_ann": 0.2,
+                "ou_zscore": 0.0,
+                "ou_half_life_d": 5.0,
+                "momentum_5d": 0.0,
+                "verdict": "neutral",
+                "notes": [],
+            }
+            for sym in scraped["universe"]
+        },
+    }
+    stdout = f"{RESULT_START_MARKER}\n{json.dumps(sandbox_signals)}\n{RESULT_END_MARKER}\n"
+
+    async def _fake_run_in_sandbox(**kwargs):
+        return ExecResult(stdout=stdout, stderr="", error=None, result=None)
+
+    monkeypatch.setattr(models, "run_in_sandbox", _fake_run_in_sandbox)
+
+    result = await run_models(str(fixtures_dir / "scraped_data.json"))
+
+    assert result["as_of"] != stale_as_of
+    stamped = datetime.fromisoformat(result["as_of"].replace("Z", "+00:00"))
+    assert abs(datetime.now(timezone.utc) - stamped) < timedelta(minutes=1)

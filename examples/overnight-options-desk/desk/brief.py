@@ -13,6 +13,8 @@ a bare `file://` URL.
 from __future__ import annotations
 
 import argparse
+import re
+from collections import OrderedDict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -25,11 +27,13 @@ from desk.contracts import ScrapedData, Signals, load_scraped, load_signals
 DISCLAIMER = "Research only — not investment advice."
 _ALLOWED_URL_SCHEMES = {"http", "https"}
 
-# Visual scale caps for the inline SVG bars — clipped, not truncated data:
-# a value beyond the cap still renders (full bar + exact number in the cell),
-# it just stops growing the bar past 100% width.
+# Visual scale caps for the inline SVG bars — clipped, not truncated data: a
+# value beyond the cap still renders (full bar + exact number in the cell),
+# it just stops growing the bar past 100% width. `_ZSCORE_SCALE` additionally
+# gets a small overflow marker past the cap (see `_zscore_bar_svg`).
 _ZSCORE_SCALE = 3.0
-_VOL_FLOOR = 0.10  # keep the vol bar legible even if every symbol is calm
+_ZSCORE_STRETCH = 1.5  # mirrors model_code/signals.py's Z_STRETCH — display-only threshold, kept local so brief.py stays decoupled from the sandbox-side model code
+_VOL_CAP_ANN = 0.60  # fixed annualized-vol scale so bars are comparable run over run, not just within one brief
 
 
 def _fmt_dt(iso: str) -> str:
@@ -80,29 +84,46 @@ def _pct(x: float, digits: int = 2) -> str:
 
 
 def _zscore_bar_svg(z: float) -> str:
-    """Diverging horizontal bar centered at 0, clipped to +/- _ZSCORE_SCALE."""
+    """Diverging horizontal bar centered at 0, clipped to +/- _ZSCORE_SCALE
+    with a small overflow marker (arrow) past the cap. Amber when |z| is
+    "stretched" (>= _ZSCORE_STRETCH), muted grey otherwise — never
+    green/red: this is a magnitude reading, not a buy/sell signal, and
+    direction color reads as advice (GRE-3464)."""
     width, height, center = 100, 14, 50
+    overflow = abs(z) > _ZSCORE_SCALE
     clipped = max(-_ZSCORE_SCALE, min(_ZSCORE_SCALE, z))
     half = clipped / _ZSCORE_SCALE * center
-    color = "#3fb950" if z >= 0 else "#f85149"
+    color = "#d29922" if abs(z) >= _ZSCORE_STRETCH else "#6e7681"
     x = center if half >= 0 else center + half
     w = abs(half)
+    marker = ""
+    if overflow:
+        arrow, marker_x, anchor = (
+            ("&#9656;", width - 3, "end") if z >= 0 else ("&#9666;", 3, "start")
+        )
+        marker = (
+            f'<text x="{marker_x}" y="{height - 3}" font-size="9" '
+            f'fill="{color}" text-anchor="{anchor}">{arrow}</text>'
+        )
     return (
         f'<svg class="bar zbar" viewBox="0 0 {width} {height}" '
-        f'role="img" aria-label="z-score {z:+.2f}">'
+        f'role="img" aria-label="z-score {z:+.2f}{" (beyond +/-" + str(_ZSCORE_SCALE) + " scale)" if overflow else ""}">'
         f'<line x1="{center}" y1="0" x2="{center}" y2="{height}" stroke="#484f58" stroke-width="1"/>'
         f'<rect x="{x:.1f}" y="2" width="{w:.1f}" height="{height - 4}" fill="{color}" rx="1"/>'
+        f"{marker}"
         f"</svg>"
     )
 
 
-def _vol_bar_svg(vol: float, vol_max: float) -> str:
+def _vol_bar_svg(vol_ann: float) -> str:
+    """Annualized-vol bar against the fixed `_VOL_CAP_ANN` scale (clipped
+    past the cap, same convention as the z-score bar)."""
     width, height = 100, 14
-    frac = 0.0 if vol_max <= 0 else max(0.0, min(1.0, vol / vol_max))
+    frac = max(0.0, min(1.0, vol_ann / _VOL_CAP_ANN))
     w = frac * width
     return (
         f'<svg class="bar volbar" viewBox="0 0 {width} {height}" '
-        f'role="img" aria-label="annualized vol forecast {vol:.1%}">'
+        f'role="img" aria-label="annualized vol forecast {vol_ann:.1%}">'
         f'<rect x="0" y="2" width="{width}" height="{height - 4}" fill="#21262d" rx="1"/>'
         f'<rect x="0" y="2" width="{w:.1f}" height="{height - 4}" fill="#d29922" rx="1"/>'
         f"</svg>"
@@ -117,10 +138,123 @@ def _momentum_arrow(m: float) -> str:
     return f'<span class="mom mom-flat">&#8212; {_pct(m)}</span>'
 
 
+# Dedupe the raw per-symbol failure log into one summary line per distinct
+# failure pattern (GRE-3464) — a 5-symbol run hitting the same dead source
+# used to render as five near-identical amber paragraphs (a Playwright stack
+# trace each) stacked after the signal table.
+
+_SOURCE_FAILURE_RE = re.compile(
+    r"^(?P<source>[a-z0-9_]+) (?:failed for|forced unreachable for) "
+    r"(?P<symbol>[A-Z][A-Z0-9.]*)(?:: (?P<detail>.*))?$",
+    re.DOTALL,
+)
+_GENERIC_SYMBOL_RE = re.compile(r"\bfor ([A-Z][A-Z0-9.]*)\b")
+_NET_ERR_RE = re.compile(r"net::ERR_[A-Z0-9_]+")
+
+
+def _error_signature(detail: str) -> str:
+    """A short, stable label for an error message, used to group otherwise-
+    identical failures across symbols. Playwright network errors repeat the
+    same `net::` code with a different per-symbol URL/call-log each time —
+    prefer that code; fall back to the first line, truncated."""
+    m = _NET_ERR_RE.search(detail)
+    if m:
+        return m.group(0)
+    return detail.splitlines()[0].strip()[:80]
+
+
+def _parse_warning(w: str) -> tuple[str, Optional[str], str]:
+    """(source_id, symbol, signature) for grouping near-duplicate warnings.
+    `source_id` is '' when the warning doesn't match the scraper's
+    "SOURCE failed/forced unreachable for SYMBOL[: detail]" shape (e.g. the
+    scrape-level "no quote data available for X" warning); `signature` then
+    has the symbol blanked out to `{symbol}` so per-symbol repeats of that
+    shape still dedupe into one group."""
+    m = _SOURCE_FAILURE_RE.match(w)
+    if m:
+        detail = m.group("detail") or "forced unreachable (override)"
+        return m.group("source"), m.group("symbol"), _error_signature(detail)
+    sym_m = _GENERIC_SYMBOL_RE.search(w)
+    symbol = sym_m.group(1) if sym_m else None
+    signature = w.replace(symbol, "{symbol}", 1) if symbol else w
+    return "", symbol, signature
+
+
+def _who(symbols: list[str], universe_size: int) -> str:
+    if not symbols:
+        return "unknown symbol(s)"
+    if len(symbols) == 1:
+        return symbols[0]
+    if len(symbols) == universe_size and universe_size > 1:
+        return f"all {universe_size} symbols"
+    return f"{len(symbols)} symbols ({', '.join(symbols)})"
+
+
+def _fallback_outcome(scraped: ScrapedData, source: str, symbols: list[str]) -> str:
+    """Evidence-based read on whether the affected symbols ended up covered
+    anyway, inferred from `scraped_data` itself rather than importing
+    `desk.scraper`'s source-chain constants (keeps this lane's pure-module
+    boundary intact — see the module docstring's NG-3 note)."""
+    if "earnings" in source:
+        covered = lambda s: any(e.symbol == s for e in scraped.earnings)  # noqa: E731
+    elif "quote" in source or source in ("stooq_csv", "cboe_quotes"):
+        covered = lambda s: s in scraped.quotes  # noqa: E731
+    else:
+        covered = lambda s: any(h.symbol == s for h in scraped.headlines)  # noqa: E731
+    if not symbols:
+        return "outcome unknown"
+    hits = sum(1 for s in symbols if covered(s))
+    if hits == len(symbols):
+        return "recovered via fallback"
+    if hits > 0:
+        return "partially recovered via fallback"
+    return "no data recovered from any source"
+
+
+def _summarize_warnings(warnings: list[str], universe_size: int, scraped: ScrapedData) -> list[dict]:
+    groups: "OrderedDict[tuple[str, str], list[tuple[Optional[str], str]]]" = OrderedDict()
+    for w in warnings:
+        source, symbol, sig = _parse_warning(w)
+        groups.setdefault((source, sig), []).append((symbol, w))
+
+    summaries = []
+    for (source, sig), entries in groups.items():
+        symbols = [s for s, _ in entries if s]
+        raw = [w for _, w in entries]
+        if source:
+            outcome = _fallback_outcome(scraped, source, symbols)
+            headline = f"{source} blocked for {_who(symbols, universe_size)} ({sig}) — {outcome}"
+        elif "{symbol}" in sig:
+            headline = sig.replace("{symbol}", _who(symbols, universe_size), 1)
+        else:
+            headline = sig
+        summaries.append({"headline": headline, "raw": raw, "count": len(raw)})
+    return summaries
+
+
+def _provenance_claim(sessions: list[str], replays: list[str]) -> str:
+    """One-line rollup for the footer — never the raw session ids: they
+    embed internal hostnames (e.g. `ip-10-0-10-195:...`), so the full list
+    belongs only in the scraped_data.json artifact this run produced, not
+    printed twice into a public brief (GRE-3464)."""
+    if not sessions:
+        return "No browser sessions were recorded for this run."
+    n = len(sessions)
+    claim = f"Provenance: {n} recorded browser session{'s' if n != 1 else ''} back the scraped data"
+    if replays:
+        r = len(replays)
+        eligible = "all of them" if r == n else f"{r} of them"
+        claim += f" ({eligible} replayable via solari.sessions.download_replay)"
+    claim += " — full ids in the run's scraped_data.json."
+    return claim
+
+
+def _short_id(session_id: str) -> str:
+    return session_id[-8:] if len(session_id) > 8 else session_id
+
+
 def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
     covered = signals.per_symbol
-    vol_max = max([s.garch_vol_forecast_ann for s in covered.values()], default=0.0)
-    vol_max = max(vol_max * 1.15, _VOL_FLOOR)
 
     ranked = sorted(covered.items(), key=lambda kv: abs(kv[1].ou_zscore), reverse=True)
     signal_rows = []
@@ -137,9 +271,10 @@ def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
                 "chg_pct": chg_pct,
                 "garch_1d": sig.garch_vol_forecast_1d,
                 "garch_ann": sig.garch_vol_forecast_ann,
-                "vol_svg": _vol_bar_svg(sig.garch_vol_forecast_ann, vol_max),
+                "vol_svg": _vol_bar_svg(sig.garch_vol_forecast_ann),
                 "zscore": sig.ou_zscore,
                 "zscore_svg": _zscore_bar_svg(sig.ou_zscore),
+                "zscore_stretched": abs(sig.ou_zscore) >= _ZSCORE_STRETCH,
                 "half_life": sig.ou_half_life_d,
                 "momentum": sig.momentum_5d,
                 "momentum_html": _momentum_arrow(sig.momentum_5d),
@@ -200,6 +335,9 @@ def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
         if h.symbol is None
     ]
 
+    sessions = list(scraped.provenance.sessions)
+    replays = list(getattr(scraped.provenance, "replays", None) or [])
+
     return {
         "as_of": _fmt_dt(scraped.as_of),
         "signals_as_of": _fmt_dt(signals.as_of),
@@ -209,10 +347,9 @@ def _build_context(scraped: ScrapedData, signals: Signals) -> dict:
         "earnings_rows": earnings_rows,
         "headline_groups": headline_groups,
         "macro_headlines": macro_headlines,
-        "sessions": scraped.provenance.sessions,
-        # GRE-3464: optional — the recorded/replayable subset of sessions.
-        "replays": getattr(scraped.provenance, "replays", None) or [],
-        "warnings": scraped.warnings,
+        "provenance_claim": _provenance_claim(sessions, replays),
+        "session_ids_short": [_short_id(s) for s in sessions],
+        "warning_groups": _summarize_warnings(scraped.warnings, len(scraped.universe), scraped),
         "disclaimer": DISCLAIMER,
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
     }
@@ -254,14 +391,14 @@ _TEMPLATE = r"""<!doctype html>
     border-bottom: 1px solid var(--border);
     background: var(--panel);
     padding: 1.25rem 0 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
   }
   header.brief-header .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .5rem 1.5rem; }
   h1 { font-size: 1.1rem; letter-spacing: .04em; text-transform: uppercase; margin: 0; color: #e6edf3; }
   .as-of { color: var(--dim); font-size: .85rem; }
   .universe { color: var(--dim); font-size: .85rem; }
   .universe strong { color: var(--text); }
-  section { margin: 0 0 2rem; }
+  section { margin: 0 0 3rem; }
   section > h2 {
     font-size: .8rem;
     letter-spacing: .08em;
@@ -269,24 +406,27 @@ _TEMPLATE = r"""<!doctype html>
     color: var(--dim);
     border-bottom: 1px solid var(--border);
     padding-bottom: .35rem;
-    margin: 0 0 .75rem;
+    margin: 0 0 1rem;
   }
   table { width: 100%; border-collapse: collapse; }
   th, td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
   th { font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
   tbody tr:hover { background: rgba(255,255,255,0.02); }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
-  .bar { display: block; width: 90px; height: 14px; }
+  .cell-metric { display: flex; align-items: center; gap: .5rem; }
+  .bar { display: block; width: 90px; height: 14px; flex: 0 0 auto; }
+  .metric-text { font-variant-numeric: tabular-nums; }
   .mom-up { color: var(--green); }
   .mom-down { color: var(--red); }
   .mom-flat { color: var(--dim); }
+  .zscore-num { font-variant-numeric: tabular-nums; }
+  .zscore-num.stretched { color: var(--amber); }
   .badge {
     display: inline-block;
     padding: .1rem .5rem;
     border-radius: 3px;
     font-size: .72rem;
-    letter-spacing: .04em;
-    text-transform: uppercase;
+    letter-spacing: .02em;
     font-weight: 700;
     border: 1px solid transparent;
   }
@@ -295,22 +435,44 @@ _TEMPLATE = r"""<!doctype html>
   .v-avoid   { color: var(--red); border-color: var(--red); background: rgba(248,81,73,.15); }
   .v-neutral { color: var(--gray); border-color: var(--gray); background: rgba(139,148,158,.08); }
   .verdict-label { display: block; color: var(--dim); font-size: .68rem; margin-top: .25rem; letter-spacing: .02em; }
-  .uncovered-note { color: var(--dim); font-size: .8rem; margin-top: .5rem; }
+  .uncovered-note { color: var(--dim); font-size: .8rem; margin-top: .75rem; }
   .callouts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .75rem; }
   .callout { border: 1px solid var(--border); background: var(--panel); border-radius: 6px; padding: .75rem .9rem; }
   .callout .sym { font-weight: 700; color: #e6edf3; font-size: .95rem; }
   .callout .date { color: var(--dim); font-size: .8rem; margin-top: .15rem; }
   .callout .badge { margin-top: .5rem; }
-  .headline-group { margin-bottom: 1rem; }
+  .headline-group { margin-bottom: 1.25rem; }
   .headline-group h3 { font-size: .85rem; color: #e6edf3; margin: 0 0 .35rem; }
   .headline-group ul { list-style: none; margin: 0; padding: 0; }
   .headline-group li { padding: .35rem 0; border-bottom: 1px dotted var(--border); }
   .headline-group li:last-child { border-bottom: none; }
   .headline-meta { color: var(--dim); font-size: .78rem; }
   .empty { color: var(--dim); font-style: italic; font-size: .85rem; }
+  .warnings { margin-top: .75rem; display: flex; flex-direction: column; gap: .4rem; }
+  .warn-row {
+    border: 1px solid rgba(210,153,34,.35);
+    background: rgba(210,153,34,.07);
+    border-radius: 4px;
+    padding: .45rem .65rem;
+    font-size: .8rem;
+    color: var(--amber);
+  }
+  .warn-row .warn-headline { display: flex; gap: .5rem; align-items: baseline; }
+  .warn-row .warn-icon { flex: 0 0 auto; }
+  .warn-row details { margin-top: .35rem; }
+  .warn-row summary { cursor: pointer; color: var(--dim); font-size: .72rem; }
+  .warn-row .warn-raw {
+    margin: .4rem 0 0;
+    padding-left: 1.1rem;
+    color: var(--dim);
+    font-size: .74rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .warn-row .warn-raw li { margin-bottom: .4rem; }
   footer.provenance {
     border-top: 1px solid var(--border);
-    margin-top: 2rem;
+    margin-top: 2.5rem;
     padding-top: 1rem;
     color: var(--dim);
     font-size: .78rem;
@@ -323,8 +485,11 @@ _TEMPLATE = r"""<!doctype html>
     font-size: .75rem;
     margin-bottom: .5rem;
   }
-  footer.provenance .sessions code { color: var(--text); }
-  .warnings { color: var(--amber); font-size: .8rem; margin-top: .5rem; }
+  footer.provenance .prov-claim { margin-bottom: .35rem; }
+  footer.provenance details.prov-detail { margin-bottom: .5rem; }
+  footer.provenance details.prov-detail summary { cursor: pointer; color: var(--dim); }
+  footer.provenance .prov-ids { margin-top: .3rem; }
+  footer.provenance .prov-ids code { color: var(--text); }
 
   @media (max-width: 640px) {
     table.responsive thead { display: none; }
@@ -374,8 +539,8 @@ _TEMPLATE = r"""<!doctype html>
           <td data-label="Symbol"><strong>{{ r.symbol }}</strong></td>
           <td data-label="Last" class="num">{% if r.last is not none %}{{ "%.2f"|format(r.last) }}{% else %}&mdash;{% endif %}</td>
           <td data-label="Chg" class="num">{% if r.chg_pct is not none %}<span class="{{ 'mom-up' if r.chg_pct >= 0 else 'mom-down' }}">{{ "%+.2f%%"|format(r.chg_pct * 100) }}</span>{% else %}&mdash;{% endif %}</td>
-          <td data-label="Vol 1d/ann">{{ r.vol_svg|safe }} {{ "%.2f%%"|format(r.garch_1d * 100) }} / {{ "%.1f%%"|format(r.garch_ann * 100) }}</td>
-          <td data-label="OU z-score">{{ r.zscore_svg|safe }} {{ "%+.2f"|format(r.zscore) }}</td>
+          <td data-label="Vol 1d/ann"><span class="cell-metric">{{ r.vol_svg|safe }}<span class="metric-text">1d {{ "%.2f%%"|format(r.garch_1d * 100) }} &middot; ann {{ "%.1f%%"|format(r.garch_ann * 100) }}</span></span></td>
+          <td data-label="OU z-score"><span class="cell-metric">{{ r.zscore_svg|safe }}<span class="zscore-num{{ ' stretched' if r.zscore_stretched else '' }}">{{ "%+.2f"|format(r.zscore) }}</span></span></td>
           <td data-label="Half-life" class="num">{{ "%.1f"|format(r.half_life) }}</td>
           <td data-label="Momentum 5d">{{ r.momentum_html|safe }}</td>
           <td data-label="Verdict"><span class="badge {{ r.verdict_class }}">{{ r.verdict }}</span>{% if r.label %}<span class="verdict-label">{{ r.label }}</span>{% endif %}</td>
@@ -387,8 +552,22 @@ _TEMPLATE = r"""<!doctype html>
     {% if uncovered %}
     <div class="uncovered-note">No signal coverage: {% for s in uncovered %}{{ s }}{% if not loop.last %}, {% endif %}{% endfor %}</div>
     {% endif %}
-    {% if warnings %}
-    <div class="warnings">&#9888; {% for w in warnings %}{{ w }}{% if not loop.last %}; {% endif %}{% endfor %}</div>
+    {% if warning_groups %}
+    <div class="warnings">
+      {% for g in warning_groups %}
+      <div class="warn-row">
+        <div class="warn-headline"><span class="warn-icon">&#9888;</span><span>{{ g.headline }}</span></div>
+        {% if g.count > 1 or g.raw[0] != g.headline %}
+        <details>
+          <summary>raw warning{{ 's' if g.count != 1 else '' }} ({{ g.count }})</summary>
+          <ul class="warn-raw">
+            {% for line in g.raw %}<li>{{ line }}</li>{% endfor %}
+          </ul>
+        </details>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
     {% endif %}
   </section>
 
@@ -450,17 +629,12 @@ _TEMPLATE = r"""<!doctype html>
 <footer class="provenance" id="provenance">
   <div class="wrap">
     <div class="disclaimer">{{ disclaimer }}</div>
-    <div class="sessions">Solari session ids:
-      {% if sessions %}
-        {% for s in sessions %}<code>{{ s }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
-      {% else %}
-        <span class="empty">none recorded</span>
-      {% endif %}
-    </div>
-    {% if replays %}
-    <div class="replays">Replay ids (recorded, downloadable via solari.sessions.download_replay):
-      {% for r in replays %}<code>{{ r }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
-    </div>
+    <div class="prov-claim">{{ provenance_claim }}</div>
+    {% if session_ids_short %}
+    <details class="prov-detail">
+      <summary>session ids, last 8 chars ({{ session_ids_short|length }})</summary>
+      <div class="prov-ids">{% for s in session_ids_short %}<code>&hellip;{{ s }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</div>
+    </details>
     {% endif %}
     <div>Rendered {{ generated_at }} &middot; desk/brief.py (hermetic, no external requests)</div>
   </div>
